@@ -1,19 +1,21 @@
 # PJU Surveyor
 
-Website pendataan tiang PJU berdasarkan `prd.md`, dengan frontend Next.js dan backend Laravel API.
+Aplikasi pendataan tiang PJU berbasis Laravel.
 
-## Menjalankan
+Frontend dan backend sekarang berjalan dalam satu aplikasi Laravel di folder `backend/`. UI memakai Blade, form Laravel, session login, dan route web biasa. Folder `frontend/` adalah frontend Next.js lama dan tidak diperlukan untuk deploy Hostinger.
 
-Frontend:
+## Struktur Aktif
 
-```bash
-npm install
-npm run dev
+```text
+backend/
+  app/Http/Controllers/Api/   API lama, tetap tersedia
+  app/Http/Controllers/Web/   Controller halaman Blade
+  resources/views/            Frontend Laravel Blade
+  routes/api.php              API Sanctum
+  routes/web.php              Halaman web Laravel
 ```
 
-Buka `http://localhost:3000`.
-
-Backend:
+## Menjalankan Lokal
 
 ```bash
 cd backend
@@ -25,34 +27,66 @@ cp .env.example .env
 /opt/lampp/bin/php artisan serve --host=127.0.0.1 --port=8000
 ```
 
+Buka:
+
+```text
+http://127.0.0.1:8000
+```
+
 Jika memakai LAMPP/XAMPP, buat database via MySQL LAMPP:
 
 ```bash
 /opt/lampp/bin/mysql -h 127.0.0.1 -P 3306 -u root -e "CREATE DATABASE IF NOT EXISTS pju_surveyor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 ```
 
-Akun awal:
+## Deploy ke Hostinger
+
+Upload hanya aplikasi Laravel di folder `backend`.
+
+1. Buat database MySQL di hPanel.
+2. Upload isi folder `backend` ke hosting.
+3. Arahkan document root domain ke folder `public`.
+4. Jika Hostinger tidak memberi opsi document root, pindahkan isi `backend/public` ke `public_html`, lalu sesuaikan path `vendor/autoload.php` dan `bootstrap/app.php` di `public_html/index.php`.
+5. Lewat SSH, jalankan:
+
+```bash
+composer2 install --no-dev --optimize-autoloader
+cp .env.production.example .env
+php artisan key:generate
+php artisan storage:link
+php artisan migrate --seed --force
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+```
+
+Contoh `.env` production tersedia di:
 
 ```text
-surveyor@pju.local
-password
+backend/.env.production.example
+```
+
+Pastikan nilai database dan domain sudah diganti:
+
+```env
+APP_URL=https://domainanda.com
+FRONTEND_URL=https://domainanda.com
+DB_DATABASE=nama_database
+DB_USERNAME=username_database
+DB_PASSWORD=password_database
 ```
 
 ## Script
 
 ```bash
-npm run lint
-npm run build
+cd backend && php artisan route:list
 cd backend && php artisan test
 ```
 
-## Catatan Runtime
+## Akun Tes
 
-- Environment lokal perlu PHP, Composer, dan MySQL/MariaDB.
-- Frontend membaca API dari `NEXT_PUBLIC_PJU_API_URL`, default `http://127.0.0.1:8000/api`.
-- Peta memakai Leaflet/OpenStreetMap tanpa API key.
-
-## User TES
+```text
 superadmin@pju.local / password
 surveyor@pju.local / password
 user@pju.local / password
+```

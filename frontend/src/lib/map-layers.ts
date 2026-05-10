@@ -35,8 +35,8 @@ export const embeddedMapLayerConfigs: EmbeddedMapLayerConfig[] = [
     id: "jalan",
     label: "Jalan",
     url: "/data/peta/jalan_ln_340320240820002322.zip",
-    style: { color: "#ef4444", fillOpacity: 0, opacity: 1, weight: 2.8 },
-    hoverStyle: { opacity: 1, weight: 4.2 },
+    style: { color: "#ef4444", fillOpacity: 0, opacity: 0.9, weight: 1.4 },
+    hoverStyle: { opacity: 1, weight: 2.4 },
   },
 ];
 
