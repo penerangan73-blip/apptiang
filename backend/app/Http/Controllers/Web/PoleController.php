@@ -21,14 +21,8 @@ class PoleController extends Controller
 
         $poles = Pole::query()
             ->with(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email'])
-            ->when($validated['query'] ?? null, function ($query, string $term) {
-                $query->where(function ($query) use ($term) {
-                    $query
-                        ->where('street_name', 'like', "%{$term}%")
-                        ->orWhere('customer_id', 'like', "%{$term}%");
-                });
-            })
-            ->when($validated['condition'] ?? null, fn ($query, string $condition) => $query->where('condition', $condition))
+            ->search($validated['query'] ?? null)
+            ->condition($validated['condition'] ?? null)
             ->latest()
             ->get();
 
@@ -135,9 +129,17 @@ class PoleController extends Controller
 
     public function destroy(Pole $pole): RedirectResponse
     {
-        $pole->delete();
+        $customerId = $pole->customer_id;
 
-        return back()->with('status', 'Data tiang berhasil dihapus.');
+        try {
+            $pole->delete();
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', "Data {$customerId} gagal dihapus. Silakan coba lagi.");
+        }
+
+        return back()->with('status', "Data {$customerId} berhasil dihapus.");
     }
 
     private function validatedPoleInput(Request $request, ?Pole $pole = null): array

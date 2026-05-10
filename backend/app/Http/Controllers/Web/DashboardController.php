@@ -5,35 +5,17 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\DailyReport;
 use App\Models\Pole;
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
     public function __invoke(Request $request): View
     {
-        $query = trim((string) $request->query('query', ''));
-        $condition = $request->query('condition');
-
-        $poles = Pole::query()
-            ->with(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email'])
-            ->when($query !== '', function ($builder) use ($query) {
-                $builder->where(function ($builder) use ($query) {
-                    $builder
-                        ->where('street_name', 'like', "%{$query}%")
-                        ->orWhere('customer_id', 'like', "%{$query}%");
-                });
-            })
-            ->when(in_array($condition, ['baik', 'rusak', 'perbaikan'], true), fn ($builder) => $builder->where('condition', $condition))
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
-
-        $allPoles = Pole::query()
+        $recentPoles = Pole::query()
             ->with(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email'])
             ->latest()
+            ->limit(5)
             ->get();
 
         $reports = DailyReport::query()
@@ -42,29 +24,28 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
 
+        $poleStats = Pole::query()
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw("SUM(CASE WHEN `condition` = 'baik' THEN 1 ELSE 0 END) as baik")
+            ->selectRaw("SUM(CASE WHEN `condition` = 'rusak' THEN 1 ELSE 0 END) as rusak")
+            ->selectRaw("SUM(CASE WHEN `condition` = 'perbaikan' THEN 1 ELSE 0 END) as perbaikan")
+            ->selectRaw('COALESCE(SUM(power_usage), 0) as daya')
+            ->first();
+
         $stats = [
-            'total' => Pole::query()->count(),
-            'baik' => Pole::query()->where('condition', 'baik')->count(),
-            'rusak' => Pole::query()->where('condition', 'rusak')->count(),
-            'perbaikan' => Pole::query()->where('condition', 'perbaikan')->count(),
-            'daya' => Pole::query()->sum('power_usage'),
+            'total' => (int) $poleStats->total,
+            'baik' => (int) $poleStats->baik,
+            'rusak' => (int) $poleStats->rusak,
+            'perbaikan' => (int) $poleStats->perbaikan,
+            'daya' => (int) $poleStats->daya,
         ];
 
-        $dialogPoles = $allPoles
-            ->take(5)
-            ->merge($poles->getCollection())
-            ->unique('id')
-            ->values();
-
-        return view('dashboard', [
-            'allPoles' => $allPoles,
-            'condition' => $condition,
-            'dialogPoles' => $dialogPoles,
-            'poles' => $poles,
-            'query' => $query,
+        return view('pages.dashboard.index', [
+            'recentPoles' => $recentPoles,
             'reports' => $reports,
             'stats' => $stats,
-            'users' => Auth::user()?->role === 'superadmin' ? User::query()->orderBy('name')->get() : collect(),
+            'user' => $request->user(),
+            'canManagePoles' => in_array($request->user()->role, ['superadmin', 'surveyor'], true),
         ]);
     }
 }

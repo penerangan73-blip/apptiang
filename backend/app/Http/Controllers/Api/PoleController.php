@@ -20,14 +20,8 @@ class PoleController extends Controller
 
         $poles = Pole::query()
             ->with(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email'])
-            ->when($validated['query'] ?? null, function ($query, string $term) {
-                $query->where(function ($query) use ($term) {
-                    $query
-                        ->where('street_name', 'like', "%{$term}%")
-                        ->orWhere('customer_id', 'like', "%{$term}%");
-                });
-            })
-            ->when($validated['condition'] ?? null, fn ($query, string $condition) => $query->where('condition', $condition))
+            ->search($validated['query'] ?? null)
+            ->condition($validated['condition'] ?? null)
             ->latest()
             ->get();
 

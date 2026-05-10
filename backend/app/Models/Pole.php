@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -41,6 +42,37 @@ class Pole extends Model
     public function reports(): HasMany
     {
         return $this->hasMany(DailyReport::class);
+    }
+
+    public function scopeSearch(Builder $query, ?string $term): Builder
+    {
+        $term = trim((string) $term);
+
+        if ($term === '') {
+            return $query;
+        }
+
+        return $query->where(function (Builder $builder) use ($term) {
+            $builder
+                ->where('street_name', 'like', "%{$term}%")
+                ->orWhere('customer_id', 'like', "%{$term}%")
+                ->when(preg_match('/^\d{4}-\d{2}-\d{2}$/', $term), fn (Builder $builder) => $builder->orWhereDate('created_at', $term))
+                ->when(preg_match('/^\d{4}$/', $term), fn (Builder $builder) => $builder->orWhereYear('created_at', (int) $term))
+                ->orWhereHas('createdBy', function (Builder $userQuery) use ($term) {
+                    $userQuery
+                        ->where('name', 'like', "%{$term}%")
+                        ->orWhere('email', 'like', "%{$term}%");
+                });
+        });
+    }
+
+    public function scopeCondition(Builder $query, ?string $condition): Builder
+    {
+        if (! in_array($condition, ['baik', 'rusak', 'perbaikan'], true)) {
+            return $query;
+        }
+
+        return $query->where('condition', $condition);
     }
 
     public function createdBy(): BelongsTo

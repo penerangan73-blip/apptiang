@@ -1,15 +1,25 @@
 <div class="card p-4">
-    <form method="GET" action="{{ route('dashboard') }}" class="grid gap-3 md:grid-cols-[1fr_220px_auto]">
-        <input class="field" name="query" value="{{ $query }}" placeholder="Cari jalan atau ID pelanggan">
-        <select class="field" name="condition">
+    <form id="search-filter-form" method="GET" action="{{ route($actionRoute ?? 'poles.index') }}" class="grid gap-3 md:grid-cols-[1fr_220px_auto]">
+        <input class="field" id="search-query" name="query" value="{{ $query }}" placeholder="Cari ID, alamat, tanggal input, tahun, atau penginput...">
+        <select class="field" id="search-condition" name="condition">
             <option value="">Semua kondisi</option>
             @foreach (['baik', 'rusak', 'perbaikan'] as $option)
                 <option value="{{ $option }}" @selected($condition === $option)>{{ ucfirst($option) }}</option>
             @endforeach
         </select>
-        <button class="btn btn-muted" type="submit">
+        <button class="btn btn-primary" type="submit">
             <i data-lucide="search" class="icon"></i>
-            Filter
+            Cari
         </button>
     </form>
 </div>
+
+<script>
+(function() {
+    const form = document.getElementById('search-filter-form');
+    const conditionSelect = document.getElementById('search-condition');
+
+    // Auto-submit langsung saat pilih kondisi
+    conditionSelect?.addEventListener('change', () => form.submit());
+})();
+</script>

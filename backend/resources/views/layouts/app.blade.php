@@ -34,9 +34,15 @@
         body { background: var(--bg); color: #f1f5f9; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         body:has(dialog[open]) { overflow: hidden; }
         dialog::backdrop { background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(8px); }
-        dialog { border: 0; padding: 0; background: transparent; color: #f1f5f9; width: min(960px, calc(100vw - 24px)); overflow: hidden; }
-        .field { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: rgba(15, 23, 42, 0.8); color: #f8fafc; transition: all 0.2s; }
-        .field:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.3); }
+        dialog { position: fixed; inset: 0; margin: auto; border: 0; padding: 0; background: transparent; color: #f1f5f9; width: min(960px, calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow: visible; }
+        .field { width: 100%; border: 1px solid rgba(148, 163, 184, 0.34); border-radius: 8px; padding: 11px 13px; background: rgba(15, 23, 42, 0.92); color: #f8fafc; font-weight: 650; transition: all 0.2s; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(255,255,255,0.03); }
+        .field::placeholder { color: #94a3b8; font-weight: 500; }
+        .field:focus { outline: none; border-color: var(--primary); background: rgba(15, 23, 42, 1); box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.28), 0 0 18px rgba(6, 182, 212, 0.12); }
+        select.field { color: #f8fafc; }
+        select.field option { background: #0f172a; color: #f8fafc; }
+        textarea.field { line-height: 1.55; }
+        input[type="date"].field { color-scheme: dark; }
+        input[type="date"].field::-webkit-calendar-picker-indicator { opacity: 0; cursor: pointer; }
         .label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 800; color: #94a3b8; }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 8px; padding: 10px 14px; font-weight: 700; transition: all 0.2s; }
         .btn-primary { background: linear-gradient(to right, #06b6d4, #3b82f6); color: #fff; box-shadow: 0 4px 14px 0 rgba(6, 182, 212, 0.39); border: none; }
@@ -56,8 +62,13 @@
         .tab-button.active { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border-left: 3px solid #22d3ee; border-radius: 0 8px 8px 0; }
         .tab-button:not(.active) { color: #94a3b8; border-left: 3px solid transparent; }
         .mobile-tab.active { color: #22d3ee; }
-        .modal-card { max-height: calc(100vh - 32px); overflow: auto; border-radius: 16px; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8); }
+        .modal-card { width: 100%; max-height: calc(100vh - 32px); margin-inline: auto; overflow: auto; border-radius: 16px; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8); }
         .icon { width: 18px; height: 18px; }
+        .leaflet-popup-content-wrapper { border-radius: 14px; background: #0f172a; color: #f8fafc; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 18px 45px rgba(2, 6, 23, 0.45); }
+        .leaflet-popup-content { margin: 0; min-width: 240px; }
+        .leaflet-popup-tip { background: #0f172a; border: 1px solid rgba(255,255,255,0.12); }
+        .leaflet-container a.leaflet-popup-close-button { color: #94a3b8; top: 8px; right: 8px; }
+        .leaflet-container a.leaflet-popup-close-button:hover { color: #f8fafc; }
     </style>
 </head>
 <body>

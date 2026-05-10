@@ -8,9 +8,18 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class UserController extends Controller
 {
+    public function index(Request $request): View
+    {
+        return view('pages.users.index', [
+            'users' => User::query()->orderBy('name')->get(),
+            'user' => $request->user(),
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $input = $request->validate([

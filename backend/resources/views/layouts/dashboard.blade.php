@@ -1,0 +1,334 @@
+@extends('layouts.app', ['title' => $pageTitle ?? 'Inventarisasi APJ Non APP'])
+
+@section('body')
+@php
+    $user = auth()->user();
+    $canManagePoles = in_array($user->role, ['superadmin', 'surveyor'], true);
+    $isSuperadmin = $user->role === 'superadmin';
+    $label = fn ($value) => ucfirst(str_replace('_', ' ', (string) $value));
+    $ownership = fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
+
+    $navItems = [
+        ['route' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'gauge'],
+        ['route' => 'poles.index', 'label' => 'Data Tiang', 'icon' => 'database'],
+        ['route' => 'map.index', 'label' => 'Peta', 'icon' => 'map-pinned'],
+        ['route' => 'reports.index', 'label' => 'Aktivitas', 'icon' => 'activity'],
+    ];
+    if ($isSuperadmin) {
+        $navItems[] = ['route' => 'users.index', 'label' => 'Manajemen User', 'icon' => 'users'];
+    }
+@endphp
+
+<div class="min-h-screen pb-24 lg:grid lg:grid-cols-[280px_1fr] lg:pb-0">
+    {{-- Desktop Sidebar --}}
+    <aside class="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-white/10 bg-slate-950/50 backdrop-blur-xl text-white lg:flex lg:flex-col">
+        <div class="border-b border-white/10 p-6">
+            <div class="flex items-center gap-4">
+                <div class="size-12 shrink-0 rounded-full border border-white/20 bg-white/5 p-1 shadow-lg">
+                    <img src="{{ asset('image/dishub.png') }}" alt="Logo Dishub" class="size-full object-contain">
+                </div>
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400 drop-shadow-sm">Dinas Perhubungan</p>
+                    <h1 class="text-sm font-bold text-slate-100">Inventarisasi APJ</h1>
+                </div>
+            </div>
+        </div>
+        <nav class="flex-1 space-y-1 p-4">
+            @foreach ($navItems as $nav)
+                <a href="{{ route($nav['route']) }}"
+                   class="flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-semibold transition hover:bg-slate-900/10
+                          {{ request()->routeIs($nav['route']) ? 'bg-cyan-500/15 text-cyan-300 border-l-[3px] border-cyan-400 rounded-l-none' : 'text-slate-400 border-l-[3px] border-transparent' }}">
+                    <i data-lucide="{{ $nav['icon'] }}" class="icon"></i>
+                    {{ $nav['label'] }}
+                </a>
+            @endforeach
+        </nav>
+    </aside>
+
+    {{-- Main Content --}}
+    <div class="min-w-0 lg:col-start-2 pt-[64px] lg:pt-0">
+        {{-- Header --}}
+        <header class="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl lg:relative lg:w-auto">
+            <div class="flex items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+                <div class="flex min-w-0 items-center gap-3">
+                    <div class="size-10 shrink-0 rounded-full border border-white/20 bg-white/5 p-1 lg:hidden">
+                        <img src="{{ asset('image/dishub.png') }}" alt="Logo Dishub" class="size-full object-contain">
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400 drop-shadow-sm">Dinas Perhubungan</p>
+                        <h2 class="truncate text-base font-bold text-slate-100">Inventarisasi APJ Non APP</h2>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <button type="button" class="btn btn-muted" data-menu-toggle="profile-menu">
+                        @if ($user->photo_url)
+                            <img src="{{ $user->photo_url }}" alt="{{ $user->name }}" class="size-7 rounded-full object-cover">
+                        @else
+                            <i data-lucide="user-circle" class="icon text-cyan-400"></i>
+                        @endif
+                        <span class="hidden max-w-36 truncate sm:inline">{{ $user->name }}</span>
+                        <i data-lucide="chevron-down" class="icon"></i>
+                    </button>
+                    <div id="profile-menu" class="absolute right-0 top-12 z-50 hidden w-72 overflow-hidden rounded-xl border border-white/10 bg-slate-900 shadow-2xl">
+                        <div class="border-b border-white/10 p-4">
+                            <p class="truncate font-bold text-slate-100">{{ $user->name }}</p>
+                            <p class="truncate text-xs font-semibold text-slate-400">{{ $user->email }}</p>
+                        </div>
+                        <div class="p-2">
+                            <button type="button" class="flex h-10 w-full items-center gap-2 rounded-md px-3 text-sm font-semibold text-slate-300 hover:bg-white/5" data-open-dialog="profile-dialog">
+                                <i data-lucide="user-circle" class="icon text-cyan-400"></i>
+                                Ubah Profil
+                            </button>
+                            <button type="button" class="flex h-10 w-full items-center gap-2 rounded-md px-3 text-sm font-semibold text-slate-300 hover:bg-white/5" data-open-dialog="password-dialog">
+                                <i data-lucide="key-round" class="icon text-cyan-400"></i>
+                                Ubah Password
+                            </button>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button class="flex h-10 w-full items-center gap-2 rounded-md px-3 text-sm font-semibold text-red-600 hover:bg-slate-900/5" type="submit">
+                                    <i data-lucide="log-out" class="icon"></i>
+                                    Keluar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        {{-- Page Content --}}
+        <main class="mx-auto max-w-[1500px] space-y-5 px-4 py-5 sm:px-6 lg:px-8">
+            @if (session('status'))
+                <div id="status-alert" class="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-5 py-4 text-sm font-semibold text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.15)] transition-opacity duration-500">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="check-circle-2" class="icon"></i>
+                        {{ session('status') }}
+                    </div>
+                </div>
+                <script>
+                    setTimeout(() => {
+                        const alert = document.getElementById('status-alert');
+                        if (alert) {
+                            alert.style.opacity = '0';
+                            setTimeout(() => alert.remove(), 500);
+                        }
+                    }, 3000);
+                </script>
+            @endif
+
+            @if (session('error'))
+                <div id="error-alert" class="rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm font-semibold text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.15)] transition-opacity duration-500">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="alert-triangle" class="icon"></i>
+                        {{ session('error') }}
+                    </div>
+                </div>
+                <script>
+                    setTimeout(() => {
+                        const alert = document.getElementById('error-alert');
+                        if (alert) {
+                            alert.style.opacity = '0';
+                            setTimeout(() => alert.remove(), 500);
+                        }
+                    }, 5000);
+                </script>
+            @endif
+
+            @if ($errors->any())
+                <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                    <p class="font-bold">Periksa lagi input berikut:</p>
+                    <ul class="mt-2 list-disc space-y-1 pl-5">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            @yield('content')
+        </main>
+    </div>
+
+    {{-- Mobile Bottom Nav --}}
+    <nav class="fixed inset-x-0 bottom-0 z-50 border-t border-white/5 bg-slate-950/95 pb-2 px-2 pt-2 backdrop-blur-2xl lg:hidden shadow-[0_-10px_40px_rgba(0,0,0,0.8)]" style="padding-bottom: max(0.5rem, env(safe-area-inset-bottom));">
+        <div class="mx-auto grid max-w-lg gap-1" style="grid-template-columns: repeat({{ count($navItems) }}, minmax(0, 1fr));">
+            @foreach ($navItems as $nav)
+                <a href="{{ route($nav['route']) }}"
+                   class="flex h-14 flex-col items-center justify-center gap-1.5 rounded-xl text-[10px] font-bold transition-all
+                          {{ request()->routeIs($nav['route']) ? 'text-cyan-400' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200' }}">
+                    <i data-lucide="{{ $nav['icon'] }}" class="icon"></i>
+                    {{ $nav['label'] }}
+                </a>
+            @endforeach
+        </div>
+    </nav>
+</div>
+
+{{-- Global Dialogs (Profile & Password) --}}
+<dialog id="profile-dialog">
+    <div class="modal-card max-w-xl">
+        <div class="flex items-start justify-between gap-4 border-b border-white/10 p-5">
+            <div>
+                <h2 class="text-xl font-black">Ubah Profil</h2>
+                <p class="text-sm text-slate-400">Perbarui nama, email, telepon, foto, dan alamat profil.</p>
+            </div>
+            <button type="button" class="btn btn-muted px-3 py-2" data-close-dialog><i data-lucide="x" class="icon"></i></button>
+        </div>
+        <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="grid gap-4 p-5 md:grid-cols-2">
+            @csrf
+            @method('PUT')
+            <div>
+                <label class="label">Nama</label>
+                <input class="field" name="name" value="{{ old('name', $user->name) }}" required>
+            </div>
+            <div>
+                <label class="label">Email</label>
+                <input class="field" name="email" type="email" value="{{ old('email', $user->email) }}" required>
+            </div>
+            <div>
+                <label class="label">Telepon</label>
+                <input class="field" name="phone" value="{{ old('phone', $user->phone) }}">
+            </div>
+            <div>
+                <label class="label">Foto</label>
+                <input class="field" name="photo" type="file" accept="image/*">
+            </div>
+            <div class="md:col-span-2">
+                <label class="label">Alamat</label>
+                <textarea class="field" name="address" rows="3">{{ old('address', $user->address) }}</textarea>
+            </div>
+            <div class="md:col-span-2">
+                <button class="btn btn-primary" type="submit">Simpan Profil</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<dialog id="password-dialog">
+    <div class="modal-card max-w-xl">
+        <div class="flex items-start justify-between gap-4 border-b border-white/10 p-5">
+            <div>
+                <h2 class="text-xl font-black">Ubah Password</h2>
+                <p class="text-sm text-slate-400">Masukkan password saat ini lalu password baru.</p>
+            </div>
+            <button type="button" class="btn btn-muted px-3 py-2" data-close-dialog><i data-lucide="x" class="icon"></i></button>
+        </div>
+        <form method="POST" action="{{ route('profile.password') }}" class="space-y-4 p-5">
+            @csrf
+            @method('PUT')
+            <div>
+                <label class="label">Password Saat Ini</label>
+                <input class="field" name="current_password" type="password" required>
+            </div>
+            <div>
+                <label class="label">Password Baru</label>
+                <input class="field" name="password" type="password" minlength="6" required>
+            </div>
+            <div>
+                <label class="label">Konfirmasi Password Baru</label>
+                <input class="field" name="password_confirmation" type="password" minlength="6" required>
+            </div>
+            <button class="btn btn-primary" type="submit">Update Password</button>
+        </form>
+    </div>
+</dialog>
+
+@yield('dialogs')
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+        setupDialogs();
+        setupProfileMenu();
+        setupPhotoPreviews();
+        try {
+            @yield('page-scripts')
+        } catch (error) {
+            console.error('Script halaman gagal dijalankan.', error);
+        }
+    });
+
+    function setupDialogs() {
+        if (window.__pjuDialogsReady) return;
+        window.__pjuDialogsReady = true;
+
+        document.addEventListener('click', (event) => {
+            const openButton = event.target.closest('[data-open-dialog]');
+            if (openButton) {
+                const dialog = document.getElementById(openButton.dataset.openDialog);
+                if (!dialog) {
+                    console.warn(`Dialog ${openButton.dataset.openDialog} tidak ditemukan.`);
+                    return;
+                }
+
+                if (openButton.dataset.reportPole) {
+                    const select = document.getElementById('report-pole-id');
+                    if (select) select.value = openButton.dataset.reportPole;
+                }
+
+                if (dialog.showModal) {
+                    dialog.showModal();
+                } else {
+                    dialog.setAttribute('open', 'open');
+                }
+
+                if (typeof window.setupCoordinatePickers === 'function') {
+                    window.setupCoordinatePickers(dialog);
+                }
+                if (window.pjuMaps) {
+                    setTimeout(() => Object.values(window.pjuMaps).forEach((map) => map.invalidateSize()), 120);
+                    setTimeout(() => Object.values(window.pjuMaps).forEach((map) => map.invalidateSize()), 350);
+                }
+                return;
+            }
+
+            const closeButton = event.target.closest('[data-close-dialog]');
+            if (closeButton) {
+                closeButton.closest('dialog')?.close();
+            }
+        });
+
+        document.querySelectorAll('dialog').forEach((dialog) => {
+            dialog.addEventListener('click', (event) => {
+                if (event.target === dialog) dialog.close();
+            });
+        });
+    }
+
+    function setupProfileMenu() {
+        document.querySelectorAll('[data-menu-toggle]').forEach((button) => {
+            button.addEventListener('click', (event) => {
+                event.stopPropagation();
+                document.getElementById(button.dataset.menuToggle)?.classList.toggle('hidden');
+            });
+        });
+        document.addEventListener('click', () => document.getElementById('profile-menu')?.classList.add('hidden'));
+    }
+
+    function setupPhotoPreviews() {
+        document.querySelectorAll('[data-photo-input]').forEach((input) => {
+            input.addEventListener('change', () => {
+                const preview = document.getElementById(input.dataset.photoInput);
+                const file = input.files?.[0];
+                if (!preview || !file) return;
+                preview.innerHTML = `<img src="${URL.createObjectURL(file)}" alt="Preview foto" class="max-h-48 rounded-md object-cover">`;
+            });
+        });
+    }
+
+    function escapeHtml(value) {
+        return String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+    }
+
+    function formatOption(value) {
+        return String(value || '').replaceAll('_', ' ');
+    }
+
+    function formatOwnership(value) {
+        return { dpu_kp: 'DPU KP', dishub: 'DISHUB', pln: 'PLN', lainnya: 'Lainnya' }[value] || formatOption(value);
+    }
+</script>
+@endsection

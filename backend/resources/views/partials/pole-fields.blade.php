@@ -8,12 +8,29 @@
     <input class="field" name="customer_id" value="{{ $poleValue('customer_id') }}" required>
 </div>
 <div class="md:col-span-2">
-    <div id="{{ $prefix }}-coordinate-map" class="glass-panel h-64 overflow-hidden rounded-lg" data-coordinate-picker data-lat-input="{{ $prefix }}-latitude" data-lng-input="{{ $prefix }}-longitude" data-street-input="{{ $prefix }}-street"></div>
-    <p class="mt-2 text-xs font-semibold text-slate-500">Klik peta atau geser pin untuk mengisi koordinat. Jika nama jalan kosong, aplikasi akan mencoba mengambil alamat dari peta online.</p>
+    <div class="rounded-xl border border-cyan-400/20 bg-slate-900/70 p-3">
+        <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm font-black text-slate-100">Pinpoint Koordinat</p>
+                <p id="{{ $prefix }}-coordinate-notice" class="text-xs font-semibold text-slate-400">Klik peta atau geser pin, lalu tekan Set Lokasi.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" class="btn btn-muted px-3 py-2 text-xs" data-location-button data-map-id="{{ $prefix }}-coordinate-map">
+                    <i data-lucide="crosshair" class="icon"></i>
+                    Ambil Lokasi
+                </button>
+                <button type="button" class="btn btn-primary px-3 py-2 text-xs" data-set-location-button data-map-id="{{ $prefix }}-coordinate-map">
+                    <i data-lucide="check" class="icon"></i>
+                    Set Lokasi
+                </button>
+            </div>
+        </div>
+        <div id="{{ $prefix }}-coordinate-map" class="h-72 overflow-hidden rounded-lg border border-white/10 bg-slate-800" data-coordinate-picker data-lat-input="{{ $prefix }}-latitude" data-lng-input="{{ $prefix }}-longitude" data-street-input="{{ $prefix }}-street" data-notice-id="{{ $prefix }}-coordinate-notice"></div>
+    </div>
 </div>
 <div class="md:col-span-2">
-    <label class="label">Lokasi</label>
-    <input id="{{ $prefix }}-street" class="field" name="street_name" value="{{ $poleValue('street_name') }}" required placeholder="Contoh: Jalan Brigjen Katamso Wonosari - Titik 1">
+    <label class="label">Alamat</label>
+    <textarea id="{{ $prefix }}-street" class="field" name="street_name" rows="3" required placeholder="Contoh: Jalan Brigjen Katamso Wonosari - Titik 1">{{ $poleValue('street_name') }}</textarea>
 </div>
 <div>
     <label class="label">Latitude</label>

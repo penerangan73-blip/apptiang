@@ -2,7 +2,7 @@
 
 Aplikasi pendataan tiang PJU berbasis Laravel.
 
-Frontend dan backend sekarang berjalan dalam satu aplikasi Laravel di folder `backend/`. UI memakai Blade, form Laravel, session login, dan route web biasa. Folder `frontend/` adalah frontend Next.js lama dan tidak diperlukan untuk deploy Hostinger.
+Frontend dan backend sekarang berjalan dalam satu aplikasi Laravel di folder `backend/`. UI memakai Blade, form Laravel, session login, dan route web biasa. Frontend Next.js lama sudah dibersihkan karena tidak diperlukan untuk deploy Hostinger.
 
 ## Struktur Aktif
 
@@ -30,7 +30,7 @@ cp .env.example .env
 Buka:
 
 ```text
-http://127.0.0.1:8000
+http://127.0.0.1:8000/dashboard
 ```
 
 Jika memakai LAMPP/XAMPP, buat database via MySQL LAMPP:
@@ -39,34 +39,24 @@ Jika memakai LAMPP/XAMPP, buat database via MySQL LAMPP:
 /opt/lampp/bin/mysql -h 127.0.0.1 -P 3306 -u root -e "CREATE DATABASE IF NOT EXISTS pju_surveyor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 ```
 
-## Deploy ke Hostinger
+## Deploy via Git ke Hosting
 
-Upload hanya aplikasi Laravel di folder `backend`.
+Panduan lengkap ada di [docs/deploy-git-hosting.md](docs/deploy-git-hosting.md).
 
-1. Buat database MySQL di hPanel.
-2. Upload isi folder `backend` ke hosting.
-3. Arahkan document root domain ke folder `public`.
-4. Jika Hostinger tidak memberi opsi document root, pindahkan isi `backend/public` ke `public_html`, lalu sesuaikan path `vendor/autoload.php` dan `bootstrap/app.php` di `public_html/index.php`.
-5. Lewat SSH, jalankan:
+Ringkasnya:
 
 ```bash
-composer2 install --no-dev --optimize-autoloader
-cp .env.production.example .env
-php artisan key:generate
-php artisan storage:link
-php artisan migrate --seed --force
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+git pull origin main
+bash backend/scripts/deploy.sh
 ```
 
-Contoh `.env` production tersedia di:
+Pastikan document root domain mengarah ke:
 
 ```text
-backend/.env.production.example
+/path/ke/repository/backend/public
 ```
 
-Pastikan nilai database dan domain sudah diganti:
+Contoh `.env` production tersedia di [backend/.env.production.example](backend/.env.production.example). Setelah deploy pertama, edit `backend/.env` dan isi nilai domain serta database:
 
 ```env
 APP_URL=https://domainanda.com
@@ -75,6 +65,8 @@ DB_DATABASE=nama_database
 DB_USERNAME=username_database
 DB_PASSWORD=password_database
 ```
+
+Jangan jalankan `php artisan migrate --seed` di production kecuali benar-benar ingin mengisi ulang data sample. Seeder utama proyek ini menghapus data tiang sample sebelum mengisi ulang.
 
 ## Script
 

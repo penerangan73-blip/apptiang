@@ -1,6 +1,7 @@
 @php
     $label = $label ?? fn ($value) => ucfirst(str_replace('_', ' ', (string) $value));
     $ownership = $ownership ?? fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
+    $showManageActions = $showManageActions ?? true;
 @endphp
 
 <div class="card overflow-hidden">
@@ -41,10 +42,20 @@
                         @endif
                         <td class="px-5 py-4">
                             <div class="flex justify-end gap-2">
-                                <button type="button" class="btn btn-muted px-3 py-2" data-open-dialog="pole-detail-{{ $pole->id }}">
+                                <a class="btn btn-muted px-3 py-2" href="{{ route('poles.show', $pole) }}">
                                     <i data-lucide="eye" class="icon"></i>
                                     Detail
-                                </button>
+                                </a>
+                                @if ($canManagePoles && $showManageActions)
+                                    <button type="button" class="btn btn-muted px-3 py-2" data-open-dialog="pole-edit-{{ $pole->id }}">
+                                        <i data-lucide="edit-3" class="icon"></i>
+                                        Edit
+                                    </button>
+                                    <button type="button" class="btn btn-danger px-3 py-2" data-open-dialog="pole-delete-{{ $pole->id }}">
+                                        <i data-lucide="trash-2" class="icon"></i>
+                                        Hapus
+                                    </button>
+                                @endif
                             </div>
                         </td>
                     </tr>

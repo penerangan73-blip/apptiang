@@ -1,102 +1,155 @@
-# PRD — Project Requirements Document
+# PRD - Project Requirements Document
 
 ## 1. Overview
-Saat ini, surveyor mendata tiang listrik untuk Penerangan Jalan Umum (PJU) tanpa sistem digital, sehingga pencatatan aset pemerintah dan pemantauan penggunaan daya menjadi tidak terstruktur. Aplikasi berbasis website ini dibangun untuk mendigitalisasi proses inventarisasi tiang PJU. Dengan aplikasi ini, surveyor dapat dengan mudah melacak lokasi tiang, mencatat kondisi serta penggunaan daya, dan membuat laporan harian. Tujuan utamanya adalah menciptakan sistem pendataan yang jauh **lebih rapi**, terpusat, dan mudah diakses secara real-time.
+
+Aplikasi ini adalah sistem inventarisasi aset Penerangan Jalan Umum (PJU) berbasis web untuk membantu surveyor dan pengelola mendata tiang, memantau kondisi aset, mencatat penggunaan daya, melihat lokasi pada peta, serta membuat laporan aktivitas harian.
+
+Sistem saat ini sudah berjalan sebagai aplikasi **full stack Laravel** di folder `backend/`. Frontend menggunakan **Laravel Blade**, route web Laravel, session login, form server-side, dan database MySQL. Frontend Next.js lama sudah tidak digunakan.
+
+Tujuan utama aplikasi adalah membuat proses pendataan PJU menjadi lebih rapi, terpusat, mudah diakses dari perangkat lapangan, dan siap dideploy ke hosting berbasis PHP/Laravel melalui Git.
 
 ## 2. Requirements
-- **Aksesibilitas:** Aplikasi berbentuk website yang responsif, sehingga surveyor dapat membukanya melalui browser di *smartphone* maupun tablet saat berada di lapangan.
-- **Manajemen Data Aset:** Mampu menyimpan ratusan hingga ribuan data tiang listrik beserta spesifikasinya (nomor tiang, daya, lokasi).
-- **Pemrosesan Media:** Mendukung fitur unggah foto untuk mendokumentasikan tiang yang rusak.
-- **Sistem Pelaporan:** Aplikasi harus bisa membuat rekapitulasi atau laporan harian dari aktivitas pendataan surveyor.
-- **Keamanan:** Sistem login sederhana untuk memastikan hanya surveyor dan admin resmi yang dapat mengubah data aset pemerintah.
+
+- **Aksesibilitas:** Aplikasi berbentuk website responsif yang bisa dibuka melalui browser desktop, tablet, dan smartphone.
+- **Autentikasi:** Pengguna harus login sebelum mengakses dashboard, data tiang, peta, laporan, profil, dan manajemen user.
+- **Role-Based Access Control:** Sistem membedakan akses `superadmin`, `surveyor`, dan `user`.
+- **Manajemen Data Aset:** Sistem menyimpan data tiang PJU beserta ID pelanggan, lokasi, koordinat, daya, kondisi, jenis tiang, pondasi, kepemilikan, trafo PLN, foto, dan catatan.
+- **Peta Aset:** Sistem menampilkan titik koordinat tiang pada peta interaktif berbasis Leaflet/OpenStreetMap.
+- **Pencarian dan Filter:** Pengguna dapat mencari aset berdasarkan teks dan memfilter berdasarkan kondisi.
+- **Pelaporan Harian:** Sistem mencatat laporan aktivitas atau kerusakan tiang, termasuk foto dan catatan.
+- **Audit Data:** Data tiang menyimpan informasi pembuat dan pengubah terakhir.
+- **Deployment:** Aplikasi dapat dideploy ke hosting Laravel/shared hosting melalui Git dengan document root mengarah ke `backend/public`.
 
 ## 3. Core Features
-- **Peta Lokasi & Pencarian Tiang:** Peta interaktif yang memungkinkan surveyor mencari tiang berdasarkan **nama jalan** dan menemukan lokasi tiang listrik di sekitarnya dengan cepat.
-- **Pendataan Tiang (Data Entry):** Form digital untuk mencatat nomor identitas tiang, besaran penggunaan daya, serta status kondisi tiang.
-- **Pelaporan Kerusakan (Photo Upload):** Fitur untuk mengambil atau mengunggah foto langsung dari lapangan jika ditemukan tiang PJU yang rusak, lengkap beserta catatan kerusakannya.
-- **Laporan Harian:** Dasbor khusus yang merangkum data tiang apa saja yang sudah didata atau dilaporkan rusak pada hari tersebut, sehingga surveyor memiliki kepuasan kerja dan rutinitas harian di dalam aplikasi.
+
+- **Dashboard Operasional:** Menampilkan ringkasan total aset, kondisi tiang, total daya, aktivitas harian, peta ringkas, dan aset terbaru.
+- **Data Tiang PJU:** Halaman daftar aset dengan pencarian, filter, pagination, tombol detail, tambah, edit, hapus, dan export data.
+- **Detail Tiang:** Halaman detail aset yang menampilkan spesifikasi lengkap, informasi koordinat, audit input/update, dan riwayat laporan.
+- **Peta Lokasi Tiang:** Halaman peta dengan marker aset, popup detail, filter, dan panel inspeksi.
+- **Laporan Aktivitas:** Halaman rekap laporan harian serta laporan kerusakan yang dibuat surveyor.
+- **Profil Pengguna:** Pengguna dapat memperbarui data profil dan password.
+- **Manajemen User:** Superadmin dapat membuat, mengubah, dan menghapus akun pengguna.
+- **Upload Foto:** Sistem mendukung upload foto aset dan laporan kerusakan ke storage Laravel.
 
 ## 4. User Flow
-1. **Login:** Surveyor masuk ke dalam aplikasi menggunakan kredensial mereka.
-2. **Cari Lokasi:** Di halaman utama, surveyor melihat peta atau daftar jalan. Mereka mengetikkan nama jalan tempat mereka sedang bertugas.
-3. **Pilih / Tambah Tiang:** Surveyor melihat titik tiang di jalan tersebut. Jika tiang belum ada di sistem, mereka membuat data baru (masukkan nomor tiang dan daya).
-4. **Cek Kondisi & Lapor Kerusakan:** Surveyor memperbarui status tiang. Jika tiang rusak, mereka memotret kerusakan tersebut lalu mengunggah fotonya ke dalam sistem.
-5. **Laporan Harian:** Pada akhir jam kerja, surveyor membuka menu Laporan Harian untuk melihat rekap jalan mana saja dan berapa tiang yang berhasil didata hari itu sebelum menutup aplikasi.
+
+1. **Login:** Pengguna masuk melalui halaman login Laravel.
+2. **Dashboard:** Pengguna melihat ringkasan kondisi aset, aktivitas harian, dan aset terbaru.
+3. **Cari Aset:** Pengguna membuka Data Tiang atau Peta, lalu mencari berdasarkan ID pelanggan/nama jalan/kondisi.
+4. **Tambah atau Update Tiang:** Superadmin atau surveyor menambah data tiang baru atau memperbarui data yang sudah ada.
+5. **Lapor Kerusakan:** Superadmin atau surveyor memilih tiang, mengisi catatan, dan mengunggah foto laporan.
+6. **Pantau Aktivitas:** Pengguna membuka halaman Aktivitas untuk melihat rekap laporan.
+7. **Kelola User:** Superadmin membuka halaman Manajemen User untuk mengelola akun dan role.
 
 ## 5. Architecture
-Aplikasi ini menggunakan arsitektur modern yang memisahkan antara tampilan depan (Frontend) dan sistem pengolahan data di belakang layar (Backend). Frontend akan menangani antarmuka peta dan form untuk pengguna, sementara Backend akan memproses logika bisnis, menyimpan foto, dan berkomunikasi dengan Database.
+
+Aplikasi menggunakan arsitektur monolith Laravel. Browser pengguna berinteraksi langsung dengan route web Laravel. Controller mengambil data dari model Eloquent, Blade merender HTML, dan form dikirim kembali ke route Laravel dengan proteksi CSRF/session.
+
+API Sanctum lama tetap tersedia untuk kebutuhan integrasi, tetapi antarmuka utama saat ini berjalan melalui Laravel Blade.
 
 ```mermaid
 sequenceDiagram
-    participant S as Surveyor (Browser)
-    participant F as Frontend (Next.js)
-    participant B as Backend API (Laravel)
-    participant DB as Database (MySQL)
+    participant U as User (Browser)
+    participant R as Laravel Web Routes
+    participant C as Web Controllers
+    participant B as Blade Views
+    participant DB as MySQL Database
+    participant FS as Laravel Storage
 
-    S->>F: Buka halaman & Cari nama jalan
-    F->>B: Request data tiang (Filter: Nama Jalan)
-    B->>DB: Query data lokasi tiang
-    DB-->>B: Kembalikan data tiang
-    B-->>F: Format data untuk peta/daftar
-    F-->>S: Tampilkan lokasi tiang di layar
-    
-    S->>F: Input nomor tiang & upload foto rusak
-    F->>B: Kirim data form & file foto
-    B->>B: Simpan foto di Server Storage
-    B->>DB: Simpan data kerusakan & laporan harian
-    DB-->>B: Status Sukses
-    B-->>F: Konfirmasi Sukses
-    F-->>S: Tampilkan notifikasi "Data Berhasil Disimpan"
+    U->>R: Buka halaman dashboard/data/peta
+    R->>C: Jalankan controller sesuai route
+    C->>DB: Query data user, tiang, laporan
+    DB-->>C: Kembalikan data
+    C->>B: Kirim data ke Blade
+    B-->>U: Render HTML responsif
+
+    U->>R: Submit form tambah/edit/laporan + foto
+    R->>C: Validasi request dan otorisasi role
+    C->>FS: Simpan file foto jika ada
+    C->>DB: Simpan/update data
+    C-->>U: Redirect dengan flash message
 ```
 
 ## 6. Database Schema
-Sistem ini menggunakan struktur data relasional untuk menjaga data tetap tersusun rapi. Berikut adalah tabel-tabel utamanya:
 
-**1. Tabel `users`** (Menyimpan data surveyor dan admin)
-- `id` (Integer): ID unik pengguna.
-- `name` (String): Nama lengkap.
-- `role` (String): Peran pengguna (contoh: 'surveyor', 'admin').
-- `email` (String): Email untuk login.
-- `password` (String): Kata sandi terenkripsi.
+Sistem menggunakan database relasional MySQL dengan tabel utama berikut.
 
-**2. Tabel `poles`** (Menyimpan data induk tiang PJU)
-- `id` (Integer): ID unik tiang di sistem.
-- `pole_number` (String): Nomor identitas fisik tiang di lapangan.
-- `street_name` (String): Nama jalan lokasi tiang.
-- `latitude` (Float): Koordinat peta (Garis Lintang).
-- `longitude` (Float): Koordinat peta (Garis Bujur).
-- `power_usage` (Integer): Penggunaan daya tiang (dalam Watt).
-- `status` (String): Kondisi saat ini (contoh: 'baik', 'rusak', 'perbaikan').
+**1. Tabel `users`**
 
-**3. Tabel `daily_reports`** (Menyimpan laporan aktivitas harian & laporan kerusakan)
-- `id` (Integer): ID unik laporan.
-- `user_id` (Integer): Penghubung ke tabel *users* (siapa yang melapor).
-- `pole_id` (Integer): Penghubung ke tabel *poles* (tiang mana yang dilaporkan).
-- `report_date` (Date): Tanggal pendataan/pelaporan.
-- `photo_url` (String): Link/alamat file foto jika tiang rusak (opsional).
-- `notes` (Text): Catatan tambahan dari surveyor.
+- `id`: ID unik pengguna.
+- `name`: Nama lengkap.
+- `email`: Email untuk login.
+- `password`: Password terenkripsi.
+- `role`: Role pengguna, yaitu `superadmin`, `surveyor`, atau `user`.
+- `phone`: Nomor telepon.
+- `photo_url`: Foto profil pengguna.
+- `address`: Alamat pengguna.
+
+**2. Tabel `poles`**
+
+- `id`: ID unik tiang.
+- `customer_id`: ID pelanggan/identitas aset, unik.
+- `street_name`: Nama jalan/lokasi tiang.
+- `latitude`: Koordinat latitude.
+- `longitude`: Koordinat longitude.
+- `power_usage`: Daya dalam watt.
+- `condition`: Kondisi aset, misalnya `baik`, `rusak`, atau `perbaikan`.
+- `pole_type`: Jenis tiang.
+- `height`: Tinggi tiang.
+- `span_length`: Panjang bentangan.
+- `foundation_type`: Jenis pondasi.
+- `ownership`: Kepemilikan aset.
+- `pln_transformer`: Informasi trafo PLN.
+- `photo_url`: Foto aset.
+- `notes`: Catatan aset.
+- `created_by_id`: User pembuat data.
+- `updated_by_id`: User pengubah terakhir.
+
+**3. Tabel `daily_reports`**
+
+- `id`: ID unik laporan.
+- `user_id`: Pengguna pembuat laporan.
+- `pole_id`: Tiang terkait laporan.
+- `report_date`: Tanggal laporan.
+- `photo_url`: Foto laporan jika ada.
+- `notes`: Catatan laporan.
 
 ```mermaid
 erDiagram
     USERS ||--o{ DAILY_REPORTS : "membuat"
+    USERS ||--o{ POLES : "membuat"
+    USERS ||--o{ POLES : "mengubah"
     POLES ||--o{ DAILY_REPORTS : "memiliki"
 
     USERS {
         int id PK
         string name
-        string role
         string email
         string password
+        string role
+        string phone
+        string photo_url
+        text address
     }
 
     POLES {
         int id PK
-        string pole_number
+        string customer_id
         string street_name
-        float latitude
-        float longitude
+        decimal latitude
+        decimal longitude
         int power_usage
-        string status
+        string condition
+        string pole_type
+        decimal height
+        decimal span_length
+        string foundation_type
+        string ownership
+        string pln_transformer
+        string photo_url
+        text notes
+        int created_by_id FK
+        int updated_by_id FK
     }
 
     DAILY_REPORTS {
@@ -110,13 +163,28 @@ erDiagram
 ```
 
 ## 7. Tech Stack
-Berdasarkan kebutuhan sistem yang rapi serta input yang diberikan, berikut adalah rekomendasi teknologinya:
 
-- **Frontend:** **Next.js** (Framework React). Dipilih untuk menghasilkan website yang cepat dan responsif saat dibuka di HP surveyor.
-- **UI Framework:** **Tailwind CSS** dipadukan dengan **shadcn/ui**. Ini akan memastikan tampilan UI sistem pelaporan sangat rapi, bersih, dan terlihat profesional.
-- **Peta (Mappping):** **Leaflet.js** atau **Google Maps API** (diintegrasikan di dalam Next.js) untuk fitur visualisasi titik lokasi tiang listrik.
-- **Backend:** **Laravel**. Framework PHP yang sangat kuat dalam menangani API (Application Programming Interface), pemrosesan logika harian, serta manajemen unggah file gambar/foto.
-- **Database:** **MySQL**. Database relasional yang sangat cocok dan stabil untuk menyimpan data aset pemerintah yang terstruktur.
-- **Deployment (AI Pilihan):** 
-  - *Frontend:* **Vercel** (Gratis dan dioptimalkan sempurna untuk Next.js).
-  - *Backend & Database:* **DigitalOcean App Platform** atau **Railway**. Platform ini menawarkan auto-deployment yang mudah untuk proyek Laravel dan integrasi database MySQL tanpa harus pusing mengelola server secara manual. Storage foto bisa memanfaatkan Amazon S3 atau DigitalOcean Spaces agar aplikasi tidak memberatkan server utama.
+- **Full Stack Framework:** Laravel 12.
+- **Frontend:** Laravel Blade, Tailwind utility classes, Lucide icons, dan JavaScript ringan di Blade/partial.
+- **Backend:** Laravel Web Controllers, middleware auth/session, middleware role, Eloquent ORM, validation, file upload, dan route web.
+- **API:** Laravel API routes + Sanctum tetap tersedia untuk integrasi, tetapi bukan antarmuka utama.
+- **Database:** MySQL.
+- **Map:** Leaflet.js dengan OpenStreetMap tile.
+- **Storage:** Laravel public storage untuk foto aset/laporan.
+- **Authentication:** Session-based Laravel auth untuk web; token Sanctum untuk API.
+- **Deployment:** Git-based deployment ke hosting PHP/Laravel. Repository dideploy ke folder non-public, document root diarahkan ke `backend/public`, dan script `backend/scripts/deploy.sh` menjalankan composer install, migrate, storage link, dan cache.
+
+## 8. Deployment Requirement
+
+- Hosting mendukung PHP 8.2+, Composer, MySQL, SSH/Git, dan document root custom.
+- Repository diclone ke folder non-public, contoh `/home/username/repositories/apptiang2`.
+- Document root domain diarahkan ke `/home/username/repositories/apptiang2/backend/public`.
+- File `.env` production dibuat dari `backend/.env.production.example`.
+- Deploy dijalankan dengan:
+
+```bash
+git pull origin main
+bash backend/scripts/deploy.sh
+```
+
+- Seeder utama tidak dijalankan otomatis di production karena dapat mengisi ulang data sample. Jika butuh akun awal, jalankan `RbacUsersSeeder` secara manual satu kali.
