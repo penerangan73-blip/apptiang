@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DailyReport extends Model
 {
@@ -30,5 +31,10 @@ class DailyReport extends Model
     public function pole(): BelongsTo
     {
         return $this->belongsTo(Pole::class);
+    }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(DailyReportPhoto::class)->orderBy('sort_order')->orderBy('id');
     }
 }

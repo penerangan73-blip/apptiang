@@ -97,11 +97,11 @@
             @else
                 <span class="flex flex-col items-center gap-2 text-sm font-semibold text-slate-500">
                     <i data-lucide="camera" class="size-8 text-cyan-700"></i>
-                    Ambil atau unggah foto tiang
+                    Ambil atau unggah beberapa foto tiang
                 </span>
             @endif
         </span>
-        <input class="sr-only" name="photo" type="file" accept="image/*" capture="environment" data-photo-input="{{ $prefix }}-photo-preview">
+        <input class="sr-only" name="photos[]" type="file" accept="image/*" capture="environment" multiple data-photo-input="{{ $prefix }}-photo-preview">
     </label>
 </div>
 <div class="md:col-span-2">

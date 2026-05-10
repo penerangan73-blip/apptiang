@@ -19,7 +19,7 @@ class PoleController extends Controller
         ]);
 
         $poles = Pole::query()
-            ->with(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email'])
+            ->with(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email', 'photos'])
             ->search($validated['query'] ?? null)
             ->condition($validated['condition'] ?? null)
             ->latest()
@@ -33,42 +33,48 @@ class PoleController extends Controller
     public function store(Request $request): JsonResponse
     {
         $input = $this->validatedPoleInput($request);
-        $input = $this->storePolePhoto($request, $input);
+        unset($input['photos'], $input['photo']);
         $input['created_by_id'] = $request->user()->id;
         $input['updated_by_id'] = $request->user()->id;
 
         $pole = Pole::query()->create($input);
+        $this->storePolePhotos($request, $pole);
 
-        DailyReport::query()->create([
+        $report = DailyReport::query()->create([
             'user_id' => $request->user()->id,
             'pole_id' => $pole->id,
             'report_date' => now()->toDateString(),
+            'photo_url' => $pole->photo_url,
             'notes' => "Data pelanggan {$pole->customer_id} ditambahkan ke inventaris.",
         ]);
+        $this->copyPolePhotosToReport($pole, $report);
 
         return response()->json([
-            'data' => $pole->load(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email']),
+            'data' => $pole->load(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email', 'photos']),
         ], 201);
     }
 
     public function update(Request $request, Pole $pole): JsonResponse
     {
         $input = $this->validatedPoleInput($request, $pole);
-        $input = $this->storePolePhoto($request, $input);
+        unset($input['photos'], $input['photo']);
         $input['updated_by_id'] = $request->user()->id;
 
         $pole->update($input);
+        $this->storePolePhotos($request, $pole);
         $pole->refresh();
 
-        DailyReport::query()->create([
+        $report = DailyReport::query()->create([
             'user_id' => $request->user()->id,
             'pole_id' => $pole->id,
             'report_date' => now()->toDateString(),
+            'photo_url' => $pole->photo_url,
             'notes' => "Data pelanggan {$pole->customer_id} diperbarui oleh surveyor.",
         ]);
+        $this->copyPolePhotosToReport($pole, $report);
 
         return response()->json([
-            'data' => $pole->load(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email']),
+            'data' => $pole->load(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email', 'photos']),
         ]);
     }
 
@@ -101,20 +107,47 @@ class PoleController extends Controller
             'foundation_type' => ['required', Rule::in(['beton', 'tanam', 'base_plate', 'lainnya'])],
             'ownership' => ['required', Rule::in(['dpu_kp', 'dishub', 'pln', 'lainnya'])],
             'pln_transformer' => ['nullable', 'string', 'max:160'],
+            'photos' => ['sometimes', 'array', 'max:10'],
+            'photos.*' => ['image', 'max:5120'],
             'photo' => ['sometimes', 'nullable', 'image', 'max:5120'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
     }
 
-    private function storePolePhoto(Request $request, array $input): array
+    private function storePolePhotos(Request $request, Pole $pole): void
     {
-        unset($input['photo']);
+        $files = $request->file('photos', []);
+        $files = is_array($files) ? $files : [$files];
+        $files = array_filter($files);
 
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('poles', 'public');
-            $input['photo_url'] = asset("storage/{$path}");
+            $files[] = $request->file('photo');
         }
 
-        return $input;
+        foreach ($files as $file) {
+            $path = $file->store('poles', 'public');
+            $photoUrl = asset("storage/{$path}");
+
+            $pole->photos()->create([
+                'photo_url' => $photoUrl,
+                'sort_order' => $pole->photos()->count(),
+            ]);
+
+            if (! $pole->photo_url) {
+                $pole->forceFill(['photo_url' => $photoUrl])->save();
+            }
+        }
+    }
+
+    private function copyPolePhotosToReport(Pole $pole, DailyReport $report): void
+    {
+        $pole->loadMissing('photos');
+
+        foreach ($pole->photos as $index => $photo) {
+            $report->photos()->create([
+                'photo_url' => $photo->photo_url,
+                'sort_order' => $index,
+            ]);
+        }
     }
 }

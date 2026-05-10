@@ -88,10 +88,37 @@
                             <p class="mt-2 text-sm leading-6 text-slate-300">{{ $report->notes }}</p>
                         </div>
                         <div>
-                            @if ($report->photo_url)
-                                <a href="{{ $report->photo_url }}" target="_blank" class="block overflow-hidden rounded-lg border border-white/10 bg-white/5">
-                                    <img src="{{ $report->photo_url }}" alt="Foto laporan {{ $pole->customer_id }}" class="h-28 w-full object-cover">
-                                </a>
+                            @php
+                                $reportPhotos = match (true) {
+                                    $report->photos->isNotEmpty() => $report->photos,
+                                    (bool) $report->photo_url => collect([(object) ['photo_url' => $report->photo_url]]),
+                                    $pole->photos->isNotEmpty() => $pole->photos,
+                                    (bool) $pole->photo_url => collect([(object) ['photo_url' => $pole->photo_url]]),
+                                    default => collect(),
+                                };
+                            @endphp
+                            @if ($reportPhotos->isNotEmpty())
+                                <div class="grid grid-cols-2 gap-2">
+                                    @foreach ($reportPhotos->take(4) as $photo)
+                                        <div class="group relative overflow-hidden rounded-lg border border-white/10 bg-white/5">
+                                            <a href="{{ $photo->photo_url }}" target="_blank" class="block">
+                                                <img src="{{ $photo->photo_url }}" alt="Foto laporan {{ $pole->customer_id }}" class="h-20 w-full object-cover">
+                                            </a>
+                                            @if ($canManagePoles && isset($photo->id))
+                                                <form method="POST" action="{{ route('daily-report-photos.destroy', $photo) }}" class="absolute right-1.5 top-1.5">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="flex size-7 items-center justify-center rounded-md bg-red-600/90 text-white shadow-lg transition hover:bg-red-500" onclick="return confirm('Hapus foto laporan ini?')" aria-label="Hapus foto laporan">
+                                                        <i data-lucide="trash-2" class="size-4"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                                @if ($reportPhotos->count() > 4)
+                                    <p class="mt-2 text-xs font-bold text-slate-400">+{{ $reportPhotos->count() - 4 }} foto lainnya</p>
+                                @endif
                             @else
                                 <div class="flex h-28 items-center justify-center rounded-lg border border-dashed border-white/15 text-sm font-semibold text-slate-500">Tanpa foto</div>
                             @endif
@@ -114,10 +141,31 @@
                 <p class="text-sm text-slate-400">Dokumentasi aset lapangan.</p>
             </div>
             <div class="p-5">
-                @if ($pole->photo_url)
-                    <a href="{{ $pole->photo_url }}" target="_blank" class="block overflow-hidden rounded-lg border border-white/10 bg-white/5">
-                        <img src="{{ $pole->photo_url }}" alt="Foto {{ $pole->customer_id }}" class="max-h-[420px] w-full object-cover">
-                    </a>
+                @php
+                    $polePhotos = $pole->photos->isNotEmpty()
+                        ? $pole->photos
+                        : collect($pole->photo_url ? [(object) ['photo_url' => $pole->photo_url]] : []);
+                @endphp
+                @if ($polePhotos->isNotEmpty())
+                    <div class="grid gap-3">
+                        @foreach ($polePhotos as $photo)
+                            <div class="group relative overflow-hidden rounded-lg border border-white/10 bg-white/5">
+                                <a href="{{ $photo->photo_url }}" target="_blank" class="block">
+                                    <img src="{{ $photo->photo_url }}" alt="Foto {{ $pole->customer_id }}" class="max-h-[320px] w-full object-cover">
+                                </a>
+                                @if ($canManagePoles && isset($photo->id))
+                                    <form method="POST" action="{{ route('pole-photos.destroy', $photo) }}" class="absolute right-3 top-3">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger bg-red-600/90 px-3 py-2 text-white shadow-lg transition hover:bg-red-500" onclick="return confirm('Hapus foto tiang ini?')" aria-label="Hapus foto tiang">
+                                            <i data-lucide="trash-2" class="icon"></i>
+                                            Hapus
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
                 @else
                     <div class="flex min-h-64 flex-col items-center justify-center rounded-lg border border-dashed border-white/20 text-slate-500">
                         <i data-lucide="image-off" class="mb-2 size-8 opacity-60"></i>

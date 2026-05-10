@@ -14,10 +14,11 @@ class PoleDetailPageController extends Controller
         $pole->load([
             'createdBy:id,name,role,email',
             'updatedBy:id,name,role,email',
+            'photos',
         ]);
 
         $reports = $pole->reports()
-            ->with('user:id,name,role')
+            ->with(['user:id,name,role', 'photos'])
             ->latest('report_date')
             ->latest()
             ->paginate(8)

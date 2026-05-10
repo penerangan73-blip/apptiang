@@ -44,8 +44,32 @@
                         <td class="px-5 py-4">{{ $report->pole?->street_name }}</td>
                         <td class="px-5 py-4">{{ $report->notes }}</td>
                         <td class="px-5 py-4">
-                            @if ($report->photo_url)
-                                <a class="font-bold text-cyan-400" href="{{ $report->photo_url }}" target="_blank">Lihat</a>
+                            @php
+                                $reportPhotos = match (true) {
+                                    $report->photos->isNotEmpty() => $report->photos,
+                                    (bool) $report->photo_url => collect([(object) ['photo_url' => $report->photo_url]]),
+                                    $report->pole?->photos?->isNotEmpty() => $report->pole->photos,
+                                    (bool) $report->pole?->photo_url => collect([(object) ['photo_url' => $report->pole->photo_url]]),
+                                    default => collect(),
+                                };
+                            @endphp
+                            @if ($reportPhotos->isNotEmpty())
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach ($reportPhotos as $index => $photo)
+                                        <span class="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5">
+                                            <a class="font-bold text-cyan-400" href="{{ $photo->photo_url }}" target="_blank">Foto {{ $index + 1 }}</a>
+                                            @if ($canManagePoles && isset($photo->id))
+                                                <form method="POST" action="{{ route('daily-report-photos.destroy', $photo) }}">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-red-400 transition hover:text-red-300" onclick="return confirm('Hapus foto laporan ini?')" aria-label="Hapus foto laporan {{ $index + 1 }}">
+                                                        <i data-lucide="trash-2" class="size-4"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </span>
+                                    @endforeach
+                                </div>
                             @else
                                 -
                             @endif

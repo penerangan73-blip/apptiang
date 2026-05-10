@@ -53,8 +53,8 @@
                 <div>
                     <label class="label">Foto</label>
                     <label class="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed bg-white/5 p-4 text-center">
-                        <span id="report-photo-preview" class="text-sm font-semibold text-slate-400">Ambil atau unggah foto laporan</span>
-                        <input class="sr-only" name="photo" type="file" accept="image/*" capture="environment" data-photo-input="report-photo-preview">
+                        <span id="report-photo-preview" class="text-sm font-semibold text-slate-400">Ambil atau unggah beberapa foto laporan</span>
+                        <input class="sr-only" name="photos[]" type="file" accept="image/*" capture="environment" multiple data-photo-input="report-photo-preview">
                     </label>
                 </div>
                 <button class="btn btn-primary h-12" type="submit"><i data-lucide="save" class="icon"></i> Simpan Laporan</button>

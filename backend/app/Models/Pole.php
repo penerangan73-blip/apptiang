@@ -44,6 +44,11 @@ class Pole extends Model
         return $this->hasMany(DailyReport::class);
     }
 
+    public function photos(): HasMany
+    {
+        return $this->hasMany(PolePhoto::class)->orderBy('sort_order')->orderBy('id');
+    }
+
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
         $term = trim((string) $term);

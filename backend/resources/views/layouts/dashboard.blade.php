@@ -343,11 +343,50 @@
 
     function setupPhotoPreviews() {
         document.querySelectorAll('[data-photo-input]').forEach((input) => {
-            input.addEventListener('change', () => {
+            const renderPreview = () => {
                 const preview = document.getElementById(input.dataset.photoInput);
-                const file = input.files?.[0];
-                if (!preview || !file) return;
-                preview.innerHTML = `<img src="${URL.createObjectURL(file)}" alt="Preview foto" class="max-h-48 rounded-md object-cover">`;
+                const files = Array.from(input.files || []);
+                if (!preview || !files.length) return;
+
+                preview.innerHTML = `
+                    <div class="grid w-full grid-cols-2 gap-2 sm:grid-cols-3">
+                        ${files.map((file, index) => `
+                            <div class="relative overflow-hidden rounded-md border border-white/10">
+                                <img src="${URL.createObjectURL(file)}" alt="Preview foto ${index + 1}" class="h-24 w-full object-cover">
+                                <button type="button" class="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-md bg-red-600/90 text-white shadow-lg transition hover:bg-red-500" data-remove-selected-photo="${index}" aria-label="Hapus preview foto ${index + 1}">
+                                    <i data-lucide="x" class="size-4"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <p class="mt-2 text-xs font-bold text-slate-500">${files.length} foto dipilih</p>
+                `;
+
+                if (window.lucide) lucide.createIcons();
+            };
+
+            input.addEventListener('change', renderPreview);
+
+            document.getElementById(input.dataset.photoInput)?.addEventListener('click', (event) => {
+                const removeButton = event.target.closest('[data-remove-selected-photo]');
+                if (!removeButton) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                const removeIndex = Number(removeButton.dataset.removeSelectedPhoto);
+                const dataTransfer = new DataTransfer();
+                Array.from(input.files || []).forEach((file, index) => {
+                    if (index !== removeIndex) dataTransfer.items.add(file);
+                });
+                input.files = dataTransfer.files;
+
+                if (input.files.length) {
+                    renderPreview();
+                } else {
+                    const preview = document.getElementById(input.dataset.photoInput);
+                    if (preview) preview.innerHTML = '<span class="text-sm font-semibold text-slate-400">Ambil atau unggah beberapa foto</span>';
+                }
             });
         });
     }

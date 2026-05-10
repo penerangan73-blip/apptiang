@@ -35,9 +35,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/poles/export', [PoleController::class, 'export'])->name('poles.export');
     Route::put('/poles/{pole}', [PoleController::class, 'update'])->middleware('role:superadmin,surveyor')->name('poles.update');
     Route::delete('/poles/{pole}', [PoleController::class, 'destroy'])->middleware('role:superadmin,surveyor')->name('poles.destroy');
+    Route::delete('/pole-photos/{photo}', [PoleController::class, 'destroyPhoto'])->middleware('role:superadmin,surveyor')->name('pole-photos.destroy');
 
     // Daily Reports
     Route::post('/daily-reports', [DailyReportController::class, 'store'])->middleware('role:superadmin,surveyor')->name('daily-reports.store');
+    Route::delete('/daily-report-photos/{photo}', [DailyReportController::class, 'destroyPhoto'])->middleware('role:superadmin,surveyor')->name('daily-report-photos.destroy');
 
     // Profile
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');

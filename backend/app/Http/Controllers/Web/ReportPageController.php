@@ -14,7 +14,7 @@ class ReportPageController extends Controller
         $date = $request->query('date');
 
         $reports = DailyReport::query()
-            ->with(['user:id,name,role', 'pole:id,customer_id,street_name'])
+            ->with(['user:id,name,role', 'pole:id,customer_id,street_name,photo_url', 'pole.photos', 'photos'])
             ->when($date, fn ($query, string $date) => $query->whereDate('report_date', $date))
             ->latest()
             ->paginate(10)
@@ -24,6 +24,7 @@ class ReportPageController extends Controller
             'date' => $date,
             'reports' => $reports,
             'user' => $request->user(),
+            'canManagePoles' => in_array($request->user()->role, ['superadmin', 'surveyor'], true),
         ]);
     }
 }

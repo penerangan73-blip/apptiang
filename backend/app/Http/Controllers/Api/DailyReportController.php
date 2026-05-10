@@ -17,6 +17,7 @@ class DailyReportController extends Controller
         ]);
 
         $reports = DailyReport::query()
+            ->with('photos')
             ->when($validated['date'] ?? null, fn ($query, string $date) => $query->whereDate('report_date', $date))
             ->latest()
             ->get();
@@ -31,23 +32,40 @@ class DailyReportController extends Controller
         $input = $request->validate([
             'pole_id' => ['required', 'exists:poles,id'],
             'notes' => ['required', 'string', 'max:2000'],
+            'photos' => ['sometimes', 'array', 'max:10'],
+            'photos.*' => ['image', 'max:5120'],
             'photo' => ['sometimes', 'nullable', 'image', 'max:5120'],
         ]);
 
-        $photoUrl = null;
+        $files = $request->file('photos', []);
+        $files = is_array($files) ? $files : [$files];
+        $files = array_filter($files);
 
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('reports', 'public');
-            $photoUrl = asset("storage/{$path}");
+            $files[] = $request->file('photo');
         }
 
         $report = DailyReport::query()->create([
             'user_id' => $request->user()->id,
             'pole_id' => $input['pole_id'],
             'report_date' => now()->toDateString(),
-            'photo_url' => $photoUrl,
+            'photo_url' => null,
             'notes' => $input['notes'],
         ]);
+
+        foreach ($files as $file) {
+            $path = $file->store('reports', 'public');
+            $photoUrl = asset("storage/{$path}");
+
+            $report->photos()->create([
+                'photo_url' => $photoUrl,
+                'sort_order' => $report->photos()->count(),
+            ]);
+
+            if (! $report->photo_url) {
+                $report->forceFill(['photo_url' => $photoUrl])->save();
+            }
+        }
 
         Pole::query()
             ->whereKey($input['pole_id'])
@@ -57,7 +75,7 @@ class DailyReportController extends Controller
             ]);
 
         return response()->json([
-            'data' => $report,
+            'data' => $report->load('photos'),
         ], 201);
     }
 }
