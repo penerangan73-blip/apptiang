@@ -1,4 +1,4 @@
-Saya sudah analisa lagi dari struktur `backend/`, route, controller, model, dan view utama. Menurut saya aplikasi ini sudah cukup jalan untuk CRUD inventaris, peta, aktivitas, user, dan profil. Tapi ada beberapa hal yang sebaiknya diprioritaskan sebelum tambah fitur besar.
+Saya sudah analisa lagi dari struktur Laravel root, route, controller, model, dan view utama. Menurut saya aplikasi ini sudah cukup jalan untuk CRUD inventaris, peta, aktivitas, user, dan profil. Tapi ada beberapa hal yang sebaiknya diprioritaskan sebelum tambah fitur besar.
 
 **Yang Perlu Diperbaiki**
 1. **Aplikasi masih terasa berat karena semua data tiang sering di-load sekaligus**

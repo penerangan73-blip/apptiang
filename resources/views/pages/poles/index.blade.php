@@ -9,7 +9,7 @@
 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
         <h2 class="text-2xl font-bold text-slate-100">Data Tiang PJU</h2>
-        <p class="text-sm text-slate-400">Kelola inventaris tiang PJU dari database backend.</p>
+        <p class="text-sm text-slate-400">Kelola inventaris tiang PJU dari database aplikasi.</p>
     </div>
     <div class="flex flex-col gap-2 sm:flex-row">
         <a class="btn btn-muted" href="{{ route('poles.export', request()->except('page')) }}">

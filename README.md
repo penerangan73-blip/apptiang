@@ -2,23 +2,21 @@
 
 Aplikasi pendataan tiang PJU berbasis Laravel.
 
-Frontend dan backend sekarang berjalan dalam satu aplikasi Laravel di folder `backend/`. UI memakai Blade, form Laravel, session login, dan route web biasa. Frontend Next.js lama sudah dibersihkan karena tidak diperlukan untuk deploy Hostinger.
+Aplikasi sekarang berjalan sebagai satu aplikasi full stack Laravel di root repository. UI memakai Blade, form Laravel, session login, dan route web biasa. Frontend Next.js lama sudah dibersihkan karena tidak diperlukan untuk deploy Hostinger.
 
 ## Struktur Aktif
 
 ```text
-backend/
-  app/Http/Controllers/Api/   API lama, tetap tersedia
-  app/Http/Controllers/Web/   Controller halaman Blade
-  resources/views/            Frontend Laravel Blade
-  routes/api.php              API Sanctum
-  routes/web.php              Halaman web Laravel
+app/Http/Controllers/Api/   API lama, tetap tersedia
+app/Http/Controllers/Web/   Controller halaman Blade
+resources/views/            Frontend Laravel Blade
+routes/api.php              API Sanctum
+routes/web.php              Halaman web Laravel
 ```
 
 ## Menjalankan Lokal
 
 ```bash
-cd backend
 /opt/lampp/bin/php /usr/bin/composer install
 cp .env.example .env
 /opt/lampp/bin/php artisan key:generate
@@ -47,16 +45,16 @@ Ringkasnya:
 
 ```bash
 git pull origin main
-bash backend/scripts/deploy.sh
+bash scripts/deploy.sh
 ```
 
 Pastikan document root domain mengarah ke:
 
 ```text
-/path/ke/repository/backend/public
+/path/ke/repository/public
 ```
 
-Contoh `.env` production tersedia di [backend/.env.production.example](backend/.env.production.example). Setelah deploy pertama, edit `backend/.env` dan isi nilai domain serta database:
+Contoh `.env` production tersedia di [.env.production.example](.env.production.example). Setelah deploy pertama, edit `.env` dan isi nilai domain serta database:
 
 ```env
 APP_URL=https://domainanda.com
@@ -71,8 +69,8 @@ Jangan jalankan `php artisan migrate --seed` di production kecuali benar-benar i
 ## Script
 
 ```bash
-cd backend && php artisan route:list
-cd backend && php artisan test
+php artisan route:list
+php artisan test
 ```
 
 ## Akun Tes

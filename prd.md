@@ -4,7 +4,7 @@
 
 Aplikasi ini adalah sistem inventarisasi aset Penerangan Jalan Umum (PJU) berbasis web untuk membantu surveyor dan pengelola mendata tiang, memantau kondisi aset, mencatat penggunaan daya, melihat lokasi pada peta, serta membuat laporan aktivitas harian.
 
-Sistem saat ini sudah berjalan sebagai aplikasi **full stack Laravel** di folder `backend/`. Frontend menggunakan **Laravel Blade**, route web Laravel, session login, form server-side, dan database MySQL. Frontend Next.js lama sudah tidak digunakan.
+Sistem saat ini sudah berjalan sebagai aplikasi **full stack Laravel** di root repository. Frontend menggunakan **Laravel Blade**, route web Laravel, session login, form server-side, dan database MySQL. Frontend Next.js lama sudah tidak digunakan.
 
 Tujuan utama aplikasi adalah membuat proses pendataan PJU menjadi lebih rapi, terpusat, mudah diakses dari perangkat lapangan, dan siap dideploy ke hosting berbasis PHP/Laravel melalui Git.
 
@@ -18,7 +18,7 @@ Tujuan utama aplikasi adalah membuat proses pendataan PJU menjadi lebih rapi, te
 - **Pencarian dan Filter:** Pengguna dapat mencari aset berdasarkan teks dan memfilter berdasarkan kondisi.
 - **Pelaporan Harian:** Sistem mencatat laporan aktivitas atau kerusakan tiang, termasuk foto dan catatan.
 - **Audit Data:** Data tiang menyimpan informasi pembuat dan pengubah terakhir.
-- **Deployment:** Aplikasi dapat dideploy ke hosting Laravel/shared hosting melalui Git dengan document root mengarah ke `backend/public`.
+- **Deployment:** Aplikasi dapat dideploy ke hosting Laravel/shared hosting melalui Git dengan document root mengarah ke `public`.
 
 ## 3. Core Features
 
@@ -172,19 +172,19 @@ erDiagram
 - **Map:** Leaflet.js dengan OpenStreetMap tile.
 - **Storage:** Laravel public storage untuk foto aset/laporan.
 - **Authentication:** Session-based Laravel auth untuk web; token Sanctum untuk API.
-- **Deployment:** Git-based deployment ke hosting PHP/Laravel. Repository dideploy ke folder non-public, document root diarahkan ke `backend/public`, dan script `backend/scripts/deploy.sh` menjalankan composer install, migrate, storage link, dan cache.
+- **Deployment:** Git-based deployment ke hosting PHP/Laravel. Repository dideploy ke folder non-public, document root diarahkan ke `public`, dan script `scripts/deploy.sh` menjalankan composer install, migrate, storage link, dan cache.
 
 ## 8. Deployment Requirement
 
 - Hosting mendukung PHP 8.2+, Composer, MySQL, SSH/Git, dan document root custom.
 - Repository diclone ke folder non-public, contoh `/home/username/repositories/apptiang2`.
-- Document root domain diarahkan ke `/home/username/repositories/apptiang2/backend/public`.
-- File `.env` production dibuat dari `backend/.env.production.example`.
+- Document root domain diarahkan ke `/home/username/repositories/apptiang2/public`.
+- File `.env` production dibuat dari `.env.production.example`.
 - Deploy dijalankan dengan:
 
 ```bash
 git pull origin main
-bash backend/scripts/deploy.sh
+bash scripts/deploy.sh
 ```
 
 - Seeder utama tidak dijalankan otomatis di production karena dapat mengisi ulang data sample. Jika butuh akun awal, jalankan `RbacUsersSeeder` secara manual satu kali.

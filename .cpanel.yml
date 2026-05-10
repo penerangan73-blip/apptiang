@@ -1,4 +1,4 @@
 ---
 deployment:
   tasks:
-    - /bin/bash backend/scripts/deploy.sh
+    - /bin/bash scripts/deploy.sh

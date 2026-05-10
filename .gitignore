@@ -2,9 +2,8 @@ node_modules
 .next
 out
 dist
-backend/vendor
-backend/.env
-backend/public/storage
+vendor
+public/storage
 .env
 .env.local
 .env.*.local
@@ -13,4 +12,4 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 *.tsbuildinfo
-backend/.phpunit.result.cache
+.phpunit.result.cache

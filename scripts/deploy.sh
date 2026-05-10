@@ -37,12 +37,12 @@ if ! grep -q '^APP_KEY=base64:' .env; then
 fi
 
 if [ "${ENV_CREATED}" -eq 1 ]; then
-    echo "Deploy awal berhenti di sini. Edit backend/.env, lalu jalankan script ini lagi."
+    echo "Deploy awal berhenti di sini. Edit .env, lalu jalankan script ini lagi."
     exit 0
 fi
 
 if grep -Eq 'domainanda\.com|nama_database|username_database|password_database' .env; then
-    echo "backend/.env masih berisi placeholder. Edit nilai domain dan database, lalu jalankan ulang."
+    echo ".env masih berisi placeholder. Edit nilai domain dan database, lalu jalankan ulang."
     exit 1
 fi
 
