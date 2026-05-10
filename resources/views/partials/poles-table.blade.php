@@ -2,6 +2,7 @@
     $label = $label ?? fn ($value) => ucfirst(str_replace('_', ' ', (string) $value));
     $ownership = $ownership ?? fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
     $showManageActions = $showManageActions ?? true;
+    $showDirectionActions = $showDirectionActions ?? false;
 @endphp
 
 <div class="card overflow-hidden">
@@ -42,6 +43,12 @@
                         @endif
                         <td class="px-5 py-4">
                             <div class="flex justify-end gap-2">
+                                @if ($showDirectionActions)
+                                    <a class="btn btn-primary px-3 py-2" href="https://www.google.com/maps/dir/?api=1&destination={{ $pole->latitude }},{{ $pole->longitude }}" target="_blank" rel="noopener noreferrer">
+                                        <i data-lucide="navigation" class="icon"></i>
+                                        Menuju Lokasi
+                                    </a>
+                                @endif
                                 <a class="btn btn-muted px-3 py-2" href="{{ route('poles.show', $pole) }}">
                                     <i data-lucide="eye" class="icon"></i>
                                     Detail

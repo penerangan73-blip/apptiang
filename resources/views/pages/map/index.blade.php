@@ -28,7 +28,7 @@
 </div>
 
 @include('partials.search-filter', ['actionRoute' => 'map.index'])
-@include('partials.poles-table', ['poles' => $poles, 'showTimestamps' => false])
+@include('partials.poles-table', ['poles' => $poles, 'showTimestamps' => false, 'showDirectionActions' => true])
 @endsection
 
 @section('dialogs')
@@ -76,7 +76,10 @@
                 icon: L.divIcon({ className: '', html: `<span style="display:block;width:18px;height:18px;border-radius:999px;background:${markerColors[pole.condition] || '#2563eb'};border:3px solid white;box-shadow:0 8px 20px rgba(15,23,42,.22)"></span>`, iconSize: [18, 18], iconAnchor: [9, 9] })
             }).addTo(map);
             marker.bindPopup(createMarkerPopup(pole), { maxWidth: 300, className: 'pju-marker-popup' });
-            marker.on('click', () => renderSelectedPole(pole));
+            marker.on('click', () => {
+                renderSelectedPole(pole);
+                setTimeout(() => window.lucide?.createIcons(), 0);
+            });
         });
         if (bounds.length) map.fitBounds(bounds, { padding: [36, 36], maxZoom: interactive ? 12 : 13 });
     }
@@ -84,6 +87,7 @@
     function renderSelectedPole(pole) {
         const panel = document.getElementById('selected-pole-panel');
         if (!panel) return;
+        const mapsUrl = googleMapsDirectionsUrl(pole);
         panel.innerHTML = `
             <div class="overflow-hidden rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-slate-900 to-slate-950 shadow-[0_14px_40px_rgba(6,182,212,0.08)]">
                 ${pole.photo_url ? `<img src="${pole.photo_url}" alt="Foto ${escapeHtml(pole.customer_id)}" class="h-36 w-full object-cover">` : ''}
@@ -96,6 +100,10 @@
                         </div>
                         <span class="badge badge-${pole.condition} shrink-0">${formatOption(pole.condition)}</span>
                     </div>
+                    <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary mt-4 w-full justify-center px-3 py-2 text-xs">
+                        <i data-lucide="navigation" class="icon"></i>
+                        Menuju Lokasi
+                    </a>
                 </div>
             </div>
             <div class="mt-4 grid grid-cols-2 gap-3">
@@ -116,6 +124,7 @@
     }
 
     function createMarkerPopup(pole) {
+        const mapsUrl = googleMapsDirectionsUrl(pole);
         return `
             <div class="p-3">
                 <div class="flex items-start justify-between gap-3 pr-7">
@@ -133,8 +142,19 @@
                     <dt class="font-bold text-slate-500">Koordinat</dt>
                     <dd class="font-semibold text-slate-100">${Number(pole.latitude).toFixed(5)}, ${Number(pole.longitude).toFixed(5)}</dd>
                 </dl>
+                <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary mt-3 w-full justify-center px-3 py-2 text-xs">
+                    <i data-lucide="navigation" class="icon"></i>
+                    Menuju Lokasi
+                </a>
             </div>
         `;
+    }
+
+    function googleMapsDirectionsUrl(pole) {
+        const lat = Number(pole.latitude);
+        const lng = Number(pole.longitude);
+
+        return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
     }
 
     // Shapefile layers
