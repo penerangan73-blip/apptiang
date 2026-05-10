@@ -3,12 +3,12 @@
 @section('content')
 <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
     <div class="card overflow-hidden -mx-4 sm:mx-0 border-x-0 sm:border-x">
-        <div class="flex items-center justify-between gap-4 border-b border-white/10 p-4 sm:p-5">
+        <div class="flex flex-col gap-3 border-b border-white/10 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5">
             <div>
                 <h3 class="flex items-center gap-2 text-lg font-black"><i data-lucide="map-pinned" class="icon text-cyan-400"></i> Peta Lokasi Tiang</h3>
                 <p class="text-sm text-slate-400">Titik aset berdasarkan filter jalan dan kondisi.</p>
             </div>
-            <button type="button" id="toggle-map-layers" class="btn btn-muted hidden px-3 py-2 text-xs sm:inline-flex">
+            <button type="button" id="toggle-map-layers" class="btn btn-muted inline-flex w-full justify-center px-3 py-2 text-xs sm:w-auto">
                 <i data-lucide="layers" class="icon"></i> Tampilkan 3 Layer
             </button>
         </div>
