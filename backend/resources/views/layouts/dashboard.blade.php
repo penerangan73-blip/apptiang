@@ -23,13 +23,16 @@
     {{-- Desktop Sidebar --}}
     <aside class="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-white/10 bg-slate-950/50 backdrop-blur-xl text-white lg:flex lg:flex-col">
         <div class="border-b border-white/10 p-6">
-            <div class="flex items-center gap-4">
-                <div class="size-12 shrink-0 rounded-full border border-white/20 bg-white/5 p-1 shadow-lg">
-                    <img src="{{ asset('image/dishub.png') }}" alt="Logo Dishub" class="size-full object-contain">
+            <div class="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-2">
+                <div class="flex size-10 items-center justify-center rounded-xl border border-white/20 bg-white/95 p-0.5 shadow-lg">
+                    <img src="{{ asset('image/gunungkidul.png') }}" alt="Logo Kabupaten Gunungkidul" class="size-full object-contain">
                 </div>
-                <div>
-                    <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400 drop-shadow-sm">Dinas Perhubungan</p>
-                    <h1 class="text-sm font-bold text-slate-100">Inventarisasi APJ</h1>
+                <div class="min-w-0 text-center">
+                    <p class="text-[10px] font-black uppercase leading-4 tracking-[0.08em] text-cyan-400 drop-shadow-sm">Dinas Perhubungan</p>
+                    <h1 class="text-sm font-bold leading-5 text-slate-100">Inventarisasi APJ</h1>
+                </div>
+                <div class="flex size-10 items-center justify-center rounded-xl border border-white/20 bg-white/95 p-0.5 shadow-lg">
+                    <img src="{{ asset('image/dishub.png') }}" alt="Logo Dishub" class="size-full object-contain">
                 </div>
             </div>
         </div>
@@ -43,6 +46,36 @@
                 </a>
             @endforeach
         </nav>
+        <div class="p-4">
+            <div class="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4 shadow-[0_14px_34px_rgba(6,182,212,0.08)]">
+                <div class="flex items-center gap-3">
+                    <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/90 p-1.5">
+                        <img src="{{ asset('image/dishub.png') }}" alt="Logo Dishub" class="size-full object-contain">
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-cyan-300">Profil Singkat</p>
+                        <h2 class="mt-0.5 text-sm font-black leading-5 text-slate-100">Dishub Gunungkidul</h2>
+                    </div>
+                </div>
+                <p class="mt-3 text-xs leading-5 text-slate-300">
+                    Mendukung pelayanan transportasi, keselamatan jalan, dan tata kelola aset APJ Kabupaten Gunungkidul.
+                </p>
+                <div class="mt-3 grid gap-2 text-xs font-semibold text-slate-300">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="map-pin" class="size-4 text-cyan-300"></i>
+                        Wonosari, Gunungkidul
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="lightbulb" class="size-4 text-amber-300"></i>
+                        Inventarisasi APJ Non APP
+                    </div>
+                </div>
+                <a href="https://dishub.gunungkidulkab.go.id/" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-xs font-black text-cyan-200 transition hover:bg-slate-950/70">
+                    <i data-lucide="external-link" class="size-4"></i>
+                    Situs Resmi
+                </a>
+            </div>
+        </div>
     </aside>
 
     {{-- Main Content --}}

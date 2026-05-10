@@ -7,14 +7,47 @@
     $label = fn ($value) => ucfirst(str_replace('_', ' ', (string) $value));
 @endphp
 
+<style>
+    @keyframes dashboardLogoFloat {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-4px) scale(1.03); }
+    }
+
+    @keyframes dashboardLogoGlow {
+        0%, 100% { opacity: 0.32; transform: scale(0.94); }
+        50% { opacity: 0.72; transform: scale(1.08); }
+    }
+
+    .dashboard-logo-mark {
+        animation: dashboardLogoFloat 3.6s ease-in-out infinite;
+    }
+
+    .dashboard-logo-glow {
+        animation: dashboardLogoGlow 2.8s ease-in-out infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .dashboard-logo-mark,
+        .dashboard-logo-glow {
+            animation: none;
+        }
+    }
+</style>
+
 {{-- Welcome Banner --}}
 <div class="dark-card relative overflow-hidden p-5 sm:p-6">
     <div class="absolute -right-20 -top-20 size-64 rounded-full bg-cyan-500/20 blur-3xl"></div>
     <div class="absolute -left-20 -bottom-20 size-64 rounded-full bg-blue-600/20 blur-3xl"></div>
     <div class="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <h2 class="text-2xl font-black tracking-tight text-white sm:text-3xl">Dashboard Utama</h2>
-            <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">Selamat datang kembali, <strong>{{ $user->name }}</strong>. Monitor lokasi, kondisi, daya, dan laporan kerusakan PJU secara real-time.</p>
+        <div class="flex items-start gap-4">
+            <div class="relative shrink-0">
+                <span class="dashboard-logo-glow absolute inset-0 rounded-2xl bg-cyan-300/40 blur-md"></span>
+                <img src="{{ asset('image/dishub.png') }}" alt="Logo Dishub" class="dashboard-logo-mark relative size-16 rounded-xl bg-white/90 p-2 shadow-lg ring-1 ring-white/40 sm:size-20">
+            </div>
+            <div>
+                <h2 class="text-2xl font-black tracking-tight text-white sm:text-3xl">Selamat datang, {{ $user->name }}</h2>
+                <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">Pantau inventaris APJ dengan lebih tertata, mulai dari sebaran lokasi, kondisi aset, penggunaan daya, hingga laporan lapangan dalam satu ruang kerja yang nyaman.</p>
+            </div>
         </div>
         <div class="flex flex-row flex-wrap gap-3 mt-2 lg:mt-0">
             @if ($canManagePoles)
@@ -97,7 +130,10 @@
         </div>
     </div>
     <div class="p-5">
-        <div id="dashboard-map" class="glass-panel h-[400px] sm:h-[500px] overflow-hidden rounded-lg"></div>
+        <div class="relative">
+            <div id="dashboard-map" class="glass-panel h-[400px] sm:h-[500px] overflow-hidden rounded-lg"></div>
+            @include('partials.marker-status-legend')
+        </div>
     </div>
 </div>
 

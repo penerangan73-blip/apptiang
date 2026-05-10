@@ -13,7 +13,10 @@
             </button>
         </div>
         <div class="p-0 sm:p-5">
-            <div id="main-map" class="glass-panel h-[65vh] min-h-[400px] sm:h-[560px] overflow-hidden rounded-none sm:rounded-lg border-x-0 sm:border-x"></div>
+            <div class="relative">
+                <div id="main-map" class="glass-panel h-[65vh] min-h-[400px] sm:h-[560px] overflow-hidden rounded-none sm:rounded-lg border-x-0 sm:border-x"></div>
+                @include('partials.marker-status-legend')
+            </div>
         </div>
     </div>
 
