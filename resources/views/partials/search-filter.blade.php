@@ -1,10 +1,10 @@
 <div class="card p-4">
     <form id="search-filter-form" method="GET" action="{{ route($actionRoute ?? 'poles.index') }}" class="grid gap-3 md:grid-cols-[1fr_220px_auto]">
-        <input class="field" id="search-query" name="query" value="{{ $query }}" placeholder="Cari ID, alamat, tanggal input, tahun, atau penginput...">
+        <input class="field" id="search-query" name="query" value="{{ $query }}" placeholder="Cari semua kolom data tiang...">
         <select class="field" id="search-condition" name="condition">
-            <option value="">Semua kondisi</option>
-            @foreach (['baik', 'rusak', 'perbaikan'] as $option)
-                <option value="{{ $option }}" @selected($condition === $option)>{{ ucfirst($option) }}</option>
+            <option value="">Semua kondisi tiang</option>
+            @foreach (['kokoh' => 'Kokoh', 'keropos' => 'Keropos', 'miring' => 'Miring', 'berkarat' => 'Berkarat'] as $option => $text)
+                <option value="{{ $option }}" @selected($condition === $option)>{{ $text }}</option>
             @endforeach
         </select>
         <button class="btn btn-primary" type="submit">

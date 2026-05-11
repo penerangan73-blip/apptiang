@@ -2,7 +2,43 @@
 
 @section('content')
 @php
-    $label = fn ($value) => ucfirst(str_replace('_', ' ', (string) $value));
+    $label = fn ($value) => [
+        'baik' => 'Kokoh',
+        'rusak' => 'Keropos',
+        'perbaikan' => 'Berkarat',
+        'lurus' => 'Tiang Baja (Galvanis)',
+        'lengkung' => 'Tiang Baja (Galvanis)',
+        'tanpa_tiang' => 'Menempel Tiang PLN',
+        'tunggal' => 'Single Arm',
+        'ganda' => 'Double Arm',
+        'dekoratif' => 'Single Arm',
+        'sodium' => 'HPS (Sodium Tekanan Tinggi)',
+        'hilang' => 'Kusam',
+        'tiang_baja_galvanis' => 'Tiang Baja (Galvanis)',
+        'tiang_beton' => 'Tiang Beton',
+        'menempel_tiang_pln' => 'Menempel Tiang PLN',
+        'single_arm' => 'Single Arm',
+        'double_arm' => 'Double Arm',
+        'high_mast' => 'High Mast',
+        'keropos' => 'Keropos',
+        'miring' => 'Miring',
+        'berkarat' => 'Berkarat',
+        'kokoh' => 'Kokoh',
+        'led' => 'LED',
+        'hps' => 'HPS (Sodium Tekanan Tinggi)',
+        'son_t' => 'SON-T',
+        'mercury' => 'Mercury',
+        'lainnya' => 'Lainnya',
+        'menyala' => 'Menyala',
+        'redup' => 'Redup',
+        'berkedip' => 'Berkedip',
+        'mati' => 'Mati',
+        'pecah' => 'Pecah',
+        'kusam' => 'Kusam',
+        'kemasukan_air' => 'Kemasukan Air',
+        'sudah_ada' => 'Sudah Ada',
+        'belum' => 'Belum',
+    ][$value] ?? ucfirst(str_replace('_', ' ', (string) $value));
     $ownership = fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
     $poleMapData = $pole->only(['customer_id', 'street_name', 'latitude', 'longitude', 'power_usage', 'condition']);
 @endphp
@@ -37,10 +73,10 @@
     <div class="space-y-5">
         <div class="card p-5">
             <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                @include('partials.detail-item', ['label' => 'Daya', 'value' => number_format($pole->power_usage).' Watt'])
+                @include('partials.detail-item', ['label' => 'Daya Lampu', 'value' => number_format($pole->power_usage).' Watt'])
                 @include('partials.detail-item', ['label' => 'Jenis Tiang', 'value' => $label($pole->pole_type)])
-                @include('partials.detail-item', ['label' => 'Tinggi', 'value' => $pole->height ? $pole->height.' m' : '-'])
-                @include('partials.detail-item', ['label' => 'Bentangan', 'value' => $pole->span_length ? $pole->span_length.' m' : '-'])
+                @include('partials.detail-item', ['label' => 'Tinggi Tiang', 'value' => $pole->height ? $pole->height.' m' : '-'])
+                @include('partials.detail-item', ['label' => 'Status Lampu', 'value' => $label($pole->lamp_status)])
             </div>
         </div>
 
@@ -53,9 +89,12 @@
                 @include('partials.detail-item', ['label' => 'Alamat', 'value' => $pole->street_name, 'class' => 'md:col-span-2'])
                 @include('partials.detail-item', ['label' => 'Latitude', 'value' => number_format((float) $pole->latitude, 7)])
                 @include('partials.detail-item', ['label' => 'Longitude', 'value' => number_format((float) $pole->longitude, 7)])
-                @include('partials.detail-item', ['label' => 'Pondasi', 'value' => $label($pole->foundation_type)])
+                @include('partials.detail-item', ['label' => 'Tipe Ornamen', 'value' => $label($pole->ornament_type)])
+                @include('partials.detail-item', ['label' => 'Jenis Lampu', 'value' => $label($pole->lamp_type)])
+                @include('partials.detail-item', ['label' => 'Kondisi Rumah Lampu', 'value' => $label($pole->lamp_house_condition)])
+                @include('partials.detail-item', ['label' => 'Jumlah Titik Lampu', 'value' => number_format((int) $pole->light_point_count)])
+                @include('partials.detail-item', ['label' => 'KWH Meter', 'value' => $label($pole->kwh_meter) ?: '-'])
                 @include('partials.detail-item', ['label' => 'Kepemilikan', 'value' => $ownership($pole->ownership)])
-                @include('partials.detail-item', ['label' => 'Trafo PLN', 'value' => $pole->pln_transformer ?: '-'])
                 @include('partials.detail-item', ['label' => 'Pertama Diinput', 'value' => optional($pole->created_at)->format('H:i d-m-Y') ?: '-'])
                 @include('partials.detail-item', ['label' => 'Diinput Oleh', 'value' => $pole->createdBy?->name ?? '-'])
                 @include('partials.detail-item', ['label' => 'Update Terakhir', 'value' => optional($pole->updated_at)->format('H:i d-m-Y') ?: '-'])
@@ -210,7 +249,7 @@
         const map = L.map(el).setView([lat, lng], 17);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
 
-        const colors = { baik: '#059669', rusak: '#e11d48', perbaikan: '#d97706' };
+        const colors = { kokoh: '#059669', keropos: '#e11d48', miring: '#d97706', berkarat: '#b45309' };
         L.marker([lat, lng], {
             icon: L.divIcon({
                 className: '',
@@ -225,7 +264,7 @@
                     <span class="badge badge-${pole.condition} mt-5 shrink-0">${escapeHtml(formatOption(pole.condition))}</span>
                 </div>
                 <p class="mt-1 text-sm leading-5 text-slate-300">${escapeHtml(pole.street_name)}</p>
-                <p class="mt-3 text-sm font-semibold text-slate-100">${Number(pole.power_usage || 0).toLocaleString('id-ID')} W</p>
+                <p class="mt-3 text-sm font-semibold text-slate-100">Daya lampu ${Number(pole.power_usage || 0).toLocaleString('id-ID')} W</p>
             </div>
         `, { maxWidth: 300, className: 'pju-marker-popup' });
     }

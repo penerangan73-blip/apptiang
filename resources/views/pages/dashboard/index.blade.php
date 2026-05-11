@@ -4,7 +4,12 @@
 @php
     $today = now()->toDateString();
     $todayReports = $reports->filter(fn ($report) => $report->report_date->format('Y-m-d') === $today);
-    $label = fn ($value) => ucfirst(str_replace('_', ' ', (string) $value));
+    $label = fn ($value) => [
+        'keropos' => 'Keropos',
+        'miring' => 'Miring',
+        'berkarat' => 'Berkarat',
+        'kokoh' => 'Kokoh',
+    ][$value] ?? ucfirst(str_replace('_', ' ', (string) $value));
 @endphp
 
 <style>
@@ -64,39 +69,45 @@
     </div>
 </div>
 
-{{-- Stat Cards --}}
-<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-    @include('partials.stat-card', ['label' => 'Total Tiang', 'value' => number_format($stats['total']), 'description' => 'aset terdata', 'icon' => 'database'])
-    @include('partials.stat-card', ['label' => 'Kondisi Baik', 'value' => number_format($stats['baik']), 'description' => 'siap operasi', 'icon' => 'check-circle-2'])
-    @include('partials.stat-card', ['label' => 'Rusak', 'value' => number_format($stats['rusak']), 'description' => 'prioritas tindak lanjut', 'icon' => 'alert-triangle'])
-    @include('partials.stat-card', ['label' => 'Perbaikan', 'value' => number_format($stats['perbaikan']), 'description' => 'sedang diproses', 'icon' => 'activity'])
-    @include('partials.stat-card', ['label' => 'Total Daya', 'value' => number_format($stats['daya']), 'description' => 'watt terdata', 'icon' => 'zap'])
-</div>
+{{-- Ringkasan Di Atas Peta --}}
+<div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div class="space-y-5">
+        <div class="grid gap-4 sm:grid-cols-2">
+            @include('partials.stat-card', ['label' => 'Total Tiang', 'value' => number_format($stats['total']), 'description' => 'aset terdata', 'icon' => 'database'])
+            @include('partials.stat-card', ['label' => 'Total Daya Lampu', 'value' => number_format($stats['daya']), 'description' => 'watt terdata', 'icon' => 'zap'])
+        </div>
 
-{{-- Kondisi & Aktivitas --}}
-<div class="grid gap-5 xl:grid-cols-2">
-    <div class="card p-5">
-        <h3 class="text-lg font-black">Kondisi Lapangan</h3>
-        <p class="text-sm text-slate-400">Distribusi kondisi aset PJU.</p>
-        <div class="mt-4 space-y-4">
-            @foreach (['baik', 'rusak', 'perbaikan'] as $conditionName)
-                @php
-                    $count = $stats[$conditionName];
-                    $percent = (int) round(($count / max($stats['total'], 1)) * 100);
-                @endphp
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between gap-3">
-                        <span class="badge badge-{{ $conditionName }}">{{ $label($conditionName) }}</span>
-                        <p class="text-sm font-bold text-slate-400">{{ $percent }}%</p>
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            @include('partials.stat-card', ['label' => 'Lampu Menyala', 'value' => number_format($stats['lamp_menyala']), 'description' => 'status normal', 'icon' => 'lightbulb'])
+            @include('partials.stat-card', ['label' => 'Lampu Redup', 'value' => number_format($stats['lamp_redup']), 'description' => 'perlu cek daya', 'icon' => 'sun-dim'])
+            @include('partials.stat-card', ['label' => 'Lampu Berkedip', 'value' => number_format($stats['lamp_berkedip']), 'description' => 'perlu pemeriksaan', 'icon' => 'activity'])
+            @include('partials.stat-card', ['label' => 'Lampu Mati', 'value' => number_format($stats['lamp_mati']), 'description' => 'prioritas tindak lanjut', 'icon' => 'power-off'])
+        </div>
+
+        <div class="card p-5">
+            <h3 class="text-lg font-black">Kondisi Tiang</h3>
+            <p class="text-sm text-slate-400">Distribusi kondisi aset PJU.</p>
+            <div class="mt-4 space-y-4">
+                @foreach (['kokoh', 'keropos', 'miring', 'berkarat'] as $conditionName)
+                    @php
+                        $count = $stats[$conditionName];
+                        $percent = (int) round(($count / max($stats['total'], 1)) * 100);
+                    @endphp
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="badge badge-{{ $conditionName }}">{{ $label($conditionName) }}</span>
+                            <p class="text-sm font-bold text-slate-400">{{ number_format($count) }} data - {{ $percent }}%</p>
+                        </div>
+                        <div class="h-2 overflow-hidden rounded-full bg-slate-800">
+                            <div class="h-full rounded-full bg-cyan-600" style="width: {{ $percent }}%"></div>
+                        </div>
                     </div>
-                    <div class="h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div class="h-full rounded-full bg-cyan-600" style="width: {{ $percent }}%"></div>
-                    </div>
-                </div>
-            @endforeach
+                @endforeach
+            </div>
         </div>
     </div>
-    <div class="card p-5">
+
+    <div class="card p-5 xl:min-h-[430px]">
         <div class="flex items-start justify-between gap-4">
             <div>
                 <h3 class="text-lg font-black">Aktivitas Hari Ini</h3>
@@ -107,7 +118,7 @@
                 <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400">Aktivitas</p>
             </div>
         </div>
-        <div class="mt-4 max-h-[176px] space-y-3 overflow-y-auto pr-2">
+        <div class="mt-4 max-h-[340px] space-y-3 overflow-y-auto pr-2 xl:max-h-[520px]">
             @forelse ($todayReports as $report)
                 <div class="rounded-lg border bg-slate-900/5 p-3">
                     <p class="font-bold text-slate-100">{{ $report->pole?->customer_id ?? 'Tiang tidak ditemukan' }}</p>
@@ -175,7 +186,7 @@
 
     function addDashboardMarkers(map, poles) {
         const bounds = [];
-        const markerColors = { baik: '#059669', rusak: '#e11d48', perbaikan: '#d97706' };
+        const markerColors = { kokoh: '#059669', keropos: '#e11d48', miring: '#d97706', berkarat: '#b45309' };
         poles.forEach((pole) => {
             const lat = Number(pole.latitude), lng = Number(pole.longitude);
             if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
@@ -198,7 +209,7 @@
                 </div>
                 <p class="mt-1 text-sm leading-5 text-slate-300">${escapeHtml(pole.street_name)}</p>
                 <dl class="mt-3 grid grid-cols-[74px_1fr] gap-x-3 gap-y-1.5 text-sm">
-                    <dt class="font-bold text-slate-500">Daya</dt>
+                    <dt class="font-bold text-slate-500">Daya Lampu</dt>
                     <dd class="font-semibold text-slate-100">${Number(pole.power_usage || 0).toLocaleString('id-ID')} W</dd>
                     <dt class="font-bold text-slate-500">Koordinat</dt>
                     <dd class="font-semibold text-slate-100">${Number(pole.latitude).toFixed(5)}, ${Number(pole.longitude).toFixed(5)}</dd>

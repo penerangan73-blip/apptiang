@@ -22,6 +22,7 @@ Route::middleware('auth')->group(function () {
     Route::redirect('/', '/dashboard');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/data-tiang', PolePageController::class)->name('poles.index');
+    Route::get('/data-tiang/datatable', [PoleController::class, 'datatable'])->name('poles.datatable');
     Route::get('/data-tiang/{pole}', PoleDetailPageController::class)->name('poles.show');
     Route::get('/peta', MapPageController::class)->name('map.index');
     Route::get('/peta/markers', [MapPageController::class, 'markers'])->name('map.markers');

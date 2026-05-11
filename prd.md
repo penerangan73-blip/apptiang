@@ -92,14 +92,17 @@ Sistem menggunakan database relasional MySQL dengan tabel utama berikut.
 - `street_name`: Nama jalan/lokasi tiang.
 - `latitude`: Koordinat latitude.
 - `longitude`: Koordinat longitude.
-- `power_usage`: Daya dalam watt.
-- `condition`: Kondisi aset, misalnya `baik`, `rusak`, atau `perbaikan`.
+- `power_usage`: Daya lampu dalam watt.
+- `condition`: Kondisi tiang, misalnya `kokoh`, `keropos`, `miring`, atau `berkarat`.
 - `pole_type`: Jenis tiang.
 - `height`: Tinggi tiang.
-- `span_length`: Panjang bentangan.
-- `foundation_type`: Jenis pondasi.
+- `ornament_type`: Tipe ornamen.
+- `lamp_type`: Jenis lampu.
+- `lamp_status`: Status lampu.
+- `lamp_house_condition`: Kondisi rumah lampu.
+- `light_point_count`: Jumlah titik lampu.
+- `kwh_meter`: Nomor atau identitas KWH meter.
 - `ownership`: Kepemilikan aset.
-- `pln_transformer`: Informasi trafo PLN.
 - `photo_url`: Foto aset.
 - `notes`: Catatan aset.
 - `created_by_id`: User pembuat data.
@@ -142,10 +145,13 @@ erDiagram
         string condition
         string pole_type
         decimal height
-        decimal span_length
-        string foundation_type
+        string ornament_type
+        string lamp_type
+        string lamp_status
+        string lamp_house_condition
+        int light_point_count
+        string kwh_meter
         string ownership
-        string pln_transformer
         string photo_url
         text notes
         int created_by_id FK

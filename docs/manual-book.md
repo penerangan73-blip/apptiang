@@ -84,10 +84,10 @@ Dashboard adalah halaman ringkasan kondisi aset.
 Dashboard menampilkan:
 
 - Total Tiang.
-- Kondisi Baik.
-- Kondisi Rusak.
-- Kondisi Perbaikan.
-- Total Daya dalam watt.
+- Kondisi Tiang Baik.
+- Kondisi Tiang Rusak.
+- Kondisi Tiang Perbaikan.
+- Total Daya Lampu dalam watt.
 - Aktivitas hari ini.
 - Peta ringkas sebaran aset.
 - Daftar aset terbaru.
@@ -112,7 +112,7 @@ Menu Data Tiang digunakan untuk mengelola inventaris tiang.
 ### 5.2 Mencari dan Memfilter Data
 
 1. Masukkan kata kunci pada kolom pencarian.
-2. Kata kunci dapat berupa ID pelanggan, alamat, tanggal input, tahun, atau nama penginput.
+2. Kata kunci dapat berupa isi kolom data tiang, misalnya ID pelanggan, alamat, koordinat, daya lampu, kondisi, jenis lampu, KWH meter, tanggal input, atau nama penginput.
 3. Pilih kondisi jika ingin memfilter data berdasarkan Baik, Rusak, atau Perbaikan.
 4. Tekan Cari.
 
@@ -127,14 +127,17 @@ Fitur ini hanya tersedia untuk superadmin dan surveyor.
    - Alamat.
    - Latitude.
    - Longitude.
-   - Daya Pakai.
-   - Kondisi.
+   - Daya Lampu.
+   - Kondisi Tiang.
    - Jenis Tiang.
-   - Jenis Fondasi.
    - Kepemilikan.
-   - Tinggi.
-   - Jarak Bentang.
-   - Trafo PLN.
+   - Tinggi Tiang.
+   - Tipe Ornamen.
+   - Jenis Lampu.
+   - Status Lampu.
+   - Kondisi Rumah Lampu.
+   - Jumlah Titik Lampu.
+   - KWH Meter.
    - Foto.
    - Catatan.
 4. Untuk menentukan koordinat, gunakan peta pinpoint:
@@ -218,21 +221,20 @@ Warna marker menunjukkan kondisi tiang:
 ### 7.3 Filter Peta
 
 1. Gunakan kolom pencarian pada halaman Peta.
-2. Masukkan ID pelanggan, alamat, tanggal, tahun, atau nama penginput.
+2. Masukkan kata kunci dari kolom data tiang, misalnya ID pelanggan, alamat, koordinat, daya lampu, kondisi, jenis lampu, KWH meter, tanggal, tahun, atau nama penginput.
 3. Pilih kondisi jika diperlukan.
 4. Tekan Cari.
 
 Peta dan tabel akan menampilkan data sesuai filter.
 
-### 7.4 Menampilkan 3 Layer
+### 7.4 Menampilkan 2 Layer
 
-Pada halaman Peta tersedia tombol Tampilkan 3 Layer. Tombol ini menampilkan layer tambahan:
+Pada halaman Peta tersedia tombol Tampilkan 2 Layer. Tombol ini menampilkan layer tambahan:
 
 - Administrasi Area.
 - Batas Administrasi.
-- Jalan.
 
-Tekan tombol Tampilkan 3 Layer untuk menyalakan layer. Tekan Tutup 3 Layer untuk menyembunyikannya kembali.
+Tekan tombol Tampilkan 2 Layer untuk menyalakan layer. Tekan Tutup 2 Layer untuk menyembunyikannya kembali.
 
 ## 8. Aktivitas
 
@@ -484,4 +486,3 @@ Periksa:
 - Gunakan catatan untuk menjelaskan kondisi khusus.
 - Filter data sebelum export jika hanya membutuhkan sebagian data.
 - Backup database sebelum migration atau penghapusan data besar.
-

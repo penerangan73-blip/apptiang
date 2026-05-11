@@ -15,8 +15,8 @@ return new class extends Migration
             $table->decimal('latitude', 10, 7);
             $table->decimal('longitude', 10, 7);
             $table->unsignedInteger('power_usage');
-            $table->string('condition')->default('baik')->index();
-            $table->string('pole_type')->default('lurus');
+            $table->string('condition')->default('kokoh')->index();
+            $table->string('pole_type')->default('tiang_baja_galvanis');
             $table->decimal('height', 8, 2)->nullable();
             $table->decimal('span_length', 8, 2)->nullable();
             $table->string('foundation_type')->default('beton');

@@ -1,8 +1,9 @@
 @php
     $markerLegendItems = $markerLegendItems ?? [
-        ['label' => 'Baik', 'color' => '#059669'],
-        ['label' => 'Rusak', 'color' => '#e11d48'],
-        ['label' => 'Perbaikan', 'color' => '#d97706'],
+        ['label' => 'Kokoh', 'color' => '#059669'],
+        ['label' => 'Keropos', 'color' => '#e11d48'],
+        ['label' => 'Miring', 'color' => '#d97706'],
+        ['label' => 'Berkarat', 'color' => '#b45309'],
     ];
 @endphp
 

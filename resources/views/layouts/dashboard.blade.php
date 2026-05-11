@@ -396,7 +396,43 @@
     }
 
     function formatOption(value) {
-        return String(value || '').replaceAll('_', ' ');
+        return {
+            baik: 'Kokoh',
+            rusak: 'Keropos',
+            perbaikan: 'Berkarat',
+            lurus: 'Tiang Baja (Galvanis)',
+            lengkung: 'Tiang Baja (Galvanis)',
+            tanpa_tiang: 'Menempel Tiang PLN',
+            tunggal: 'Single Arm',
+            ganda: 'Double Arm',
+            dekoratif: 'Single Arm',
+            sodium: 'HPS (Sodium Tekanan Tinggi)',
+            hilang: 'Kusam',
+            tiang_baja_galvanis: 'Tiang Baja (Galvanis)',
+            tiang_beton: 'Tiang Beton',
+            menempel_tiang_pln: 'Menempel Tiang PLN',
+            single_arm: 'Single Arm',
+            double_arm: 'Double Arm',
+            high_mast: 'High Mast',
+            keropos: 'Keropos',
+            miring: 'Miring',
+            berkarat: 'Berkarat',
+            kokoh: 'Kokoh',
+            led: 'LED',
+            hps: 'HPS (Sodium Tekanan Tinggi)',
+            son_t: 'SON-T',
+            mercury: 'Mercury',
+            lainnya: 'Lainnya',
+            menyala: 'Menyala',
+            redup: 'Redup',
+            berkedip: 'Berkedip',
+            mati: 'Mati',
+            pecah: 'Pecah',
+            kusam: 'Kusam',
+            kemasukan_air: 'Kemasukan Air',
+            sudah_ada: 'Sudah Ada',
+            belum: 'Belum',
+        }[value] || String(value || '').replaceAll('_', ' ');
     }
 
     function formatOwnership(value) {

@@ -20,7 +20,7 @@ return new class extends Migration
 
         Schema::table('poles', function (Blueprint $table) {
             if (! Schema::hasColumn('poles', 'pole_type')) {
-                $table->string('pole_type')->default('lurus')->after('condition');
+                $table->string('pole_type')->default('tiang_baja_galvanis')->after('condition');
             }
 
             if (! Schema::hasColumn('poles', 'height')) {

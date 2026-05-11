@@ -15,7 +15,7 @@ class PoleController extends Controller
     {
         $validated = $request->validate([
             'query' => ['sometimes', 'nullable', 'string', 'max:120'],
-            'condition' => ['sometimes', 'nullable', Rule::in(['baik', 'rusak', 'perbaikan'])],
+            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh'])],
         ]);
 
         $poles = Pole::query()
@@ -100,13 +100,16 @@ class PoleController extends Controller
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'power_usage' => ['required', 'integer', 'min:1', 'max:100000'],
-            'condition' => ['required', Rule::in(['baik', 'rusak', 'perbaikan'])],
-            'pole_type' => ['required', Rule::in(['lurus', 'lengkung', 'tanpa_tiang', 'lainnya'])],
+            'condition' => ['required', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh'])],
+            'pole_type' => ['required', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln'])],
             'height' => ['nullable', 'numeric', 'min:0', 'max:1000'],
-            'span_length' => ['nullable', 'numeric', 'min:0', 'max:10000'],
-            'foundation_type' => ['required', Rule::in(['beton', 'tanam', 'base_plate', 'lainnya'])],
+            'ornament_type' => ['required', Rule::in(['single_arm', 'double_arm', 'high_mast'])],
+            'lamp_type' => ['required', Rule::in(['led', 'hps', 'son_t', 'mercury', 'lainnya'])],
+            'lamp_status' => ['required', Rule::in(['menyala', 'redup', 'berkedip', 'mati'])],
+            'lamp_house_condition' => ['required', Rule::in(['pecah', 'kusam', 'kemasukan_air'])],
+            'light_point_count' => ['required', 'integer', 'min:1', 'max:1000'],
+            'kwh_meter' => ['required', Rule::in(['sudah_ada', 'belum'])],
             'ownership' => ['required', Rule::in(['dpu_kp', 'dishub', 'pln', 'lainnya'])],
-            'pln_transformer' => ['nullable', 'string', 'max:160'],
             'photos' => ['sometimes', 'array', 'max:10'],
             'photos.*' => ['image', 'max:5120'],
             'photo' => ['sometimes', 'nullable', 'image', 'max:5120'],

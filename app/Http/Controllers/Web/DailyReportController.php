@@ -55,7 +55,7 @@ class DailyReportController extends Controller
         Pole::query()
             ->whereKey($input['pole_id'])
             ->update([
-                'condition' => 'rusak',
+                'condition' => 'keropos',
                 'updated_by_id' => $request->user()->id,
             ]);
 

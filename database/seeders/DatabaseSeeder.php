@@ -59,9 +59,12 @@ class DatabaseSeeder extends Seeder
             ['kapanewon' => 'Wonosari', 'street' => 'Jalan Siyono-Wonosari', 'lat' => -7.9492, 'lon' => 110.5891],
             ['kapanewon' => 'Karangmojo', 'street' => 'Jalan Bejiharjo-Karangmojo', 'lat' => -7.9286, 'lon' => 110.6492],
         ];
-        $conditions = ['baik', 'baik', 'baik', 'rusak', 'perbaikan'];
-        $poleTypes = ['lurus', 'lengkung', 'tanpa_tiang', 'lainnya'];
-        $foundations = ['beton', 'tanam', 'base_plate', 'lainnya'];
+        $conditions = ['kokoh', 'kokoh', 'kokoh', 'keropos', 'miring', 'berkarat'];
+        $poleTypes = ['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln'];
+        $ornamentTypes = ['single_arm', 'double_arm', 'high_mast'];
+        $lampTypes = ['led', 'hps', 'son_t', 'mercury', 'lainnya'];
+        $lampStatuses = ['menyala', 'menyala', 'menyala', 'mati', 'redup', 'berkedip'];
+        $lampHouseConditions = ['kusam', 'kusam', 'kemasukan_air', 'pecah'];
         $ownerships = ['dpu_kp', 'dishub', 'pln', 'lainnya'];
         $powerUsages = [60, 80, 90, 100, 120, 150];
 
@@ -71,7 +74,10 @@ class DatabaseSeeder extends Seeder
             $locations,
             $conditions,
             $poleTypes,
-            $foundations,
+            $ornamentTypes,
+            $lampTypes,
+            $lampStatuses,
+            $lampHouseConditions,
             $ownerships,
             $powerUsages,
         ) {
@@ -87,11 +93,14 @@ class DatabaseSeeder extends Seeder
                 'power_usage' => $this->pick($powerUsages),
                 'condition' => $this->pick($conditions),
                 'pole_type' => $poleType,
-                'height' => $poleType === 'tanpa_tiang' ? null : $this->randomFloat(5.5, 10.5, 1),
-                'span_length' => $this->randomFloat(18, 42, 1),
-                'foundation_type' => $this->pick($foundations),
+                'height' => $poleType === 'menempel_tiang_pln' ? null : $this->randomFloat(5.5, 10.5, 1),
+                'ornament_type' => $this->pick($ornamentTypes),
+                'lamp_type' => $this->pick($lampTypes),
+                'lamp_status' => $this->pick($lampStatuses),
+                'lamp_house_condition' => $this->pick($lampHouseConditions),
+                'light_point_count' => mt_rand(1, 4),
+                'kwh_meter' => $number % 3 === 0 ? 'belum' : 'sudah_ada',
                 'ownership' => $this->pick($ownerships),
-                'pln_transformer' => sprintf('TR-GK-%02d', (($number - 1) % 18) + 1),
                 'photo_url' => null,
                 'notes' => "Data sample area Kabupaten Gunungkidul, Kapanewon {$location['kapanewon']}.",
             ];
@@ -119,8 +128,8 @@ class DatabaseSeeder extends Seeder
             'Validasi koordinat dan lokasi selesai.',
             'Lampu redup, perlu pemeriksaan armatur.',
             'Panel bawah perlu dikunci ulang.',
-            'Tiang dalam kondisi baik saat survey.',
-            'Bentangan kabel perlu dicek ulang.',
+            'Tiang dalam kondisi kokoh saat survey.',
+            'Kondisi rumah lampu perlu dicek ulang.',
             'Foto aset perlu diperbarui pada kunjungan berikutnya.',
         ];
 

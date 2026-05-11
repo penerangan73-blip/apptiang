@@ -39,7 +39,7 @@ class MapPageController extends Controller
     {
         $validated = $request->validate([
             'query' => ['sometimes', 'nullable', 'string', 'max:120'],
-            'condition' => ['sometimes', 'nullable', Rule::in(['baik', 'rusak', 'perbaikan'])],
+            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh'])],
             'summary' => ['sometimes', 'boolean'],
         ]);
         $summary = $request->boolean('summary');
@@ -66,10 +66,13 @@ class MapPageController extends Controller
                 'condition',
                 'pole_type',
                 'height',
-                'span_length',
-                'foundation_type',
+                'ornament_type',
+                'lamp_type',
+                'lamp_status',
+                'lamp_house_condition',
+                'light_point_count',
+                'kwh_meter',
                 'ownership',
-                'pln_transformer',
                 'photo_url',
                 'notes',
             ])

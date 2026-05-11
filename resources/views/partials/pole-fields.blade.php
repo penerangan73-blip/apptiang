@@ -34,59 +34,109 @@
 </div>
 <div>
     <label class="label">Latitude</label>
-    <input id="{{ $prefix }}-latitude" class="field" name="latitude" type="number" step="0.0000001" value="{{ $poleValue('latitude', -7.965) }}" required>
+    <input id="{{ $prefix }}-latitude" class="field no-spinner" name="latitude" type="number" step="0.0000001" value="{{ $poleValue('latitude', -7.965) }}" required>
 </div>
 <div>
     <label class="label">Longitude</label>
-    <input id="{{ $prefix }}-longitude" class="field" name="longitude" type="number" step="0.0000001" value="{{ $poleValue('longitude', 110.603) }}" required>
+    <input id="{{ $prefix }}-longitude" class="field no-spinner" name="longitude" type="number" step="0.0000001" value="{{ $poleValue('longitude', 110.603) }}" required>
 </div>
-<div>
-    <label class="label">Daya Pakai</label>
-    <input class="field" name="power_usage" type="number" min="1" value="{{ $poleValue('power_usage', 40) }}" required>
+<div class="md:col-span-2 rounded-xl border border-white/10 bg-white/5 p-4">
+    <div class="mb-4">
+        <h3 class="text-sm font-black uppercase tracking-wide text-cyan-400">Parameter Teknis Lampu (Luminer)</h3>
+    </div>
+    <div class="grid gap-4 md:grid-cols-2">
+        <div>
+            <label class="label">Daya Lampu</label>
+            <input class="field" name="power_usage" type="number" min="1" value="{{ $poleValue('power_usage', 40) }}" required>
+        </div>
+        <div>
+            <label class="label">Jenis Lampu</label>
+            <select class="field" name="lamp_type" required>
+                <option value="" @selected($poleValue('lamp_type') === '')>Pilihan</option>
+                @foreach (['led' => 'LED', 'hps' => 'HPS (Sodium Tekanan Tinggi)', 'son_t' => 'SON-T', 'mercury' => 'Mercury', 'lainnya' => 'Lainnya'] as $value => $text)
+                    <option value="{{ $value }}" @selected($poleValue('lamp_type') === $value)>{{ $text }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="label">Status Lampu</label>
+            <select class="field" name="lamp_status" required>
+                <option value="" @selected($poleValue('lamp_status') === '')>Pilihan</option>
+                @foreach (['menyala' => 'Menyala', 'redup' => 'Redup', 'berkedip' => 'Berkedip', 'mati' => 'Mati'] as $value => $text)
+                    <option value="{{ $value }}" @selected($poleValue('lamp_status') === $value)>{{ $text }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="label">Kondisi Rumah Lampu</label>
+            <select class="field" name="lamp_house_condition" required>
+                <option value="" @selected($poleValue('lamp_house_condition') === '')>Pilihan</option>
+                @foreach (['pecah' => 'Pecah', 'kusam' => 'Kusam', 'kemasukan_air' => 'Kemasukan Air'] as $value => $text)
+                    <option value="{{ $value }}" @selected($poleValue('lamp_house_condition') === $value)>{{ $text }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="label">Jumlah Titik Lampu</label>
+            <input class="field" name="light_point_count" type="number" min="1" value="{{ $poleValue('light_point_count', 1) }}" required>
+        </div>
+    </div>
 </div>
-<div>
-    <label class="label">Kondisi</label>
-    <select class="field" name="condition" required>
-        @foreach (['baik' => 'Baik', 'rusak' => 'Rusak', 'perbaikan' => 'Perbaikan'] as $value => $text)
-            <option value="{{ $value }}" @selected($poleValue('condition', 'baik') === $value)>{{ $text }}</option>
-        @endforeach
-    </select>
-</div>
-<div>
-    <label class="label">Jenis Tiang</label>
-    <select class="field" name="pole_type" required>
-        @foreach (['lurus' => 'Lurus', 'lengkung' => 'Lengkung', 'tanpa_tiang' => 'Tanpa tiang', 'lainnya' => 'Lainnya'] as $value => $text)
-            <option value="{{ $value }}" @selected($poleValue('pole_type', 'lurus') === $value)>{{ $text }}</option>
-        @endforeach
-    </select>
-</div>
-<div>
-    <label class="label">Jenis Fondasi</label>
-    <select class="field" name="foundation_type" required>
-        @foreach (['beton' => 'Beton', 'tanam' => 'Tanam', 'base_plate' => 'Base plate', 'lainnya' => 'Lainnya'] as $value => $text)
-            <option value="{{ $value }}" @selected($poleValue('foundation_type', 'beton') === $value)>{{ $text }}</option>
-        @endforeach
-    </select>
+<div class="md:col-span-2 rounded-xl border border-white/10 bg-white/5 p-4">
+    <div class="mb-4">
+        <h3 class="text-sm font-black uppercase tracking-wide text-cyan-400">Parameter Fisik (Konstruksi)</h3>
+    </div>
+    <div class="grid gap-4 md:grid-cols-2">
+        <div>
+            <label class="label">Jenis Tiang</label>
+            <select class="field" name="pole_type" required>
+                <option value="" @selected($poleValue('pole_type') === '')>Pilihan</option>
+                @foreach (['tiang_baja_galvanis' => 'Tiang Baja (Galvanis)', 'tiang_beton' => 'Tiang Beton', 'menempel_tiang_pln' => 'Menempel Tiang PLN'] as $value => $text)
+                    <option value="{{ $value }}" @selected($poleValue('pole_type') === $value)>{{ $text }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="label">Tinggi Tiang</label>
+            <input class="field" name="height" type="number" min="0" step="0.01" value="{{ $poleValue('height') }}">
+        </div>
+        <div>
+            <label class="label">Tipe Ornamen</label>
+            <select class="field" name="ornament_type" required>
+                <option value="" @selected($poleValue('ornament_type') === '')>Pilihan</option>
+                @foreach (['single_arm' => 'Single Arm', 'double_arm' => 'Double Arm', 'high_mast' => 'High Mast'] as $value => $text)
+                    <option value="{{ $value }}" @selected($poleValue('ornament_type') === $value)>{{ $text }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="label">Kondisi Tiang</label>
+            <select class="field" name="condition" required>
+                <option value="" @selected($poleValue('condition') === '')>Pilihan</option>
+                @foreach (['keropos' => 'Keropos', 'miring' => 'Miring', 'berkarat' => 'Berkarat', 'kokoh' => 'Kokoh'] as $value => $text)
+                    <option value="{{ $value }}" @selected($poleValue('condition') === $value)>{{ $text }}</option>
+                @endforeach
+            </select>
+        </div>
+    </div>
 </div>
 <div>
     <label class="label">Kepemilikan</label>
     <select class="field" name="ownership" required>
+        <option value="" @selected($poleValue('ownership') === '')>Pilihan</option>
         @foreach (['dpu_kp' => 'DPU KP', 'dishub' => 'Dishub', 'pln' => 'PLN', 'lainnya' => 'Lainnya'] as $value => $text)
-            <option value="{{ $value }}" @selected($poleValue('ownership', 'dpu_kp') === $value)>{{ $text }}</option>
+            <option value="{{ $value }}" @selected($poleValue('ownership') === $value)>{{ $text }}</option>
         @endforeach
     </select>
 </div>
 <div>
-    <label class="label">Tinggi</label>
-    <input class="field" name="height" type="number" min="0" step="0.01" value="{{ $poleValue('height') }}">
-</div>
-<div>
-    <label class="label">Jarak Bentang</label>
-    <input class="field" name="span_length" type="number" min="0" step="0.01" value="{{ $poleValue('span_length') }}">
-</div>
-<div>
-    <label class="label">Trafo PLN</label>
-    <input class="field" name="pln_transformer" value="{{ $poleValue('pln_transformer') }}">
+    <label class="label">KWH Meter</label>
+    <select class="field" name="kwh_meter" required>
+        <option value="" @selected($poleValue('kwh_meter') === '')>Pilihan</option>
+        @foreach (['sudah_ada' => 'Sudah Ada', 'belum' => 'Belum'] as $value => $text)
+            <option value="{{ $value }}" @selected($poleValue('kwh_meter') === $value)>{{ $text }}</option>
+        @endforeach
+    </select>
 </div>
 <div>
     <label class="label">Foto</label>

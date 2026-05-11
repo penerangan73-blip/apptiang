@@ -9,7 +9,7 @@
                 <p class="text-sm text-slate-400">Titik aset berdasarkan filter jalan dan kondisi.</p>
             </div>
             <button type="button" id="toggle-map-layers" class="btn btn-muted inline-flex w-full justify-center px-3 py-2 text-xs sm:w-auto">
-                <i data-lucide="layers" class="icon"></i> Tampilkan 3 Layer
+                <i data-lucide="layers" class="icon"></i> Tampilkan 2 Layer
             </button>
         </div>
         <div class="p-0 sm:p-5">
@@ -39,7 +39,7 @@
     window.pjuCanManagePoles = @json($canManagePoles);
     @include('partials.pole-scripts')
 
-    const markerColors = { baik: '#059669', rusak: '#e11d48', perbaikan: '#d97706' };
+    const markerColors = { kokoh: '#059669', keropos: '#e11d48', miring: '#d97706', berkarat: '#b45309' };
     const mainMaps = {};
     const mapMarkerUrl = @json(route('map.markers', request()->only(['query', 'condition'])));
 
@@ -107,14 +107,17 @@
                 </div>
             </div>
             <div class="mt-4 grid grid-cols-2 gap-3">
-                ${detailBlock('Daya', `${pole.power_usage} W`)}
+                ${detailBlock('Daya Lampu', `${pole.power_usage} W`)}
                 ${detailBlock('Koordinat', `${Number(pole.latitude).toFixed(4)}, ${Number(pole.longitude).toFixed(4)}`)}
-                ${detailBlock('Jenis', formatOption(pole.pole_type))}
-                ${detailBlock('Tinggi', pole.height ? `${pole.height} m` : '-')}
-                ${detailBlock('Bentangan', pole.span_length ? `${pole.span_length} m` : '-')}
-                ${detailBlock('Pondasi', formatOption(pole.foundation_type))}
+                ${detailBlock('Jenis Tiang', formatOption(pole.pole_type))}
+                ${detailBlock('Tinggi Tiang', pole.height ? `${pole.height} m` : '-')}
+                ${detailBlock('Tipe Ornamen', formatOption(pole.ornament_type))}
+                ${detailBlock('Jenis Lampu', formatLampType(pole.lamp_type))}
+                ${detailBlock('Status Lampu', formatOption(pole.lamp_status))}
+                ${detailBlock('Kondisi Rumah Lampu', formatOption(pole.lamp_house_condition))}
+                ${detailBlock('Jumlah Titik Lampu', pole.light_point_count || '-')}
+                ${detailBlock('KWH Meter', pole.kwh_meter ? formatOption(pole.kwh_meter) : '-')}
                 ${detailBlock('Kepemilikan', formatOwnership(pole.ownership))}
-                ${detailBlock('Trafo PLN', pole.pln_transformer || '-')}
             </div>
             ${pole.notes ? `<div class="mt-3 rounded-xl border border-white/10 bg-white/5 p-4"><p class="text-xs font-black uppercase tracking-widest text-slate-400">Keterangan</p><p class="mt-2 text-sm leading-6 text-slate-300">${escapeHtml(pole.notes)}</p></div>` : ''}`;
     }
@@ -135,10 +138,12 @@
                 </div>
                 <p class="mt-1 text-sm leading-5 text-slate-300">${escapeHtml(pole.street_name)}</p>
                 <dl class="mt-3 grid grid-cols-[72px_1fr] gap-x-3 gap-y-1.5 text-sm">
-                    <dt class="font-bold text-slate-500">Daya</dt>
+                    <dt class="font-bold text-slate-500">Daya Lampu</dt>
                     <dd class="font-semibold text-slate-100">${pole.power_usage} W</dd>
                     <dt class="font-bold text-slate-500">Jenis</dt>
                     <dd class="font-semibold text-slate-100">${escapeHtml(formatOption(pole.pole_type))}</dd>
+                    <dt class="font-bold text-slate-500">Lampu</dt>
+                    <dd class="font-semibold text-slate-100">${escapeHtml(formatLampType(pole.lamp_type))} - ${escapeHtml(formatOption(pole.lamp_status))}</dd>
                     <dt class="font-bold text-slate-500">Koordinat</dt>
                     <dd class="font-semibold text-slate-100">${Number(pole.latitude).toFixed(5)}, ${Number(pole.longitude).toFixed(5)}</dd>
                 </dl>
@@ -157,11 +162,14 @@
         return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
     }
 
+    function formatLampType(value) {
+        return formatOption(value);
+    }
+
     // Shapefile layers
     const layerConfigs = [
         { id: 'administrasi-area', label: 'Administrasi Area', url: '/data/peta/administrasi_ar_340320240807001259.zip', style: { color: '#075985', fillColor: '#38bdf8', fillOpacity: 0.48, opacity: 0.95, weight: 1.4 }, hover: { fillOpacity: 0.68, weight: 2.8 } },
         { id: 'administrasi-garis', label: 'Batas Administrasi', url: '/data/peta/administrasi_ln_340320240806233638.zip', style: { color: '#0e7490', fillOpacity: 0, opacity: 0.95, weight: 1.6, dashArray: '4 3' }, hover: { opacity: 1, weight: 2.6 } },
-        { id: 'jalan', label: 'Jalan', url: '/data/peta/jalan_ln_340320240820002322.zip', style: { color: '#ef4444', fillOpacity: 0, opacity: 0.9, weight: 1.4 }, hover: { opacity: 1, weight: 2.4 } },
     ];
     const loadedLayers = [];
     let layerPromise = null, shpScriptPromise = null;
@@ -207,7 +215,7 @@
         try {
             const layers = await loadLayers();
             Object.values(mainMaps).forEach(m => addLayersToMap(m, layers));
-            if (btn) btn.innerHTML = layers.length ? '<i data-lucide="eye-off" class="icon"></i> Tutup 3 Layer' : '<i data-lucide="layers" class="icon"></i> Layer gagal';
+            if (btn) btn.innerHTML = layers.length ? '<i data-lucide="eye-off" class="icon"></i> Tutup 2 Layer' : '<i data-lucide="layers" class="icon"></i> Layer gagal';
             btn?.classList.toggle('btn-danger', layers.length > 0);
             btn?.classList.toggle('btn-muted', layers.length === 0);
         } catch {
@@ -245,7 +253,7 @@
         });
         const btn = document.getElementById('toggle-map-layers');
         if (btn) {
-            btn.innerHTML = '<i data-lucide="layers" class="icon"></i> Tampilkan 3 Layer';
+            btn.innerHTML = '<i data-lucide="layers" class="icon"></i> Tampilkan 2 Layer';
             btn.classList.remove('btn-danger');
             btn.classList.add('btn-muted');
         }
@@ -259,9 +267,31 @@
         }
         const p = feature.properties || {};
         const name = prop(p,'namobj')||prop(p,'desa')||prop(p,'wadmkd')||ml.label;
+        const village = prop(p,'desa')||prop(p,'wadmkd')||prop(p,'namobj')||'-';
         const dist = prop(p,'wadmkc')||prop(p,'kecamata_1');
         const reg = prop(p,'wadmkk')||prop(p,'kabupaten');
-        layer.bindPopup(`<div class="min-w-48"><p class="text-xs font-bold uppercase tracking-wide text-slate-400">${escapeHtml(ml.label)}</p><p class="text-base font-extrabold text-slate-100">${escapeHtml(name)}</p>${dist?`<p class="text-sm text-slate-700">Kecamatan ${escapeHtml(dist)}</p>`:''}${reg?`<p class="text-sm text-slate-300">${escapeHtml(reg)}</p>`:''}</div>`);
+        layer.bindPopup(`
+            <div class="p-3" style="width:min(320px, calc(100vw - 64px));">
+                <div class="border-b border-white/10 pb-3">
+                    <p class="text-xs font-black uppercase tracking-widest text-cyan-400">${escapeHtml(ml.label)}</p>
+                    <p class="mt-1 text-lg font-black leading-tight text-slate-100">${escapeHtml(name)}</p>
+                </div>
+                <dl class="mt-3 grid gap-2 text-sm">
+                    ${featureInfoRow('Desa', village)}
+                    ${featureInfoRow('Kecamatan', dist || '-')}
+                    ${featureInfoRow('Kabupaten', reg || '-')}
+                </dl>
+            </div>
+        `, { maxWidth: 380, className: 'pju-marker-popup' });
+    }
+
+    function featureInfoRow(label, value) {
+        return `
+            <div class="rounded-lg border border-white/10 bg-white/5 p-3">
+                <dt class="text-xs font-black uppercase tracking-widest text-slate-400">${escapeHtml(label)}</dt>
+                <dd class="mt-1 break-words font-extrabold text-slate-100">${escapeHtml(value)}</dd>
+            </div>
+        `;
     }
 
     function adminColor(f) {

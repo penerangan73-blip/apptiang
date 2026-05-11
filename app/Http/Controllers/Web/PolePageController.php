@@ -14,30 +14,27 @@ class PolePageController extends Controller
         $query = trim((string) $request->query('query', ''));
         $condition = $request->query('condition');
 
-        $poles = Pole::query()
-            ->with(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email'])
-            ->search($query)
-            ->condition($condition)
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
-
         $allPoles = Pole::query()
             ->select(['id', 'customer_id', 'street_name'])
             ->latest()
             ->get();
 
-        $dialogPoles = $poles->getCollection()
-            ->unique('id')
+        $years = Pole::query()
+            ->whereNotNull('created_at')
+            ->latest('created_at')
+            ->pluck('created_at')
+            ->map(fn ($date) => optional($date)->year)
+            ->filter()
+            ->unique()
             ->values();
 
         $user = $request->user();
 
         return view('pages.poles.index', [
-            'poles' => $poles,
             'allPoles' => $allPoles,
-            'dialogPoles' => $dialogPoles,
+            'years' => $years,
             'query' => $query,
+            'year' => $request->query('year'),
             'condition' => $condition,
             'user' => $user,
             'canManagePoles' => in_array($user->role, ['superadmin', 'surveyor'], true),

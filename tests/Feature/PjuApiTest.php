@@ -41,6 +41,12 @@ class PjuApiTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.created_by.email', 'user@pju.local');
+
+        $this->withToken($token)
+            ->getJson('/api/poles?query=sudah ada')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.kwh_meter', 'sudah_ada');
     }
 
     public function test_poles_can_be_created_and_updated(): void
@@ -74,10 +80,10 @@ class PjuApiTest extends TestCase
         $this->flushHeaders()
             ->patchJson('/api/poles/'.$created->json('data.id'), [
                 ...$this->polePayload(),
-                'condition' => 'perbaikan',
+                'condition' => 'berkarat',
             ])
             ->assertOk()
-            ->assertJsonPath('data.condition', 'perbaikan')
+            ->assertJsonPath('data.condition', 'berkarat')
             ->assertJsonPath('data.created_by.email', 'surveyor@pju.local')
             ->assertJsonPath('data.updated_by.email', 'superadmin@pju.local');
 
@@ -111,7 +117,7 @@ class PjuApiTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.notes', 'Lampu mati total.');
 
-        $this->assertSame('rusak', $pole->fresh()->condition);
+        $this->assertSame('keropos', $pole->fresh()->condition);
         $this->assertSame($user->id, $pole->fresh()->updated_by_id);
         $this->assertNotEmpty(Storage::disk('public')->files('reports'));
     }
@@ -297,13 +303,16 @@ class PjuApiTest extends TestCase
             'latitude' => -6.21462,
             'longitude' => 106.82137,
             'power_usage' => 90,
-            'condition' => 'baik',
-            'pole_type' => 'lurus',
+            'condition' => 'kokoh',
+            'pole_type' => 'tiang_baja_galvanis',
             'height' => 7,
-            'span_length' => 25,
-            'foundation_type' => 'beton',
+            'ornament_type' => 'single_arm',
+            'lamp_type' => 'led',
+            'lamp_status' => 'menyala',
+            'lamp_house_condition' => 'kusam',
+            'light_point_count' => 1,
+            'kwh_meter' => 'sudah_ada',
             'ownership' => 'dpu_kp',
-            'pln_transformer' => 'TR-TST-01',
             'notes' => 'Catatan test.',
         ];
     }
