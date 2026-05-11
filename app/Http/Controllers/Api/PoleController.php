@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\DailyReport;
 use App\Models\Pole;
+use App\Support\ImageStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -111,8 +112,8 @@ class PoleController extends Controller
             'kwh_meter' => ['required', Rule::in(['sudah_ada', 'belum'])],
             'ownership' => ['required', Rule::in(['dpu_kp', 'dishub', 'pln', 'lainnya'])],
             'photos' => ['sometimes', 'array', 'max:10'],
-            'photos.*' => ['image', 'max:5120'],
-            'photo' => ['sometimes', 'nullable', 'image', 'max:5120'],
+            'photos.*' => ['image', 'max:10240'],
+            'photo' => ['sometimes', 'nullable', 'image', 'max:10240'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
     }
@@ -128,7 +129,7 @@ class PoleController extends Controller
         }
 
         foreach ($files as $file) {
-            $path = $file->store('poles', 'public');
+            $path = ImageStorage::store($file, 'poles');
             $photoUrl = asset("storage/{$path}");
 
             $pole->photos()->create([

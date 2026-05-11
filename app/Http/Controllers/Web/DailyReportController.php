@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DailyReport;
 use App\Models\DailyReportPhoto;
 use App\Models\Pole;
+use App\Support\ImageStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -18,8 +19,8 @@ class DailyReportController extends Controller
             'pole_id' => ['required', 'exists:poles,id'],
             'notes' => ['required', 'string', 'max:2000'],
             'photos' => ['sometimes', 'array', 'max:10'],
-            'photos.*' => ['image', 'max:5120'],
-            'photo' => ['sometimes', 'nullable', 'image', 'max:5120'],
+            'photos.*' => ['image', 'max:10240'],
+            'photo' => ['sometimes', 'nullable', 'image', 'max:10240'],
         ]);
 
         $files = $request->file('photos', []);
@@ -39,7 +40,7 @@ class DailyReportController extends Controller
         ]);
 
         foreach ($files as $file) {
-            $path = $file->store('reports', 'public');
+            $path = ImageStorage::store($file, 'reports');
             $photoUrl = asset("storage/{$path}");
 
             $report->photos()->create([

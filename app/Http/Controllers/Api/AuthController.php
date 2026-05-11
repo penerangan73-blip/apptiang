@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Support\ImageStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -52,11 +53,11 @@ class AuthController extends Controller
             'email' => ['required', 'email', 'max:160', Rule::unique('users', 'email')->ignore($user->id)],
             'phone' => ['nullable', 'string', 'max:40'],
             'address' => ['nullable', 'string', 'max:2000'],
-            'photo' => ['sometimes', 'nullable', 'image', 'max:5120'],
+            'photo' => ['sometimes', 'nullable', 'image', 'max:10240'],
         ]);
 
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('profiles', 'public');
+            $path = ImageStorage::store($request->file('photo'), 'profiles');
             $input['photo_url'] = asset("storage/{$path}");
         }
 
