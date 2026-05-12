@@ -68,7 +68,7 @@
                 @forelse ($poles as $pole)
                     <tr>
                         <td class="px-5 py-4">
-                            <p class="font-bold text-slate-100">{{ $pole->customer_id }}</p>
+                            <p class="min-w-44 whitespace-nowrap font-bold text-slate-100">{{ $pole->customer_id }}</p>
                         </td>
                         <td class="px-5 py-4 font-medium text-slate-300">
                             <span class="pju-location-cell" title="{{ $pole->street_name }}">{{ $pole->street_name }}</span>

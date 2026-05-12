@@ -322,7 +322,7 @@ class PoleController extends Controller
         }
 
         return [
-            'customer' => '<p class="font-bold text-slate-100">'.e($pole->customer_id).'</p>',
+            'customer' => '<p class="min-w-44 whitespace-nowrap font-bold text-slate-100">'.e($pole->customer_id).'</p>',
             'street_name' => '<span class="pju-location-cell font-medium text-slate-300" title="'.e($pole->street_name).'">'.e($pole->street_name).'</span>',
             'power_usage' => e(number_format((int) $pole->power_usage)).' Watt',
             'condition' => '<span class="badge badge-'.e((string) $pole->condition).'">'.e($this->formatOption($pole->condition)).'</span>',

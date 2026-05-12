@@ -187,7 +187,7 @@
             pageLength: 15,
             lengthMenu: [[10, 15, 25, 50, 100], [10, 15, 25, 50, 100]],
             columns: [
-                { data: 'customer', name: 'customer_id' },
+                { data: 'customer', name: 'customer_id', width: '220px' },
                 { data: 'street_name', name: 'street_name' },
                 { data: 'power_usage', name: 'power_usage' },
                 { data: 'condition', name: 'condition' },
