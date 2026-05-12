@@ -302,6 +302,18 @@
                     if (select) select.value = openButton.dataset.reportPole;
                 }
 
+                if (openButton.dataset.deleteUrl) {
+                    const form = dialog.querySelector('#pole-datatable-delete-form');
+                    const code = dialog.querySelector('#pole-datatable-delete-code');
+                    const number = dialog.querySelector('#pole-datatable-delete-number');
+                    const street = dialog.querySelector('#pole-datatable-delete-street');
+
+                    if (form) form.action = openButton.dataset.deleteUrl;
+                    if (code) code.textContent = openButton.dataset.deleteCode || '-';
+                    if (number) number.textContent = openButton.dataset.deleteCode || '-';
+                    if (street) street.textContent = openButton.dataset.deleteStreet || '-';
+                }
+
                 if (dialog.showModal) {
                     dialog.showModal();
                 } else {

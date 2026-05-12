@@ -11,7 +11,7 @@
             <div class="flex items-start justify-between gap-4 border-b border-white/10 p-5">
                 <div>
                     <h2 class="text-xl font-black">Tambah Data Tiang</h2>
-                    <p class="text-sm text-slate-400">Isi ID pelanggan, lokasi, spesifikasi, foto, dan keterangan aset PJU.</p>
+                    <p class="text-sm text-slate-400">Isi nomor tiang listrik, lokasi, spesifikasi, foto, dan keterangan aset PJU.</p>
                 </div>
                 <button type="button" class="btn btn-muted px-3 py-2" data-close-dialog><i data-lucide="x" class="icon"></i></button>
             </div>
@@ -95,7 +95,7 @@
                         </div>
                         <div class="min-w-0">
                             <h2 class="text-xl font-black text-slate-100">Hapus Data Tiang?</h2>
-                            <p class="mt-1 text-sm leading-6 text-slate-400">Data <span class="font-bold text-slate-200">{{ $pole->customer_id }}</span> akan dihapus. Laporan yang terkait dengan tiang ini juga dapat ikut terhapus.</p>
+                            <p class="mt-1 text-sm leading-6 text-slate-400">Data nomor tiang <span class="font-bold text-slate-200">{{ $pole->customer_id }}</span> akan dihapus. Laporan yang terkait dengan tiang ini juga dapat ikut terhapus.</p>
                         </div>
                     </div>
                 </div>

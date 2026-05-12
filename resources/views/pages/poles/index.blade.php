@@ -91,7 +91,7 @@
         <table id="poles-datatable" class="min-w-full divide-y divide-white/10 text-sm">
             <thead class="bg-white/5 text-left text-xs font-black uppercase tracking-wide text-slate-400">
                 <tr>
-                    <th class="px-5 py-3">ID Pelanggan</th>
+                    <th class="px-5 py-3">Nomor Tiang Listrik</th>
                     <th class="px-5 py-3">Lokasi</th>
                     <th class="px-5 py-3">Daya Lampu</th>
                     <th class="px-5 py-3">Kondisi Tiang</th>
@@ -114,6 +114,41 @@
 
 @section('dialogs')
     @include('partials.pole-dialogs', ['dialogPoles' => collect(), 'allPoles' => $allPoles])
+
+    @if ($canManagePoles)
+        <dialog id="pole-datatable-delete-dialog">
+            <div class="modal-card max-w-lg">
+                <div class="border-b border-white/10 p-5">
+                    <div class="flex items-start gap-4">
+                        <div class="flex size-12 shrink-0 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 text-red-400">
+                            <i data-lucide="alert-triangle" class="icon"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h2 class="text-xl font-black text-slate-100">Hapus Data Tiang?</h2>
+                            <p class="mt-1 text-sm leading-6 text-slate-400">Data nomor tiang <span id="pole-datatable-delete-code" class="font-bold text-slate-200">-</span> akan dihapus. Laporan yang terkait dengan tiang ini juga dapat ikut terhapus.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+                        <p id="pole-datatable-delete-number" class="font-bold text-slate-100">-</p>
+                        <p id="pole-datatable-delete-street" class="mt-1">-</p>
+                    </div>
+                    <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <button type="button" class="btn btn-muted" data-close-dialog>Batal</button>
+                        <form id="pole-datatable-delete-form" method="POST" action="#">
+                            @csrf
+                            @method('DELETE')
+                            <button class="btn btn-danger w-full sm:w-auto" type="submit">
+                                <i data-lucide="trash-2" class="icon"></i>
+                                Ya, Hapus
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </dialog>
+    @endif
 @endsection
 
 @section('page-scripts')

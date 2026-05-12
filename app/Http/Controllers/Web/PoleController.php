@@ -34,7 +34,7 @@ class PoleController extends Controller
             ->get();
 
         $headers = [
-            'ID Pelanggan',
+            'Nomor Tiang Listrik',
             'Nama Jalan',
             'Latitude',
             'Longitude',
@@ -155,6 +155,7 @@ class PoleController extends Controller
             $sortColumn = 'created_at';
         }
 
+        $canManagePoles = $this->canManagePoles($request);
         $poles = $filteredQuery
             ->orderBy($sortColumn, $orderDirection)
             ->when($sortColumn !== 'id', fn ($query) => $query->orderByDesc('id'))
@@ -165,7 +166,7 @@ class PoleController extends Controller
             'draw' => (int) ($validated['draw'] ?? 0),
             'recordsTotal' => $recordsTotal,
             'recordsFiltered' => $recordsFiltered,
-            'data' => $poles->map(fn (Pole $pole) => $this->datatableRow($pole))->values(),
+            'data' => $poles->map(fn (Pole $pole) => $this->datatableRow($pole, $canManagePoles))->values(),
         ]);
     }
 
@@ -312,8 +313,14 @@ class PoleController extends Controller
         }
     }
 
-    private function datatableRow(Pole $pole): array
+    private function datatableRow(Pole $pole, bool $canManagePoles): array
     {
+        $actions = '<a class="btn btn-muted px-3 py-2" href="'.e(route('poles.show', $pole)).'"><i data-lucide="eye" class="icon"></i> Detail</a>';
+
+        if ($canManagePoles) {
+            $actions .= '<button type="button" class="btn btn-danger px-3 py-2" data-open-dialog="pole-datatable-delete-dialog" data-delete-url="'.e(route('poles.destroy', $pole)).'" data-delete-code="'.e($pole->customer_id).'" data-delete-street="'.e($pole->street_name).'"><i data-lucide="trash-2" class="icon"></i> Hapus</button>';
+        }
+
         return [
             'customer' => '<p class="font-bold text-slate-100">'.e($pole->customer_id).'</p>',
             'street_name' => '<span class="pju-location-cell font-medium text-slate-300" title="'.e($pole->street_name).'">'.e($pole->street_name).'</span>',
@@ -331,8 +338,13 @@ class PoleController extends Controller
             'created_by' => e($pole->createdBy?->name ?? '-'),
             'updated_at' => e(optional($pole->updated_at)->format('H:i d-m-Y') ?: '-'),
             'updated_by' => e($pole->updatedBy?->name ?? '-'),
-            'actions' => '<div class="flex justify-end gap-2"><a class="btn btn-muted px-3 py-2" href="'.e(route('poles.show', $pole)).'"><i data-lucide="eye" class="icon"></i> Detail</a></div>',
+            'actions' => '<div class="flex justify-end gap-2">'.$actions.'</div>',
         ];
+    }
+
+    private function canManagePoles(Request $request): bool
+    {
+        return in_array($request->user()?->role, ['superadmin', 'surveyor'], true);
     }
 
     private function formatOption(?string $value): string

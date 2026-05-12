@@ -4,7 +4,7 @@
 @endphp
 
 <div>
-    <label class="label">ID Pelanggan</label>
+    <label class="label">Nomor Tiang Listrik</label>
     <input class="field" name="customer_id" value="{{ $poleValue('customer_id') }}" required>
 </div>
 <div class="md:col-span-2">

@@ -46,7 +46,7 @@
         <table class="min-w-full divide-y divide-white/10 text-sm">
             <thead class="bg-white/5 text-left text-xs font-black uppercase tracking-wide text-slate-400">
                 <tr>
-                    <th class="px-5 py-3">ID Pelanggan</th>
+                    <th class="px-5 py-3">Nomor Tiang Listrik</th>
                     <th class="px-5 py-3">Lokasi</th>
                     <th class="px-5 py-3">Daya Lampu</th>
                     <th class="px-5 py-3">Kondisi Tiang</th>
