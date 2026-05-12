@@ -43,6 +43,7 @@
 @php
     $label = fn ($value) => ucfirst(str_replace('_', ' ', (string) $value));
     $ownership = fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
+    $canDeletePoles = $user->role === 'superadmin';
 @endphp
 
 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -55,10 +56,12 @@
             <i data-lucide="download" class="icon"></i> Download Data
         </a>
         @if ($canManagePoles)
-            <button type="button" id="poles-bulk-delete-button" class="btn btn-danger hidden min-w-0 px-3 text-xs sm:px-4 sm:text-sm" data-open-dialog="pole-bulk-delete-dialog">
-                <i data-lucide="trash-2" class="icon"></i>
-                Hapus Terpilih
-            </button>
+            @if ($canDeletePoles)
+                <button type="button" id="poles-bulk-delete-button" class="btn btn-danger hidden min-w-0 px-3 text-xs sm:px-4 sm:text-sm" data-open-dialog="pole-bulk-delete-dialog">
+                    <i data-lucide="trash-2" class="icon"></i>
+                    Hapus Terpilih
+                </button>
+            @endif
             <button type="button" class="btn btn-primary min-w-0 px-3 text-xs sm:px-4 sm:text-sm" data-open-dialog="pole-create-dialog">
                 <i data-lucide="plus-circle" class="icon"></i> Tambah Tiang Baru
             </button>
@@ -95,7 +98,7 @@
         <table id="poles-datatable" class="min-w-full divide-y divide-white/10 text-sm">
             <thead class="bg-white/5 text-left text-xs font-black uppercase tracking-wide text-slate-400">
                 <tr>
-                    @if ($canManagePoles)
+                    @if ($canDeletePoles)
                         <th class="px-5 py-3">
                             <input id="poles-select-all" class="size-4 rounded border-white/20 bg-slate-900 text-cyan-500" type="checkbox" aria-label="Pilih semua data pada halaman ini">
                         </th>
@@ -124,7 +127,7 @@
 @section('dialogs')
     @include('partials.pole-dialogs', ['dialogPoles' => collect(), 'allPoles' => $allPoles])
 
-    @if ($canManagePoles)
+    @if ($canDeletePoles)
         <dialog id="pole-datatable-delete-dialog">
             <div class="modal-card max-w-lg">
                 <div class="border-b border-white/10 p-5">
@@ -216,7 +219,7 @@
         const bulkDeleteInputs = document.getElementById('pole-bulk-delete-inputs');
         const selectedPoleIds = new Set();
         const exportUrl = @json(route('poles.export'));
-        const canManagePoles = @json($canManagePoles);
+        const canDeletePoles = @json($canDeletePoles);
         const table = jQuery('#poles-datatable').DataTable({
             processing: true,
             serverSide: true,
@@ -231,11 +234,11 @@
                     data.year = yearSelect?.value || '';
                 },
             },
-            order: [[canManagePoles ? 13 : 12, 'desc']],
+            order: [[canDeletePoles ? 13 : 12, 'desc']],
             pageLength: 15,
             lengthMenu: [[10, 15, 25, 50, 100], [10, 15, 25, 50, 100]],
             columns: [
-                ...(canManagePoles ? [{ data: 'select', name: 'select', orderable: false, searchable: false }] : []),
+                ...(canDeletePoles ? [{ data: 'select', name: 'select', orderable: false, searchable: false }] : []),
                 { data: 'customer', name: 'customer_id', width: '220px' },
                 { data: 'street_name', name: 'street_name' },
                 { data: 'power_usage', name: 'power_usage' },
@@ -253,7 +256,7 @@
             ],
             columnDefs: [
                 { targets: '_all', className: 'px-5 py-4 align-top text-slate-300' },
-                { targets: [canManagePoles ? 14 : 13], className: 'px-5 py-4 align-top text-right' },
+                { targets: [canDeletePoles ? 14 : 13], className: 'px-5 py-4 align-top text-right' },
             ],
             language: {
                 emptyTable: 'Tidak ada tiang untuk filter ini.',

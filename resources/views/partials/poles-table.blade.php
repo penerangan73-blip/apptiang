@@ -39,6 +39,7 @@
     $ownership = $ownership ?? fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
     $showManageActions = $showManageActions ?? true;
     $showDirectionActions = $showDirectionActions ?? false;
+    $canDeletePoles = auth()->user()->role === 'superadmin';
 @endphp
 
 <div class="card overflow-hidden">
@@ -103,6 +104,8 @@
                                         <i data-lucide="edit-3" class="icon"></i>
                                         Edit
                                     </button>
+                                @endif
+                                @if ($canDeletePoles && $showManageActions)
                                     <button type="button" class="btn btn-danger px-3 py-2" data-open-dialog="pole-delete-{{ $pole->id }}">
                                         <i data-lucide="trash-2" class="icon"></i>
                                         Hapus

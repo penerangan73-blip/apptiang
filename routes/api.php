@@ -18,7 +18,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/poles', [PoleController::class, 'store'])->middleware('role:superadmin,surveyor');
     Route::patch('/poles/{pole}', [PoleController::class, 'update'])->middleware('role:superadmin,surveyor');
     Route::post('/poles/{pole}', [PoleController::class, 'update'])->middleware('role:superadmin,surveyor');
-    Route::delete('/poles/{pole}', [PoleController::class, 'destroy'])->middleware('role:superadmin,surveyor');
+    Route::delete('/poles/{pole}', [PoleController::class, 'destroy'])->middleware('role:superadmin');
 
     Route::get('/daily-reports', [DailyReportController::class, 'index']);
     Route::post('/daily-reports', [DailyReportController::class, 'store'])->middleware('role:superadmin,surveyor');

@@ -35,8 +35,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/poles', [PoleController::class, 'store'])->middleware('role:superadmin,surveyor')->name('poles.store');
     Route::get('/poles/export', [PoleController::class, 'export'])->name('poles.export');
     Route::put('/poles/{pole}', [PoleController::class, 'update'])->middleware('role:superadmin,surveyor')->name('poles.update');
-    Route::delete('/poles/bulk-delete', [PoleController::class, 'bulkDestroy'])->middleware('role:superadmin,surveyor')->name('poles.bulk-destroy');
-    Route::delete('/poles/{pole}', [PoleController::class, 'destroy'])->middleware('role:superadmin,surveyor')->name('poles.destroy');
+    Route::delete('/poles/bulk-delete', [PoleController::class, 'bulkDestroy'])->middleware('role:superadmin')->name('poles.bulk-destroy');
+    Route::delete('/poles/{pole}', [PoleController::class, 'destroy'])->middleware('role:superadmin')->name('poles.destroy');
     Route::delete('/pole-photos/{photo}', [PoleController::class, 'destroyPhoto'])->middleware('role:superadmin,surveyor')->name('pole-photos.destroy');
 
     // Daily Reports

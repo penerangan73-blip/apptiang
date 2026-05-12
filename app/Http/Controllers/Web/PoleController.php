@@ -121,10 +121,10 @@ class PoleController extends Controller
         $search = trim((string) data_get($validated, 'search.value', ''));
         $year = $validated['year'] ?? null;
         $condition = $validated['condition'] ?? null;
-        $canManagePoles = $this->canManagePoles($request);
-        $orderColumn = (int) data_get($validated, 'order.0.column', $canManagePoles ? 13 : 12);
+        $canDeletePoles = $this->canDeletePoles($request);
+        $orderColumn = (int) data_get($validated, 'order.0.column', $canDeletePoles ? 13 : 12);
         $orderDirection = data_get($validated, 'order.0.dir', 'desc') === 'asc' ? 'asc' : 'desc';
-        $orderMap = $canManagePoles
+        $orderMap = $canDeletePoles
             ? [
                 1 => 'customer_id',
                 2 => 'street_name',
@@ -181,7 +181,7 @@ class PoleController extends Controller
             'draw' => (int) ($validated['draw'] ?? 0),
             'recordsTotal' => $recordsTotal,
             'recordsFiltered' => $recordsFiltered,
-            'data' => $poles->map(fn (Pole $pole) => $this->datatableRow($pole, $canManagePoles))->values(),
+            'data' => $poles->map(fn (Pole $pole) => $this->datatableRow($pole, $canDeletePoles))->values(),
         ]);
     }
 
@@ -353,11 +353,11 @@ class PoleController extends Controller
         }
     }
 
-    private function datatableRow(Pole $pole, bool $canManagePoles): array
+    private function datatableRow(Pole $pole, bool $canDeletePoles): array
     {
         $actions = '<a class="btn btn-muted px-3 py-2" href="'.e(route('poles.show', $pole)).'"><i data-lucide="eye" class="icon"></i> Detail</a>';
 
-        if ($canManagePoles) {
+        if ($canDeletePoles) {
             $actions .= '<button type="button" class="btn btn-danger px-3 py-2" data-open-dialog="pole-datatable-delete-dialog" data-delete-url="'.e(route('poles.destroy', $pole)).'" data-delete-code="'.e($pole->customer_id).'" data-delete-street="'.e($pole->street_name).'"><i data-lucide="trash-2" class="icon"></i> Hapus</button>';
         }
 
@@ -381,7 +381,7 @@ class PoleController extends Controller
             'actions' => '<div class="flex justify-end gap-2">'.$actions.'</div>',
         ];
 
-        if ($canManagePoles) {
+        if ($canDeletePoles) {
             $row = [
                 'select' => '<input type="checkbox" class="pju-pole-select size-4 rounded border-white/20 bg-slate-900 text-cyan-500" value="'.e($pole->id).'" aria-label="Pilih '.e($pole->customer_id).'">',
             ] + $row;
@@ -390,9 +390,9 @@ class PoleController extends Controller
         return $row;
     }
 
-    private function canManagePoles(Request $request): bool
+    private function canDeletePoles(Request $request): bool
     {
-        return in_array($request->user()?->role, ['superadmin', 'surveyor'], true);
+        return $request->user()?->role === 'superadmin';
     }
 
     private function formatOption(?string $value): string
