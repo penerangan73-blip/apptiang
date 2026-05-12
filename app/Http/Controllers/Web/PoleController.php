@@ -121,24 +121,40 @@ class PoleController extends Controller
         $search = trim((string) data_get($validated, 'search.value', ''));
         $year = $validated['year'] ?? null;
         $condition = $validated['condition'] ?? null;
-        $orderColumn = (int) data_get($validated, 'order.0.column', 12);
+        $canManagePoles = $this->canManagePoles($request);
+        $orderColumn = (int) data_get($validated, 'order.0.column', $canManagePoles ? 13 : 12);
         $orderDirection = data_get($validated, 'order.0.dir', 'desc') === 'asc' ? 'asc' : 'desc';
-        $orderMap = [
-            0 => 'customer_id',
-            1 => 'street_name',
-            2 => 'power_usage',
-            3 => 'condition',
-            4 => 'pole_type',
-            5 => 'height',
-            6 => 'ornament_type',
-            7 => 'lamp_type',
-            8 => 'lamp_status',
-            9 => 'lamp_house_condition',
-            10 => 'light_point_count',
-            11 => 'kwh_meter',
-            12 => 'created_at',
-            13 => 'updated_at',
-        ];
+        $orderMap = $canManagePoles
+            ? [
+                1 => 'customer_id',
+                2 => 'street_name',
+                3 => 'power_usage',
+                4 => 'condition',
+                5 => 'pole_type',
+                6 => 'height',
+                7 => 'ornament_type',
+                8 => 'lamp_type',
+                9 => 'lamp_status',
+                10 => 'lamp_house_condition',
+                11 => 'light_point_count',
+                12 => 'kwh_meter',
+                13 => 'created_at',
+            ]
+            : [
+                0 => 'customer_id',
+                1 => 'street_name',
+                2 => 'power_usage',
+                3 => 'condition',
+                4 => 'pole_type',
+                5 => 'height',
+                6 => 'ornament_type',
+                7 => 'lamp_type',
+                8 => 'lamp_status',
+                9 => 'lamp_house_condition',
+                10 => 'light_point_count',
+                11 => 'kwh_meter',
+                12 => 'created_at',
+            ];
 
         $baseQuery = Pole::query();
         $filteredQuery = Pole::query()
@@ -155,7 +171,6 @@ class PoleController extends Controller
             $sortColumn = 'created_at';
         }
 
-        $canManagePoles = $this->canManagePoles($request);
         $poles = $filteredQuery
             ->orderBy($sortColumn, $orderDirection)
             ->when($sortColumn !== 'id', fn ($query) => $query->orderByDesc('id'))
@@ -218,7 +233,7 @@ class PoleController extends Controller
         $customerId = $pole->customer_id;
 
         try {
-            $pole->delete();
+            $this->deletePoleWithAssets($pole);
         } catch (\Throwable $exception) {
             report($exception);
 
@@ -226,6 +241,31 @@ class PoleController extends Controller
         }
 
         return back()->with('status', "Data {$customerId} berhasil dihapus.");
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:200'],
+            'ids.*' => ['integer', 'distinct', 'exists:poles,id'],
+        ]);
+
+        $poles = Pole::query()
+            ->with(['photos', 'reports.photos'])
+            ->whereIn('id', $validated['ids'])
+            ->get();
+
+        try {
+            foreach ($poles as $pole) {
+                $this->deletePoleWithAssets($pole);
+            }
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', 'Sebagian data gagal dihapus. Silakan coba lagi.');
+        }
+
+        return back()->with('status', $poles->count().' data tiang berhasil dihapus.');
     }
 
     public function destroyPhoto(PolePhoto $photo): RedirectResponse
@@ -321,7 +361,7 @@ class PoleController extends Controller
             $actions .= '<button type="button" class="btn btn-danger px-3 py-2" data-open-dialog="pole-datatable-delete-dialog" data-delete-url="'.e(route('poles.destroy', $pole)).'" data-delete-code="'.e($pole->customer_id).'" data-delete-street="'.e($pole->street_name).'"><i data-lucide="trash-2" class="icon"></i> Hapus</button>';
         }
 
-        return [
+        $row = [
             'customer' => '<p class="min-w-44 whitespace-nowrap font-bold text-slate-100">'.e($pole->customer_id).'</p>',
             'street_name' => '<span class="pju-location-cell font-medium text-slate-300" title="'.e($pole->street_name).'">'.e($pole->street_name).'</span>',
             'power_usage' => e(number_format((int) $pole->power_usage)).' Watt',
@@ -340,6 +380,14 @@ class PoleController extends Controller
             'updated_by' => e($pole->updatedBy?->name ?? '-'),
             'actions' => '<div class="flex justify-end gap-2">'.$actions.'</div>',
         ];
+
+        if ($canManagePoles) {
+            $row = [
+                'select' => '<input type="checkbox" class="pju-pole-select size-4 rounded border-white/20 bg-slate-900 text-cyan-500" value="'.e($pole->id).'" aria-label="Pilih '.e($pole->customer_id).'">',
+            ] + $row;
+        }
+
+        return $row;
     }
 
     private function canManagePoles(Request $request): bool
@@ -401,6 +449,23 @@ class PoleController extends Controller
     private function formatLampType(?string $value): string
     {
         return $this->formatOption($value);
+    }
+
+    private function deletePoleWithAssets(Pole $pole): void
+    {
+        $pole->loadMissing(['photos', 'reports.photos']);
+
+        $photoUrls = collect([$pole->photo_url])
+            ->merge($pole->photos->pluck('photo_url'))
+            ->merge($pole->reports->pluck('photo_url'))
+            ->merge($pole->reports->flatMap(fn (DailyReport $report) => $report->photos->pluck('photo_url')))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $pole->delete();
+
+        $photoUrls->each(fn (string $photoUrl) => $this->deleteStoredPhoto($photoUrl));
     }
 
     private function deleteStoredPhoto(string $photoUrl): void

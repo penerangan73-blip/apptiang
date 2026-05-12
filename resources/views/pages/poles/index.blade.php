@@ -55,6 +55,10 @@
             <i data-lucide="download" class="icon"></i> Download Data
         </a>
         @if ($canManagePoles)
+            <button type="button" id="poles-bulk-delete-button" class="btn btn-danger hidden min-w-0 px-3 text-xs sm:px-4 sm:text-sm" data-open-dialog="pole-bulk-delete-dialog">
+                <i data-lucide="trash-2" class="icon"></i>
+                Hapus Terpilih
+            </button>
             <button type="button" class="btn btn-primary min-w-0 px-3 text-xs sm:px-4 sm:text-sm" data-open-dialog="pole-create-dialog">
                 <i data-lucide="plus-circle" class="icon"></i> Tambah Tiang Baru
             </button>
@@ -91,6 +95,11 @@
         <table id="poles-datatable" class="min-w-full divide-y divide-white/10 text-sm">
             <thead class="bg-white/5 text-left text-xs font-black uppercase tracking-wide text-slate-400">
                 <tr>
+                    @if ($canManagePoles)
+                        <th class="px-5 py-3">
+                            <input id="poles-select-all" class="size-4 rounded border-white/20 bg-slate-900 text-cyan-500" type="checkbox" aria-label="Pilih semua data pada halaman ini">
+                        </th>
+                    @endif
                     <th class="px-5 py-3">Nomor Tiang Listrik</th>
                     <th class="px-5 py-3">Lokasi</th>
                     <th class="px-5 py-3">Daya Lampu</th>
@@ -148,6 +157,39 @@
                 </div>
             </div>
         </dialog>
+
+        <dialog id="pole-bulk-delete-dialog">
+            <div class="modal-card max-w-lg">
+                <div class="border-b border-white/10 p-5">
+                    <div class="flex items-start gap-4">
+                        <div class="flex size-12 shrink-0 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 text-red-400">
+                            <i data-lucide="alert-triangle" class="icon"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h2 class="text-xl font-black text-slate-100">Hapus Data Terpilih?</h2>
+                            <p class="mt-1 text-sm leading-6 text-slate-400"><span id="pole-bulk-delete-count" class="font-bold text-slate-200">0</span> data tiang akan dihapus. Semua laporan dan foto yang terkait juga ikut terhapus.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100">
+                        Pastikan data yang dipilih sudah benar. Proses ini tidak bisa dibatalkan dari aplikasi.
+                    </div>
+                    <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <button type="button" class="btn btn-muted" data-close-dialog>Batal</button>
+                        <form id="pole-bulk-delete-form" method="POST" action="{{ route('poles.bulk-destroy') }}">
+                            @csrf
+                            @method('DELETE')
+                            <div id="pole-bulk-delete-inputs"></div>
+                            <button class="btn btn-danger w-full sm:w-auto" type="submit">
+                                <i data-lucide="trash-2" class="icon"></i>
+                                Ya, Hapus Semua
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </dialog>
     @endif
 @endsection
 
@@ -168,7 +210,13 @@
         const resetButton = document.getElementById('poles-datatable-reset');
         const countLabel = document.getElementById('poles-datatable-count');
         const exportButton = document.getElementById('poles-export-button');
+        const selectAllCheckbox = document.getElementById('poles-select-all');
+        const bulkDeleteButton = document.getElementById('poles-bulk-delete-button');
+        const bulkDeleteCount = document.getElementById('pole-bulk-delete-count');
+        const bulkDeleteInputs = document.getElementById('pole-bulk-delete-inputs');
+        const selectedPoleIds = new Set();
         const exportUrl = @json(route('poles.export'));
+        const canManagePoles = @json($canManagePoles);
         const table = jQuery('#poles-datatable').DataTable({
             processing: true,
             serverSide: true,
@@ -183,10 +231,11 @@
                     data.year = yearSelect?.value || '';
                 },
             },
-            order: [[12, 'desc']],
+            order: [[canManagePoles ? 13 : 12, 'desc']],
             pageLength: 15,
             lengthMenu: [[10, 15, 25, 50, 100], [10, 15, 25, 50, 100]],
             columns: [
+                ...(canManagePoles ? [{ data: 'select', name: 'select', orderable: false, searchable: false }] : []),
                 { data: 'customer', name: 'customer_id', width: '220px' },
                 { data: 'street_name', name: 'street_name' },
                 { data: 'power_usage', name: 'power_usage' },
@@ -204,7 +253,7 @@
             ],
             columnDefs: [
                 { targets: '_all', className: 'px-5 py-4 align-top text-slate-300' },
-                { targets: [13], className: 'px-5 py-4 align-top text-right' },
+                { targets: [canManagePoles ? 14 : 13], className: 'px-5 py-4 align-top text-right' },
             ],
             language: {
                 emptyTable: 'Tidak ada tiang untuk filter ini.',
@@ -225,6 +274,7 @@
             drawCallback: function () {
                 const info = this.api().page.info();
                 if (countLabel) countLabel.textContent = `${Number(info.recordsDisplay || 0).toLocaleString('id-ID')} data`;
+                syncVisibleSelection();
                 if (window.lucide) lucide.createIcons();
             },
         });
@@ -262,8 +312,69 @@
             table.ajax.reload();
             searchInput.focus();
         });
+        document.getElementById('poles-datatable')?.addEventListener('change', (event) => {
+            const checkbox = event.target.closest('.pju-pole-select');
+            if (!checkbox) return;
+
+            if (checkbox.checked) {
+                selectedPoleIds.add(checkbox.value);
+            } else {
+                selectedPoleIds.delete(checkbox.value);
+            }
+
+            refreshBulkDeleteState();
+        });
+        selectAllCheckbox?.addEventListener('change', () => {
+            document.querySelectorAll('.pju-pole-select').forEach((checkbox) => {
+                checkbox.checked = selectAllCheckbox.checked;
+                if (checkbox.checked) {
+                    selectedPoleIds.add(checkbox.value);
+                } else {
+                    selectedPoleIds.delete(checkbox.value);
+                }
+            });
+            refreshBulkDeleteState();
+        });
+        bulkDeleteButton?.addEventListener('click', (event) => {
+            if (!selectedPoleIds.size) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+
+            if (bulkDeleteCount) bulkDeleteCount.textContent = Number(selectedPoleIds.size).toLocaleString('id-ID');
+            if (bulkDeleteInputs) {
+                bulkDeleteInputs.innerHTML = Array.from(selectedPoleIds)
+                    .map((id) => `<input type="hidden" name="ids[]" value="${escapeHtml(id)}">`)
+                    .join('');
+            }
+        });
         updateExportUrl();
         updateResetButton();
+
+        function syncVisibleSelection() {
+            document.querySelectorAll('.pju-pole-select').forEach((checkbox) => {
+                checkbox.checked = selectedPoleIds.has(checkbox.value);
+            });
+            refreshBulkDeleteState();
+        }
+
+        function refreshBulkDeleteState() {
+            bulkDeleteButton?.classList.toggle('hidden', selectedPoleIds.size === 0);
+            if (bulkDeleteButton) {
+                bulkDeleteButton.innerHTML = `<i data-lucide="trash-2" class="icon"></i> Hapus ${Number(selectedPoleIds.size).toLocaleString('id-ID')}`;
+            }
+
+            const visibleCheckboxes = Array.from(document.querySelectorAll('.pju-pole-select'));
+            const checkedVisibleCount = visibleCheckboxes.filter((checkbox) => checkbox.checked).length;
+
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = visibleCheckboxes.length > 0 && checkedVisibleCount === visibleCheckboxes.length;
+                selectAllCheckbox.indeterminate = checkedVisibleCount > 0 && checkedVisibleCount < visibleCheckboxes.length;
+            }
+
+            if (window.lucide) lucide.createIcons();
+        }
     }
 
     function debounce(callback, delay) {

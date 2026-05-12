@@ -8,6 +8,7 @@ use App\Models\Pole;
 use App\Support\ImageStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class PoleController extends Controller
@@ -81,7 +82,7 @@ class PoleController extends Controller
 
     public function destroy(Pole $pole): JsonResponse
     {
-        $pole->delete();
+        $this->deletePoleWithAssets($pole);
 
         return response()->json([
             'message' => 'Data tiang berhasil dihapus.',
@@ -153,5 +154,35 @@ class PoleController extends Controller
                 'sort_order' => $index,
             ]);
         }
+    }
+
+    private function deletePoleWithAssets(Pole $pole): void
+    {
+        $pole->loadMissing(['photos', 'reports.photos']);
+
+        $photoUrls = collect([$pole->photo_url])
+            ->merge($pole->photos->pluck('photo_url'))
+            ->merge($pole->reports->pluck('photo_url'))
+            ->merge($pole->reports->flatMap(fn (DailyReport $report) => $report->photos->pluck('photo_url')))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $pole->delete();
+
+        $photoUrls->each(fn (string $photoUrl) => $this->deleteStoredPhoto($photoUrl));
+    }
+
+    private function deleteStoredPhoto(string $photoUrl): void
+    {
+        $path = parse_url($photoUrl, PHP_URL_PATH) ?: '';
+        $storagePrefix = '/storage/';
+        $position = strpos($path, $storagePrefix);
+
+        if ($position === false) {
+            return;
+        }
+
+        Storage::disk('public')->delete(rawurldecode(substr($path, $position + strlen($storagePrefix))));
     }
 }
