@@ -1,4 +1,4 @@
-@extends('layouts.dashboard', ['pageTitle' => $pole->customer_id.' - Detail Tiang'])
+@extends('layouts.dashboard', ['pageTitle' => $pole->displayName().' - Detail Tiang'])
 
 @section('content')
 @php
@@ -33,6 +33,10 @@
         'redup' => 'Redup',
         'berkedip' => 'Berkedip',
         'mati' => 'Mati',
+        'rusak_pecah' => 'Rusak Pecah',
+        'tidak_ada_lampu' => 'Tidak Ada Lampu',
+        'caping' => 'Caping',
+        'konvensional' => 'Konvensional',
         'pecah' => 'Pecah',
         'kusam' => 'Kusam',
         'kemasukan_air' => 'Kemasukan Air',
@@ -40,7 +44,11 @@
         'belum' => 'Belum',
     ][$value] ?? ucfirst(str_replace('_', ' ', (string) $value));
     $ownership = fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
-    $poleMapData = $pole->only(['customer_id', 'street_name', 'latitude', 'longitude', 'power_usage', 'condition']);
+    $poleTitle = $pole->displayName();
+    $poleMapData = [
+        ...$pole->only(['customer_id', 'street_name', 'latitude', 'longitude', 'power_usage', 'condition']),
+        'display_name' => $poleTitle,
+    ];
 @endphp
 
 <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -50,7 +58,7 @@
             Kembali ke Data Tiang
         </a>
         <div class="mt-3 flex flex-wrap items-center gap-3">
-            <h2 class="break-words text-2xl font-black text-slate-100 sm:text-3xl">{{ $pole->customer_id }}</h2>
+            <h2 class="break-words text-2xl font-black text-slate-100 sm:text-3xl">{{ $poleTitle }}</h2>
             <span class="badge badge-{{ $pole->condition }}">{{ $label($pole->condition) }}</span>
         </div>
         <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-400">{{ $pole->street_name }}</p>
@@ -76,7 +84,7 @@
                 @include('partials.detail-item', ['label' => 'Daya Lampu', 'value' => number_format($pole->power_usage).' Watt'])
                 @include('partials.detail-item', ['label' => 'Jenis Tiang', 'value' => $label($pole->pole_type)])
                 @include('partials.detail-item', ['label' => 'Tinggi Tiang', 'value' => $pole->height ? $pole->height.' m' : '-'])
-                @include('partials.detail-item', ['label' => 'Status Lampu', 'value' => $label($pole->lamp_status)])
+                @include('partials.detail-item', ['label' => 'Kondisi Lampu', 'value' => $label($pole->lamp_status)])
             </div>
         </div>
 
@@ -91,6 +99,7 @@
                 @include('partials.detail-item', ['label' => 'Longitude', 'value' => number_format((float) $pole->longitude, 7)])
                 @include('partials.detail-item', ['label' => 'Tipe Ornamen', 'value' => $label($pole->ornament_type)])
                 @include('partials.detail-item', ['label' => 'Jenis Lampu', 'value' => $label($pole->lamp_type)])
+                @include('partials.detail-item', ['label' => 'Jenis Rumah Lampu', 'value' => $label($pole->lamp_house_type)])
                 @include('partials.detail-item', ['label' => 'Kondisi Rumah Lampu', 'value' => $label($pole->lamp_house_condition)])
                 @include('partials.detail-item', ['label' => 'Jumlah Titik Lampu', 'value' => number_format((int) $pole->light_point_count)])
                 @include('partials.detail-item', ['label' => 'KWH Meter', 'value' => $label($pole->kwh_meter) ?: '-'])
@@ -141,7 +150,7 @@
                                     @foreach ($reportPhotos->take(4) as $photo)
                                         <div class="group relative overflow-hidden rounded-lg border border-white/10 bg-white/5">
                                             <a href="{{ $photo->photo_url }}" target="_blank" class="block">
-                                                <img src="{{ $photo->photo_url }}" alt="Foto laporan {{ $pole->customer_id }}" class="h-20 w-full object-cover">
+                                                <img src="{{ $photo->photo_url }}" alt="Foto laporan {{ $poleTitle }}" class="h-20 w-full object-cover">
                                             </a>
                                             @if ($canManagePoles && isset($photo->id))
                                                 <form method="POST" action="{{ route('daily-report-photos.destroy', $photo) }}" class="absolute right-1.5 top-1.5">
@@ -190,7 +199,7 @@
                         @foreach ($polePhotos as $photo)
                             <div class="group relative overflow-hidden rounded-lg border border-white/10 bg-white/5">
                                 <a href="{{ $photo->photo_url }}" target="_blank" class="block">
-                                    <img src="{{ $photo->photo_url }}" alt="Foto {{ $pole->customer_id }}" class="max-h-[320px] w-full object-cover">
+                                    <img src="{{ $photo->photo_url }}" alt="Foto {{ $poleTitle }}" class="max-h-[320px] w-full object-cover">
                                 </a>
                                 @if ($canManagePoles && isset($photo->id))
                                     <form method="POST" action="{{ route('pole-photos.destroy', $photo) }}" class="absolute right-3 top-3">
@@ -260,7 +269,7 @@
         }).addTo(map).bindPopup(`
             <div class="p-3">
                 <div class="flex items-start justify-between gap-3 pr-7">
-                    <p class="truncate text-lg font-black text-slate-100">${escapeHtml(pole.customer_id)}</p>
+                    <p class="truncate text-lg font-black text-slate-100">${escapeHtml(pole.display_name || pole.customer_id)}</p>
                     <span class="badge badge-${pole.condition} mt-5 shrink-0">${escapeHtml(formatOption(pole.condition))}</span>
                 </div>
                 <p class="mt-1 text-sm leading-5 text-slate-300">${escapeHtml(pole.street_name)}</p>

@@ -111,7 +111,8 @@
                     <th class="px-5 py-3">Tinggi Tiang</th>
                     <th class="px-5 py-3">Tipe Ornamen</th>
                     <th class="px-5 py-3">Jenis Lampu</th>
-                    <th class="px-5 py-3">Status Lampu</th>
+                    <th class="px-5 py-3">Kondisi Lampu</th>
+                    <th class="px-5 py-3">Jenis Rumah Lampu</th>
                     <th class="px-5 py-3">Kondisi Rumah Lampu</th>
                     <th class="px-5 py-3">Jumlah Titik Lampu</th>
                     <th class="px-5 py-3">KWH Meter</th>
@@ -234,7 +235,7 @@
                     data.year = yearSelect?.value || '';
                 },
             },
-            order: [[canDeletePoles ? 13 : 12, 'desc']],
+            order: [[canDeletePoles ? 14 : 13, 'desc']],
             pageLength: 15,
             lengthMenu: [[10, 15, 25, 50, 100], [10, 15, 25, 50, 100]],
             columns: [
@@ -248,6 +249,7 @@
                 { data: 'ornament_type', name: 'ornament_type' },
                 { data: 'lamp_type', name: 'lamp_type' },
                 { data: 'lamp_status', name: 'lamp_status' },
+                { data: 'lamp_house_type', name: 'lamp_house_type' },
                 { data: 'lamp_house_condition', name: 'lamp_house_condition' },
                 { data: 'light_point_count', name: 'light_point_count' },
                 { data: 'kwh_meter', name: 'kwh_meter' },
@@ -256,7 +258,7 @@
             ],
             columnDefs: [
                 { targets: '_all', className: 'px-5 py-4 align-top text-slate-300' },
-                { targets: [canDeletePoles ? 14 : 13], className: 'px-5 py-4 align-top text-right' },
+                { targets: [canDeletePoles ? 15 : 14], className: 'px-5 py-4 align-top text-right' },
             ],
             language: {
                 emptyTable: 'Tidak ada tiang untuk filter ini.',

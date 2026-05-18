@@ -44,7 +44,8 @@ class PoleController extends Controller
             'Tinggi Tiang',
             'Tipe Ornamen',
             'Jenis Lampu',
-            'Status Lampu',
+            'Kondisi Lampu',
+            'Jenis Rumah Lampu',
             'Kondisi Rumah Lampu',
             'Jumlah Titik Lampu',
             'KWH Meter',
@@ -65,7 +66,7 @@ class PoleController extends Controller
 
         foreach ($poles as $pole) {
             $row = [
-                $pole->customer_id,
+                $pole->displayName(),
                 $pole->street_name,
                 $pole->latitude,
                 $pole->longitude,
@@ -76,6 +77,7 @@ class PoleController extends Controller
                 $this->formatOption($pole->ornament_type),
                 $this->formatLampType($pole->lamp_type),
                 $this->formatOption($pole->lamp_status),
+                $this->formatOption($pole->lamp_house_type),
                 $this->formatOption($pole->lamp_house_condition),
                 $pole->light_point_count,
                 $this->formatOption($pole->kwh_meter),
@@ -122,7 +124,7 @@ class PoleController extends Controller
         $year = $validated['year'] ?? null;
         $condition = $validated['condition'] ?? null;
         $canDeletePoles = $this->canDeletePoles($request);
-        $orderColumn = (int) data_get($validated, 'order.0.column', $canDeletePoles ? 13 : 12);
+        $orderColumn = (int) data_get($validated, 'order.0.column', $canDeletePoles ? 14 : 13);
         $orderDirection = data_get($validated, 'order.0.dir', 'desc') === 'asc' ? 'asc' : 'desc';
         $orderMap = $canDeletePoles
             ? [
@@ -135,10 +137,11 @@ class PoleController extends Controller
                 7 => 'ornament_type',
                 8 => 'lamp_type',
                 9 => 'lamp_status',
-                10 => 'lamp_house_condition',
-                11 => 'light_point_count',
-                12 => 'kwh_meter',
-                13 => 'created_at',
+                10 => 'lamp_house_type',
+                11 => 'lamp_house_condition',
+                12 => 'light_point_count',
+                13 => 'kwh_meter',
+                14 => 'created_at',
             ]
             : [
                 0 => 'customer_id',
@@ -150,10 +153,11 @@ class PoleController extends Controller
                 6 => 'ornament_type',
                 7 => 'lamp_type',
                 8 => 'lamp_status',
-                9 => 'lamp_house_condition',
-                10 => 'light_point_count',
-                11 => 'kwh_meter',
-                12 => 'created_at',
+                9 => 'lamp_house_type',
+                10 => 'lamp_house_condition',
+                11 => 'light_point_count',
+                12 => 'kwh_meter',
+                13 => 'created_at',
             ];
 
         $baseQuery = Pole::query();
@@ -200,7 +204,7 @@ class PoleController extends Controller
             'pole_id' => $pole->id,
             'report_date' => now()->toDateString(),
             'photo_url' => $pole->photo_url,
-            'notes' => "Data pelanggan {$pole->customer_id} ditambahkan ke inventaris.",
+            'notes' => "Data pelanggan {$pole->displayName()} ditambahkan ke inventaris.",
         ]);
         $this->copyPolePhotosToReport($pole, $report);
 
@@ -221,7 +225,7 @@ class PoleController extends Controller
             'pole_id' => $pole->id,
             'report_date' => now()->toDateString(),
             'photo_url' => $pole->photo_url,
-            'notes' => "Data pelanggan {$pole->customer_id} diperbarui.",
+            'notes' => "Data pelanggan {$pole->displayName()} diperbarui.",
         ]);
         $this->copyPolePhotosToReport($pole, $report);
 
@@ -230,7 +234,7 @@ class PoleController extends Controller
 
     public function destroy(Pole $pole): RedirectResponse
     {
-        $customerId = $pole->customer_id;
+        $customerId = $pole->displayName();
 
         try {
             $this->deletePoleWithAssets($pole);
@@ -287,6 +291,9 @@ class PoleController extends Controller
     private function validatedPoleInput(Request $request, ?Pole $pole = null): array
     {
         $validated = $request->validate([
+            'route_type' => ['required', Rule::in(['sumber', 'sub'])],
+            'source_name' => ['required_if:route_type,sumber,sub', 'nullable', 'string', 'max:120'],
+            'sub_name' => ['required_if:route_type,sub', 'nullable', 'string', 'max:120'],
             'customer_id' => [
                 'required',
                 'string',
@@ -302,7 +309,8 @@ class PoleController extends Controller
             'height' => ['nullable', 'numeric', 'min:0', 'max:1000'],
             'ornament_type' => ['required', Rule::in(['single_arm', 'double_arm', 'high_mast'])],
             'lamp_type' => ['required', Rule::in(['led', 'hps', 'son_t', 'mercury', 'lainnya'])],
-            'lamp_status' => ['required', Rule::in(['menyala', 'redup', 'berkedip', 'mati'])],
+            'lamp_status' => ['required', Rule::in(['menyala', 'redup', 'berkedip', 'mati', 'rusak_pecah', 'tidak_ada_lampu'])],
+            'lamp_house_type' => ['required', Rule::in(['caping', 'konvensional'])],
             'lamp_house_condition' => ['required', Rule::in(['pecah', 'kusam', 'kemasukan_air'])],
             'light_point_count' => ['required', 'integer', 'min:1', 'max:1000'],
             'kwh_meter' => ['required', Rule::in(['sudah_ada', 'belum'])],
@@ -312,6 +320,12 @@ class PoleController extends Controller
             'photo' => ['sometimes', 'nullable', 'image', 'max:10240'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        if (($validated['route_type'] ?? null) === 'sumber') {
+            $validated['sub_name'] = null;
+        }
+
+        unset($validated['route_type']);
 
         return $validated;
     }
@@ -358,11 +372,11 @@ class PoleController extends Controller
         $actions = '<a class="btn btn-muted px-3 py-2" href="'.e(route('poles.show', $pole)).'"><i data-lucide="eye" class="icon"></i> Detail</a>';
 
         if ($canDeletePoles) {
-            $actions .= '<button type="button" class="btn btn-danger px-3 py-2" data-open-dialog="pole-datatable-delete-dialog" data-delete-url="'.e(route('poles.destroy', $pole)).'" data-delete-code="'.e($pole->customer_id).'" data-delete-street="'.e($pole->street_name).'"><i data-lucide="trash-2" class="icon"></i> Hapus</button>';
+            $actions .= '<button type="button" class="btn btn-danger px-3 py-2" data-open-dialog="pole-datatable-delete-dialog" data-delete-url="'.e(route('poles.destroy', $pole)).'" data-delete-code="'.e($pole->displayName()).'" data-delete-street="'.e($pole->street_name).'"><i data-lucide="trash-2" class="icon"></i> Hapus</button>';
         }
 
         $row = [
-            'customer' => '<p class="min-w-44 whitespace-nowrap font-bold text-slate-100">'.e($pole->customer_id).'</p>',
+            'customer' => '<p class="min-w-44 whitespace-nowrap font-bold text-slate-100">'.e($pole->displayName()).'</p>',
             'street_name' => '<span class="pju-location-cell font-medium text-slate-300" title="'.e($pole->street_name).'">'.e($pole->street_name).'</span>',
             'power_usage' => e(number_format((int) $pole->power_usage)).' Watt',
             'condition' => '<span class="badge badge-'.e((string) $pole->condition).'">'.e($this->formatOption($pole->condition)).'</span>',
@@ -371,6 +385,7 @@ class PoleController extends Controller
             'ornament_type' => e($this->formatOption($pole->ornament_type)),
             'lamp_type' => e($this->formatOption($pole->lamp_type)),
             'lamp_status' => e($this->formatOption($pole->lamp_status)),
+            'lamp_house_type' => e($this->formatOption($pole->lamp_house_type)),
             'lamp_house_condition' => e($this->formatOption($pole->lamp_house_condition)),
             'light_point_count' => e($pole->light_point_count ? number_format((int) $pole->light_point_count) : '-'),
             'kwh_meter' => e($this->formatOption($pole->kwh_meter)),
@@ -383,7 +398,7 @@ class PoleController extends Controller
 
         if ($canDeletePoles) {
             $row = [
-                'select' => '<input type="checkbox" class="pju-pole-select size-4 rounded border-white/20 bg-slate-900 text-cyan-500" value="'.e($pole->id).'" aria-label="Pilih '.e($pole->customer_id).'">',
+                'select' => '<input type="checkbox" class="pju-pole-select size-4 rounded border-white/20 bg-slate-900 text-cyan-500" value="'.e($pole->id).'" aria-label="Pilih '.e($pole->displayName()).'">',
             ] + $row;
         }
 
@@ -428,6 +443,10 @@ class PoleController extends Controller
             'redup' => 'Redup',
             'berkedip' => 'Berkedip',
             'mati' => 'Mati',
+            'rusak_pecah' => 'Rusak Pecah',
+            'tidak_ada_lampu' => 'Tidak Ada Lampu',
+            'caping' => 'Caping',
+            'konvensional' => 'Konvensional',
             'pecah' => 'Pecah',
             'kusam' => 'Kusam',
             'kemasukan_air' => 'Kemasukan Air',

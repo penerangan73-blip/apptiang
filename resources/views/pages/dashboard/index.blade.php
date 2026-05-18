@@ -121,7 +121,7 @@
         <div class="mt-4 max-h-[340px] space-y-3 overflow-y-auto pr-2 xl:max-h-[520px]">
             @forelse ($todayReports as $report)
                 <div class="rounded-lg border bg-slate-900/5 p-3">
-                    <p class="font-bold text-slate-100">{{ $report->pole?->customer_id ?? 'Tiang tidak ditemukan' }}</p>
+                    <p class="font-bold text-slate-100">{{ $report->pole?->displayName() ?? 'Tiang tidak ditemukan' }}</p>
                     <p class="text-sm text-slate-400">{{ $report->pole?->street_name }}</p>
                     <p class="mt-2 text-sm leading-6 text-slate-300">{{ $report->notes }}</p>
                 </div>
@@ -203,7 +203,7 @@
             <div class="p-3">
                 <div class="flex items-start justify-between gap-3 pr-7">
                     <div class="min-w-0">
-                        <p class="truncate text-lg font-black text-slate-100">${escapeHtml(pole.customer_id)}</p>
+                        <p class="truncate text-lg font-black text-slate-100">${escapeHtml(pole.display_name || pole.customer_id)}</p>
                     </div>
                     <span class="badge badge-${pole.condition} mt-5 shrink-0">${escapeHtml(formatOption(pole.condition))}</span>
                 </div>

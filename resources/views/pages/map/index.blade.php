@@ -8,9 +8,66 @@
                 <h3 class="flex items-center gap-2 text-lg font-black"><i data-lucide="map-pinned" class="icon text-cyan-400"></i> Peta Lokasi Tiang</h3>
                 <p class="text-sm text-slate-400">Titik aset berdasarkan filter jalan dan kondisi.</p>
             </div>
-            <button type="button" id="toggle-map-layers" class="btn btn-muted inline-flex w-full justify-center px-3 py-2 text-xs sm:w-auto">
-                <i data-lucide="layers" class="icon"></i> Tampilkan 2 Layer
-            </button>
+            <div class="flex flex-wrap gap-2 sm:items-center sm:justify-end">
+                <div class="relative">
+                    <button type="button" id="map-style-toggle" class="btn btn-muted inline-flex px-3 py-2 text-xs" aria-expanded="false" aria-controls="map-style-menu">
+                        <i data-lucide="map" class="icon"></i>
+                        <span id="map-style-label">Satelit</span>
+                        <i data-lucide="chevron-down" class="icon"></i>
+                    </button>
+                    <div id="map-style-menu" class="absolute left-0 z-[1000] mt-2 hidden w-56 overflow-hidden rounded-lg border border-white/10 bg-slate-950/95 p-1 shadow-2xl backdrop-blur sm:left-auto sm:right-0">
+                        <button type="button" class="w-full rounded-md px-3 py-2 text-left text-xs font-bold text-slate-200 transition hover:bg-white/10" data-map-style="standard">Standar</button>
+                        <button type="button" class="w-full rounded-md px-3 py-2 text-left text-xs font-bold text-slate-200 transition hover:bg-white/10" data-map-style="satellite">Satelit</button>
+                        <button type="button" class="w-full rounded-md px-3 py-2 text-left text-xs font-bold text-slate-200 transition hover:bg-white/10" data-map-style="topography">Topografi</button>
+                        <button type="button" class="w-full rounded-md px-3 py-2 text-left text-xs font-bold text-slate-200 transition hover:bg-white/10" data-map-style="streets">Jalan Detail</button>
+                    </div>
+                </div>
+                <button type="button" id="toggle-map-layers" class="btn btn-muted inline-flex px-3 py-2 text-xs">
+                    <i data-lucide="layers" class="icon"></i> Tampilkan 2 Layer
+                </button>
+                <div class="relative">
+                    <button type="button" id="map-download-toggle" class="btn btn-muted inline-flex px-3 py-2 text-xs" aria-expanded="false" aria-controls="map-download-menu">
+                        <i data-lucide="download" class="icon"></i>
+                        Download
+                        <i data-lucide="chevron-down" class="icon"></i>
+                    </button>
+                    <div id="map-download-menu" class="absolute left-0 z-[1000] mt-2 hidden w-44 overflow-hidden rounded-lg border border-white/10 bg-slate-950/95 p-1 shadow-2xl backdrop-blur sm:left-auto sm:right-0">
+                        <a class="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-bold text-slate-200 transition hover:bg-white/10" href="{{ route('map.export', ['format' => 'shp'] + request()->only(['query', 'condition'])) }}" data-map-download-link>
+                            <i data-lucide="download" class="icon"></i>
+                            SHP
+                        </a>
+                        <a class="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-bold text-slate-200 transition hover:bg-white/10" href="{{ route('map.export', ['format' => 'geojson'] + request()->only(['query', 'condition'])) }}" data-map-download-link>
+                            <i data-lucide="braces" class="icon"></i>
+                            GeoJSON
+                        </a>
+                        <a class="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-bold text-slate-200 transition hover:bg-white/10" href="{{ route('map.export', ['format' => 'kml'] + request()->only(['query', 'condition'])) }}" data-map-download-link>
+                            <i data-lucide="file-code-2" class="icon"></i>
+                            KML
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="border-b border-white/10 p-4 sm:p-5">
+            <form id="map-search-filter-form" method="GET" action="{{ route('map.index') }}" class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_auto_auto]">
+                <input class="field" name="query" value="{{ $query }}" placeholder="Cari nomor tiang atau alamat...">
+                <select class="field" id="map-search-condition" name="condition">
+                    <option value="">Semua kondisi tiang</option>
+                    @foreach (['kokoh' => 'Kokoh', 'keropos' => 'Keropos', 'miring' => 'Miring', 'berkarat' => 'Berkarat'] as $option => $text)
+                        <option value="{{ $option }}" @selected($condition === $option)>{{ $text }}</option>
+                    @endforeach
+                </select>
+                <button class="btn btn-primary justify-self-start" type="submit">
+                    <i data-lucide="search" class="icon"></i>
+                    Cari
+                </button>
+                @if ($query || $condition)
+                    <a class="btn btn-muted justify-self-start" href="{{ route('map.index') }}">
+                        <i data-lucide="x-circle" class="icon"></i>
+                        Reset
+                    </a>
+                @endif
+            </form>
         </div>
         <div class="p-0 sm:p-5">
             <div class="relative">
@@ -27,8 +84,24 @@
     </div>
 </div>
 
-@include('partials.search-filter', ['actionRoute' => 'map.index'])
-@include('partials.poles-table', ['poles' => $poles, 'showTimestamps' => false, 'showDirectionActions' => true])
+<div class="card overflow-hidden">
+    <button type="button" id="toggle-map-pole-list" class="flex w-full items-center justify-between gap-3 p-5 text-left transition hover:bg-white/5" aria-expanded="false" aria-controls="map-pole-list-panel">
+        <span>
+            <span class="flex items-center gap-2 text-lg font-black text-slate-100">
+                <i data-lucide="table-2" class="icon text-cyan-400"></i>
+                Daftar Tiang
+            </span>
+            <span class="mt-1 block text-sm text-slate-400">Lihat data hasil filter dalam bentuk tabel.</span>
+        </span>
+        <span class="btn btn-muted px-3 py-2 text-xs">
+            <i data-lucide="chevron-down" class="icon" id="map-pole-list-icon"></i>
+            <span id="map-pole-list-label">Tampilkan</span>
+        </span>
+    </button>
+    <div id="map-pole-list-panel" class="hidden border-t border-white/10">
+        @include('partials.poles-table', ['poles' => $poles, 'showTimestamps' => false, 'showDirectionActions' => true])
+    </div>
+</div>
 @endsection
 
 @section('dialogs')
@@ -42,17 +115,133 @@
     const markerColors = { kokoh: '#059669', keropos: '#e11d48', miring: '#d97706', berkarat: '#b45309' };
     const mainMaps = {};
     const mapMarkerUrl = @json(route('map.markers', request()->only(['query', 'condition'])));
+    const mapBaseLayers = {
+        standard: {
+            label: 'Standar',
+            url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            options: { maxZoom: 19, attribution: '&copy; OpenStreetMap' },
+        },
+        satellite: {
+            label: 'Satelit',
+            url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            options: { maxZoom: 19, attribution: 'Tiles &copy; Esri' },
+        },
+        topography: {
+            label: 'Topografi',
+            url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+            options: { maxZoom: 17, attribution: '&copy; OpenTopoMap &copy; OpenStreetMap' },
+        },
+        streets: {
+            label: 'Jalan Detail',
+            url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+            options: { maxZoom: 19, attribution: '&copy; OpenStreetMap &copy; CARTO' },
+        },
+    };
 
     initPoleMap('main-map', true);
     document.getElementById('toggle-map-layers')?.addEventListener('click', () => toggleMapLayers());
+    setupMapStyleMenu();
+    setupMapDownloadMenu();
+    setupMapPoleListToggle();
+    setupMapSearchFilter();
 
     function initPoleMap(id, interactive) {
         const el = document.getElementById(id);
         if (!el || mainMaps[id]) return;
         const map = L.map(el).setView([-7.965, 110.603], 11);
         mainMaps[id] = map;
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+        map._pjuBaseStyle = 'satellite';
+        map._pjuBaseLayer = createBaseLayer('satellite').addTo(map);
         loadPoleMarkers(map, interactive);
+    }
+
+    function createBaseLayer(style) {
+        const config = mapBaseLayers[style] || mapBaseLayers.standard;
+
+        return L.tileLayer(config.url, config.options);
+    }
+
+    function setupMapStyleMenu() {
+        const toggle = document.getElementById('map-style-toggle');
+        const menu = document.getElementById('map-style-menu');
+        const label = document.getElementById('map-style-label');
+
+        if (!toggle || !menu || !label) return;
+
+        toggle.addEventListener('click', () => {
+            const isOpen = !menu.classList.contains('hidden');
+            menu.classList.toggle('hidden', isOpen);
+            toggle.setAttribute('aria-expanded', String(!isOpen));
+        });
+
+        menu.querySelectorAll('[data-map-style]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const style = button.dataset.mapStyle || 'standard';
+                setMapStyle(style);
+                label.textContent = mapBaseLayers[style]?.label || mapBaseLayers.standard.label;
+                menu.classList.add('hidden');
+                toggle.setAttribute('aria-expanded', 'false');
+            });
+        });
+
+        document.addEventListener('click', (event) => {
+            if (toggle.contains(event.target) || menu.contains(event.target)) return;
+            menu.classList.add('hidden');
+            toggle.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    function setMapStyle(style) {
+        Object.values(mainMaps).forEach((map) => {
+            if (map._pjuBaseStyle === style) return;
+            if (map._pjuBaseLayer) map.removeLayer(map._pjuBaseLayer);
+            map._pjuBaseLayer = createBaseLayer(style).addTo(map);
+            map._pjuBaseStyle = style;
+        });
+    }
+
+    function setupMapDownloadMenu() {
+        const toggle = document.getElementById('map-download-toggle');
+        const menu = document.getElementById('map-download-menu');
+
+        if (!toggle || !menu) return;
+
+        toggle.addEventListener('click', () => {
+            const isOpen = !menu.classList.contains('hidden');
+            menu.classList.toggle('hidden', isOpen);
+            toggle.setAttribute('aria-expanded', String(!isOpen));
+        });
+
+        document.addEventListener('click', (event) => {
+            if (toggle.contains(event.target) || menu.contains(event.target)) return;
+            menu.classList.add('hidden');
+            toggle.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    function setupMapPoleListToggle() {
+        const toggle = document.getElementById('toggle-map-pole-list');
+        const panel = document.getElementById('map-pole-list-panel');
+        const label = document.getElementById('map-pole-list-label');
+        const icon = document.getElementById('map-pole-list-icon');
+
+        if (!toggle || !panel || !label || !icon) return;
+
+        toggle.addEventListener('click', () => {
+            const willOpen = panel.classList.contains('hidden');
+            panel.classList.toggle('hidden', !willOpen);
+            toggle.setAttribute('aria-expanded', String(willOpen));
+            label.textContent = willOpen ? 'Sembunyikan' : 'Tampilkan';
+            icon.setAttribute('data-lucide', willOpen ? 'chevron-up' : 'chevron-down');
+            window.lucide?.createIcons();
+        });
+    }
+
+    function setupMapSearchFilter() {
+        const form = document.getElementById('map-search-filter-form');
+        const conditionSelect = document.getElementById('map-search-condition');
+
+        conditionSelect?.addEventListener('change', () => form?.submit());
     }
 
     async function loadPoleMarkers(map, interactive) {
@@ -90,12 +279,12 @@
         const mapsUrl = googleMapsDirectionsUrl(pole);
         panel.innerHTML = `
             <div class="overflow-hidden rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-slate-900 to-slate-950 shadow-[0_14px_40px_rgba(6,182,212,0.08)]">
-                ${pole.photo_url ? `<img src="${pole.photo_url}" alt="Foto ${escapeHtml(pole.customer_id)}" class="h-36 w-full object-cover">` : ''}
+                ${pole.photo_url ? `<img src="${pole.photo_url}" alt="Foto ${escapeHtml(pole.display_name || pole.customer_id)}" class="h-36 w-full object-cover">` : ''}
                 <div class="p-4">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <p class="text-xs font-black uppercase tracking-widest text-cyan-400">Tiang Terpilih</p>
-                            <p class="mt-1 truncate text-2xl font-black text-slate-100">${escapeHtml(pole.customer_id)}</p>
+                            <p class="mt-1 truncate text-2xl font-black text-slate-100">${escapeHtml(pole.display_name || pole.customer_id)}</p>
                             <p class="mt-2 text-sm leading-6 text-slate-400">${escapeHtml(pole.street_name)}</p>
                         </div>
                         <span class="badge badge-${pole.condition} shrink-0">${formatOption(pole.condition)}</span>
@@ -113,7 +302,8 @@
                 ${detailBlock('Tinggi Tiang', pole.height ? `${pole.height} m` : '-')}
                 ${detailBlock('Tipe Ornamen', formatOption(pole.ornament_type))}
                 ${detailBlock('Jenis Lampu', formatLampType(pole.lamp_type))}
-                ${detailBlock('Status Lampu', formatOption(pole.lamp_status))}
+                ${detailBlock('Kondisi Lampu', formatOption(pole.lamp_status))}
+                ${detailBlock('Jenis Rumah Lampu', formatOption(pole.lamp_house_type))}
                 ${detailBlock('Kondisi Rumah Lampu', formatOption(pole.lamp_house_condition))}
                 ${detailBlock('Jumlah Titik Lampu', pole.light_point_count || '-')}
                 ${detailBlock('KWH Meter', pole.kwh_meter ? formatOption(pole.kwh_meter) : '-')}
@@ -132,7 +322,7 @@
             <div class="p-3">
                 <div class="flex items-start justify-between gap-3 pr-7">
                     <div class="min-w-0">
-                        <p class="text-lg font-black text-slate-100">${escapeHtml(pole.customer_id)}</p>
+                        <p class="text-lg font-black text-slate-100">${escapeHtml(pole.display_name || pole.customer_id)}</p>
                     </div>
                     <span class="badge badge-${pole.condition} mt-5 shrink-0">${formatOption(pole.condition)}</span>
                 </div>
@@ -215,6 +405,7 @@
         try {
             const layers = await loadLayers();
             Object.values(mainMaps).forEach(m => addLayersToMap(m, layers));
+            syncLayerDownloadLinks(layers.length > 0);
             if (btn) btn.innerHTML = layers.length ? '<i data-lucide="eye-off" class="icon"></i> Tutup 2 Layer' : '<i data-lucide="layers" class="icon"></i> Layer gagal';
             btn?.classList.toggle('btn-danger', layers.length > 0);
             btn?.classList.toggle('btn-muted', layers.length === 0);
@@ -257,7 +448,22 @@
             btn.classList.remove('btn-danger');
             btn.classList.add('btn-muted');
         }
+        syncLayerDownloadLinks(false);
         if (window.lucide) lucide.createIcons();
+    }
+
+    function syncLayerDownloadLinks(includeLayers) {
+        document.querySelectorAll('[data-map-download-link]').forEach((link) => {
+            const url = new URL(link.href, window.location.origin);
+
+            if (includeLayers) {
+                url.searchParams.set('include_layers', '1');
+            } else {
+                url.searchParams.delete('include_layers');
+            }
+
+            link.href = url.toString();
+        });
     }
 
     function bindFeature(ml, feature, layer) {

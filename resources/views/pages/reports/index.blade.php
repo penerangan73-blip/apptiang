@@ -8,12 +8,7 @@
             <p class="text-sm text-slate-400">Rekap kegiatan pendataan dan kerusakan.</p>
         </div>
         <form method="GET" action="{{ route('reports.index') }}" class="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <label class="relative block min-w-56">
-                <input id="activity-date-filter" class="field w-full pl-3 pr-10" type="date" name="date" value="{{ $date }}">
-                <button type="button" class="absolute right-3 top-1/2 z-10 -translate-y-1/2 text-cyan-400 transition hover:text-cyan-300" data-date-trigger="activity-date-filter" aria-label="Buka kalender">
-                    <i data-lucide="calendar" class="size-4"></i>
-                </button>
-            </label>
+            <input id="activity-date-filter" class="field min-w-56" type="date" name="date" value="{{ $date }}">
             <div class="flex gap-2">
                 <button class="btn btn-primary" type="submit">
                     <i data-lucide="calendar-search" class="icon"></i>
@@ -29,7 +24,7 @@
         <table class="min-w-full divide-y divide-white/10 text-sm">
             <thead class="bg-slate-900/5 text-left text-xs font-black uppercase tracking-wide text-slate-400">
                 <tr>
-                    <th class="px-5 py-3">Tanggal</th>
+                    <th class="px-5 py-3">Tanggal & Waktu</th>
                     <th class="px-5 py-3">ID Pelanggan</th>
                     <th class="px-5 py-3">Jalan</th>
                     <th class="px-5 py-3">Catatan</th>
@@ -39,8 +34,11 @@
             <tbody class="divide-y divide-white/5">
                 @forelse ($reports as $report)
                     <tr>
-                        <td class="px-5 py-4 font-semibold">{{ $report->report_date }}</td>
-                        <td class="px-5 py-4">{{ $report->pole?->customer_id ?? 'Tiang tidak ditemukan' }}</td>
+                        <td class="px-5 py-4">
+                            <p class="font-semibold text-slate-100">{{ $report->report_date?->format('d-m-Y') }}</p>
+                            <p class="mt-1 text-xs font-bold text-slate-400">{{ $report->created_at?->format('H:i') }} WIB</p>
+                        </td>
+                        <td class="px-5 py-4">{{ $report->pole?->displayName() ?? 'Tiang tidak ditemukan' }}</td>
                         <td class="px-5 py-4">{{ $report->pole?->street_name }}</td>
                         <td class="px-5 py-4">{{ $report->notes }}</td>
                         <td class="px-5 py-4">
@@ -56,17 +54,10 @@
                             @if ($reportPhotos->isNotEmpty())
                                 <div class="flex flex-wrap gap-2">
                                     @foreach ($reportPhotos as $index => $photo)
-                                        <span class="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5">
-                                            <a class="font-bold text-cyan-400" href="{{ $photo->photo_url }}" target="_blank">Foto {{ $index + 1 }}</a>
-                                            @if ($canManagePoles && isset($photo->id))
-                                                <form method="POST" action="{{ route('daily-report-photos.destroy', $photo) }}">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-red-400 transition hover:text-red-300" onclick="return confirm('Hapus foto laporan ini?')" aria-label="Hapus foto laporan {{ $index + 1 }}">
-                                                        <i data-lucide="trash-2" class="size-4"></i>
-                                                    </button>
-                                                </form>
-                                            @endif
+                                        <span class="relative inline-flex overflow-hidden rounded-lg border border-white/10 bg-white/5">
+                                            <a class="block" href="{{ $photo->photo_url }}" target="_blank" rel="noopener noreferrer" aria-label="Buka foto laporan {{ $index + 1 }}">
+                                                <img src="{{ $photo->photo_url }}" alt="Foto laporan {{ $index + 1 }}" class="h-16 w-16 object-cover transition hover:opacity-80">
+                                            </a>
                                         </span>
                                     @endforeach
                                 </div>
@@ -94,19 +85,4 @@
         @endif
     </div>
 </div>
-<script>
-document.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-date-trigger]');
-    if (!button) return;
-
-    const input = document.getElementById(button.dataset.dateTrigger);
-    if (!input) return;
-
-    if (typeof input.showPicker === 'function') {
-        input.showPicker();
-    } else {
-        input.focus();
-    }
-});
-</script>
 @endsection

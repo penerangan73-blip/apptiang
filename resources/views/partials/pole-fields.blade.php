@@ -1,8 +1,25 @@
 @php
     $poleValue = fn ($field, $fallback = '') => old($field, $pole?->{$field} ?? $fallback);
     $prefix = $prefix ?? 'pole';
+    $routeType = old('route_type', $pole?->sub_name ? 'sub' : ($pole?->source_name ? 'sumber' : ''));
 @endphp
 
+<div>
+    <label class="label">Tipe Jalur</label>
+    <select class="field" id="{{ $prefix }}-route-type" name="route_type" required data-route-type-select data-route-prefix="{{ $prefix }}">
+        <option value="" @selected($routeType === '')>Pilihan</option>
+        <option value="sumber" @selected($routeType === 'sumber')>Sumber</option>
+        <option value="sub" @selected($routeType === 'sub')>Sub</option>
+    </select>
+</div>
+<div id="{{ $prefix }}-source-wrap" data-route-source-wrap>
+    <label class="label">Sumber</label>
+    <input class="field" id="{{ $prefix }}-source-name" name="source_name" value="{{ $poleValue('source_name') }}" data-route-source-input>
+</div>
+<div id="{{ $prefix }}-sub-wrap" data-route-sub-wrap>
+    <label class="label">Sub</label>
+    <input class="field" id="{{ $prefix }}-sub-name" name="sub_name" value="{{ $poleValue('sub_name') }}" data-route-sub-input>
+</div>
 <div>
     <label class="label">Nomor Tiang Listrik</label>
     <input class="field" name="customer_id" value="{{ $poleValue('customer_id') }}" required>
@@ -59,11 +76,20 @@
             </select>
         </div>
         <div>
-            <label class="label">Status Lampu</label>
+            <label class="label">Kondisi Lampu</label>
             <select class="field" name="lamp_status" required>
                 <option value="" @selected($poleValue('lamp_status') === '')>Pilihan</option>
-                @foreach (['menyala' => 'Menyala', 'redup' => 'Redup', 'berkedip' => 'Berkedip', 'mati' => 'Mati'] as $value => $text)
+                @foreach (['menyala' => 'Menyala', 'redup' => 'Redup', 'berkedip' => 'Berkedip', 'mati' => 'Mati', 'rusak_pecah' => 'Rusak Pecah', 'tidak_ada_lampu' => 'Tidak Ada Lampu'] as $value => $text)
                     <option value="{{ $value }}" @selected($poleValue('lamp_status') === $value)>{{ $text }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="label">Jenis Rumah Lampu</label>
+            <select class="field" name="lamp_house_type" required>
+                <option value="" @selected($poleValue('lamp_house_type') === '')>Pilihan</option>
+                @foreach (['caping' => 'Caping', 'konvensional' => 'Konvensional'] as $value => $text)
+                    <option value="{{ $value }}" @selected($poleValue('lamp_house_type', 'caping') === $value)>{{ $text }}</option>
                 @endforeach
             </select>
         </div>

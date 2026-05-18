@@ -30,6 +30,10 @@
         'redup' => 'Redup',
         'berkedip' => 'Berkedip',
         'mati' => 'Mati',
+        'rusak_pecah' => 'Rusak Pecah',
+        'tidak_ada_lampu' => 'Tidak Ada Lampu',
+        'caping' => 'Caping',
+        'konvensional' => 'Konvensional',
         'pecah' => 'Pecah',
         'kusam' => 'Kusam',
         'kemasukan_air' => 'Kemasukan Air',
@@ -55,7 +59,8 @@
                     <th class="px-5 py-3">Tinggi Tiang</th>
                     <th class="px-5 py-3">Tipe Ornamen</th>
                     <th class="px-5 py-3">Jenis Lampu</th>
-                    <th class="px-5 py-3">Status Lampu</th>
+                    <th class="px-5 py-3">Kondisi Lampu</th>
+                    <th class="px-5 py-3">Jenis Rumah Lampu</th>
                     <th class="px-5 py-3">Kondisi Rumah Lampu</th>
                     <th class="px-5 py-3">Jumlah Titik Lampu</th>
                     <th class="px-5 py-3">KWH Meter</th>
@@ -69,7 +74,7 @@
                 @forelse ($poles as $pole)
                     <tr>
                         <td class="px-5 py-4">
-                            <p class="min-w-44 whitespace-nowrap font-bold text-slate-100">{{ $pole->customer_id }}</p>
+                            <p class="min-w-44 whitespace-nowrap font-bold text-slate-100">{{ $pole->displayName() }}</p>
                         </td>
                         <td class="px-5 py-4 font-medium text-slate-300">
                             <span class="pju-location-cell" title="{{ $pole->street_name }}">{{ $pole->street_name }}</span>
@@ -81,6 +86,7 @@
                         <td class="px-5 py-4 text-slate-300">{{ $label($pole->ornament_type) }}</td>
                         <td class="px-5 py-4 text-slate-300">{{ $label($pole->lamp_type) }}</td>
                         <td class="px-5 py-4 text-slate-300">{{ $label($pole->lamp_status) }}</td>
+                        <td class="px-5 py-4 text-slate-300">{{ $label($pole->lamp_house_type) }}</td>
                         <td class="px-5 py-4 text-slate-300">{{ $label($pole->lamp_house_condition) }}</td>
                         <td class="px-5 py-4 text-slate-300">{{ number_format((int) $pole->light_point_count) }}</td>
                         <td class="px-5 py-4 text-slate-300">{{ $label($pole->kwh_meter) ?: '-' }}</td>

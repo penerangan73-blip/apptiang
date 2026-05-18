@@ -47,7 +47,7 @@ class PoleController extends Controller
             'pole_id' => $pole->id,
             'report_date' => now()->toDateString(),
             'photo_url' => $pole->photo_url,
-            'notes' => "Data pelanggan {$pole->customer_id} ditambahkan ke inventaris.",
+            'notes' => "Data pelanggan {$pole->displayName()} ditambahkan ke inventaris.",
         ]);
         $this->copyPolePhotosToReport($pole, $report);
 
@@ -71,7 +71,7 @@ class PoleController extends Controller
             'pole_id' => $pole->id,
             'report_date' => now()->toDateString(),
             'photo_url' => $pole->photo_url,
-            'notes' => "Data pelanggan {$pole->customer_id} diperbarui oleh surveyor.",
+            'notes' => "Data pelanggan {$pole->displayName()} diperbarui oleh surveyor.",
         ]);
         $this->copyPolePhotosToReport($pole, $report);
 
@@ -91,7 +91,9 @@ class PoleController extends Controller
 
     private function validatedPoleInput(Request $request, ?Pole $pole = null): array
     {
-        return $request->validate([
+        $validated = $request->validate([
+            'source_name' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'sub_name' => ['sometimes', 'nullable', 'string', 'max:120'],
             'customer_id' => [
                 'required',
                 'string',
@@ -107,7 +109,8 @@ class PoleController extends Controller
             'height' => ['nullable', 'numeric', 'min:0', 'max:1000'],
             'ornament_type' => ['required', Rule::in(['single_arm', 'double_arm', 'high_mast'])],
             'lamp_type' => ['required', Rule::in(['led', 'hps', 'son_t', 'mercury', 'lainnya'])],
-            'lamp_status' => ['required', Rule::in(['menyala', 'redup', 'berkedip', 'mati'])],
+            'lamp_status' => ['required', Rule::in(['menyala', 'redup', 'berkedip', 'mati', 'rusak_pecah', 'tidak_ada_lampu'])],
+            'lamp_house_type' => ['sometimes', Rule::in(['caping', 'konvensional'])],
             'lamp_house_condition' => ['required', Rule::in(['pecah', 'kusam', 'kemasukan_air'])],
             'light_point_count' => ['required', 'integer', 'min:1', 'max:1000'],
             'kwh_meter' => ['required', Rule::in(['sudah_ada', 'belum'])],
@@ -117,6 +120,8 @@ class PoleController extends Controller
             'photo' => ['sometimes', 'nullable', 'image', 'max:10240'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        return $validated;
     }
 
     private function storePolePhotos(Request $request, Pole $pole): void

@@ -6,6 +6,44 @@
         });
     });
 
+    // Dynamic route fields
+    window.setupRouteTypeFields = function setupRouteTypeFields(scope = document) {
+        scope.querySelectorAll('[data-route-type-select]').forEach((select) => {
+            if (select.dataset.routeInitialized === '1') return;
+            select.dataset.routeInitialized = '1';
+
+            const form = select.closest('form') || document;
+            const sourceWrap = form.querySelector('[data-route-source-wrap]');
+            const subWrap = form.querySelector('[data-route-sub-wrap]');
+            const sourceInput = form.querySelector('[data-route-source-input]');
+            const subInput = form.querySelector('[data-route-sub-input]');
+
+            const sync = () => {
+                const isSource = select.value === 'sumber';
+                const isSub = select.value === 'sub';
+
+                sourceWrap?.classList.toggle('hidden', !isSource && !isSub);
+                subWrap?.classList.toggle('hidden', !isSub);
+
+                if (sourceInput) {
+                    sourceInput.required = isSource || isSub;
+                    sourceInput.disabled = !isSource && !isSub;
+                }
+
+                if (subInput) {
+                    subInput.required = isSub;
+                    subInput.disabled = !isSub;
+                    if (!isSub) subInput.value = '';
+                }
+            };
+
+            select.addEventListener('change', sync);
+            sync();
+        });
+    };
+
+    window.setupRouteTypeFields();
+
     // Coordinate picker maps
     window.pjuMaps = window.pjuMaps || {};
     window.pjuCoordinatePickerState = window.pjuCoordinatePickerState || {};
@@ -145,6 +183,31 @@
             const response = await fetch(`https://nominatim.openstreetmap.org/reverse?${params.toString()}`, { headers: { Accept: 'application/json' } });
             if (!response.ok) return '';
             const data = await response.json();
-            return data.display_name || '';
+            return formatReverseAddress(data);
         } catch { return ''; }
+    }
+
+    function formatReverseAddress(data) {
+        const address = data?.address || {};
+        const excludedParts = new Set([
+            String(address.postcode || '').trim().toLowerCase(),
+            String(address.country || '').trim().toLowerCase(),
+            String(address.country_code || '').trim().toLowerCase(),
+            String(address.island || '').trim().toLowerCase(),
+            'jawa',
+            'java',
+            'sumatra',
+            'sumatera',
+            'kalimantan',
+            'sulawesi',
+            'papua',
+            'bali',
+            'lombok',
+        ].filter(Boolean));
+
+        return String(data?.display_name || '')
+            .split(',')
+            .map((part) => part.trim())
+            .filter((part) => part && !excludedParts.has(part.toLowerCase()))
+            .join(', ');
     }

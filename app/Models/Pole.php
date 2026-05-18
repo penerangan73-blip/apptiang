@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Schema;
 class Pole extends Model
 {
     protected $fillable = [
+        'source_name',
+        'sub_name',
         'customer_id',
         'street_name',
         'latitude',
@@ -22,6 +24,7 @@ class Pole extends Model
         'ornament_type',
         'lamp_type',
         'lamp_status',
+        'lamp_house_type',
         'lamp_house_condition',
         'light_point_count',
         'kwh_meter',
@@ -53,6 +56,14 @@ class Pole extends Model
         return $this->hasMany(PolePhoto::class)->orderBy('sort_order')->orderBy('id');
     }
 
+    public function displayName(): string
+    {
+        return collect([$this->source_name, $this->sub_name, $this->customer_id])
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->implode('/');
+    }
+
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
         $term = trim((string) $term);
@@ -69,6 +80,8 @@ class Pole extends Model
 
         $columns = [
             'id',
+            'source_name',
+            'sub_name',
             'customer_id',
             'street_name',
             'latitude',
@@ -82,6 +95,7 @@ class Pole extends Model
             'ornament_type',
             'lamp_type',
             'lamp_status',
+            'lamp_house_type',
             'lamp_house_condition',
             'light_point_count',
             'kwh_meter',
