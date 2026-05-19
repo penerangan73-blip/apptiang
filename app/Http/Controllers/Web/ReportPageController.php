@@ -14,7 +14,7 @@ class ReportPageController extends Controller
         $date = $request->query('date');
 
         $reports = DailyReport::query()
-            ->with(['user:id,name,role', 'pole:id,source_name,sub_name,customer_id,street_name,photo_url', 'pole.photos', 'photos'])
+            ->with(['user:id,name,role', 'pole:id,sub_name,customer_id,street_name,photo_url', 'pole.photos', 'photos'])
             ->when($date, fn ($query, string $date) => $query->whereDate('report_date', $date))
             ->latest()
             ->paginate(10)

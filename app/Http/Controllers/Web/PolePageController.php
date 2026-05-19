@@ -15,7 +15,7 @@ class PolePageController extends Controller
         $condition = $request->query('condition');
 
         $allPoles = Pole::query()
-            ->select(['id', 'source_name', 'sub_name', 'customer_id', 'street_name'])
+            ->select(['id', 'sub_name', 'customer_id', 'street_name'])
             ->latest()
             ->get();
 

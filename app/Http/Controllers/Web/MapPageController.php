@@ -53,7 +53,6 @@ class MapPageController extends Controller
         )
             ->select($summary ? [
                 'id',
-                'source_name',
                 'sub_name',
                 'customer_id',
                 'street_name',
@@ -63,7 +62,6 @@ class MapPageController extends Controller
                 'condition',
             ] : [
                 'id',
-                'source_name',
                 'sub_name',
                 'customer_id',
                 'street_name',
@@ -126,7 +124,6 @@ class MapPageController extends Controller
         return $this->filteredPoleQuery($query, $condition)
             ->select([
                 'id',
-                'source_name',
                 'sub_name',
                 'customer_id',
                 'street_name',

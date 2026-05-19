@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Schema;
 class Pole extends Model
 {
     protected $fillable = [
-        'source_name',
         'sub_name',
         'customer_id',
         'street_name',
@@ -58,7 +57,7 @@ class Pole extends Model
 
     public function displayName(): string
     {
-        return collect([$this->source_name, $this->sub_name, $this->customer_id])
+        return collect([$this->customer_id, $this->sub_name])
             ->map(fn ($value) => trim((string) $value))
             ->filter()
             ->implode('/');
@@ -80,7 +79,6 @@ class Pole extends Model
 
         $columns = [
             'id',
-            'source_name',
             'sub_name',
             'customer_id',
             'street_name',

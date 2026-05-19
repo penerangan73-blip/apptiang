@@ -13,21 +13,21 @@
             select.dataset.routeInitialized = '1';
 
             const form = select.closest('form') || document;
-            const sourceWrap = form.querySelector('[data-route-source-wrap]');
+            const customerWrap = form.querySelector('[data-route-customer-wrap]');
             const subWrap = form.querySelector('[data-route-sub-wrap]');
-            const sourceInput = form.querySelector('[data-route-source-input]');
+            const customerInput = form.querySelector('[data-route-customer-input]');
             const subInput = form.querySelector('[data-route-sub-input]');
 
             const sync = () => {
                 const isSource = select.value === 'sumber';
                 const isSub = select.value === 'sub';
 
-                sourceWrap?.classList.toggle('hidden', !isSource && !isSub);
+                customerWrap?.classList.toggle('hidden', !isSource && !isSub);
                 subWrap?.classList.toggle('hidden', !isSub);
 
-                if (sourceInput) {
-                    sourceInput.required = isSource || isSub;
-                    sourceInput.disabled = !isSource && !isSub;
+                if (customerInput) {
+                    customerInput.required = isSource || isSub;
+                    customerInput.disabled = !isSource && !isSub;
                 }
 
                 if (subInput) {

@@ -92,7 +92,6 @@ class PoleController extends Controller
     private function validatedPoleInput(Request $request, ?Pole $pole = null): array
     {
         $validated = $request->validate([
-            'source_name' => ['sometimes', 'nullable', 'string', 'max:120'],
             'sub_name' => ['sometimes', 'nullable', 'string', 'max:120'],
             'customer_id' => [
                 'required',

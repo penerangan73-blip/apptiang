@@ -1,7 +1,7 @@
 @php
     $poleValue = fn ($field, $fallback = '') => old($field, $pole?->{$field} ?? $fallback);
     $prefix = $prefix ?? 'pole';
-    $routeType = old('route_type', $pole?->sub_name ? 'sub' : ($pole?->source_name ? 'sumber' : ''));
+    $routeType = old('route_type', $pole?->sub_name ? 'sub' : ($pole?->customer_id ? 'sumber' : ''));
 @endphp
 
 <div>
@@ -12,17 +12,13 @@
         <option value="sub" @selected($routeType === 'sub')>Sub</option>
     </select>
 </div>
-<div id="{{ $prefix }}-source-wrap" data-route-source-wrap>
-    <label class="label">Sumber</label>
-    <input class="field" id="{{ $prefix }}-source-name" name="source_name" value="{{ $poleValue('source_name') }}" data-route-source-input>
+<div id="{{ $prefix }}-customer-wrap" data-route-customer-wrap>
+    <label class="label">Nomor Tiang Listrik</label>
+    <input class="field" name="customer_id" value="{{ $poleValue('customer_id') }}" required data-route-customer-input>
 </div>
 <div id="{{ $prefix }}-sub-wrap" data-route-sub-wrap>
     <label class="label">Sub</label>
     <input class="field" id="{{ $prefix }}-sub-name" name="sub_name" value="{{ $poleValue('sub_name') }}" data-route-sub-input>
-</div>
-<div>
-    <label class="label">Nomor Tiang Listrik</label>
-    <input class="field" name="customer_id" value="{{ $poleValue('customer_id') }}" required>
 </div>
 <div class="md:col-span-2">
     <div class="rounded-xl border border-cyan-400/20 bg-slate-900/70 p-3">

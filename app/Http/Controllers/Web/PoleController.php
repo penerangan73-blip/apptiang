@@ -292,7 +292,6 @@ class PoleController extends Controller
     {
         $validated = $request->validate([
             'route_type' => ['required', Rule::in(['sumber', 'sub'])],
-            'source_name' => ['required_if:route_type,sumber,sub', 'nullable', 'string', 'max:120'],
             'sub_name' => ['required_if:route_type,sub', 'nullable', 'string', 'max:120'],
             'customer_id' => [
                 'required',

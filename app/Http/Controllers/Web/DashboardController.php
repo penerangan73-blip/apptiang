@@ -19,7 +19,7 @@ class DashboardController extends Controller
             ->get();
 
         $reports = DailyReport::query()
-            ->with(['user:id,name,role', 'pole:id,source_name,sub_name,customer_id,street_name'])
+            ->with(['user:id,name,role', 'pole:id,sub_name,customer_id,street_name'])
             ->latest()
             ->limit(8)
             ->get();
