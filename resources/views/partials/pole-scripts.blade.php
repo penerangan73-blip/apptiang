@@ -8,19 +8,21 @@
 
     // Dynamic route fields
     window.setupRouteTypeFields = function setupRouteTypeFields(scope = document) {
-        scope.querySelectorAll('[data-route-type-select]').forEach((select) => {
-            if (select.dataset.routeInitialized === '1') return;
-            select.dataset.routeInitialized = '1';
+        scope.querySelectorAll('[data-route-type-group]').forEach((group) => {
+            if (group.dataset.routeInitialized === '1') return;
+            group.dataset.routeInitialized = '1';
 
-            const form = select.closest('form') || document;
+            const form = group.closest('form') || document;
+            const options = [...group.querySelectorAll('[data-route-type-option]')];
             const customerWrap = form.querySelector('[data-route-customer-wrap]');
             const subWrap = form.querySelector('[data-route-sub-wrap]');
             const customerInput = form.querySelector('[data-route-customer-input]');
             const subInput = form.querySelector('[data-route-sub-input]');
 
             const sync = () => {
-                const isSource = select.value === 'sumber';
-                const isSub = select.value === 'sub';
+                const routeType = options.find((option) => option.checked)?.value || '';
+                const isSource = routeType === 'sumber';
+                const isSub = routeType === 'sub';
 
                 customerWrap?.classList.toggle('hidden', !isSource && !isSub);
                 subWrap?.classList.toggle('hidden', !isSub);
@@ -37,7 +39,7 @@
                 }
             };
 
-            select.addEventListener('change', sync);
+            options.forEach((option) => option.addEventListener('change', sync));
             sync();
         });
     };

@@ -4,16 +4,21 @@
     $routeType = old('route_type', $pole?->sub_name ? 'sub' : ($pole?->customer_id ? 'sumber' : ''));
 @endphp
 
-<div>
+<div class="md:col-span-2" data-route-type-group>
     <label class="label">Tipe Jalur</label>
-    <select class="field" id="{{ $prefix }}-route-type" name="route_type" required data-route-type-select data-route-prefix="{{ $prefix }}">
-        <option value="" @selected($routeType === '')>Pilihan</option>
-        <option value="sumber" @selected($routeType === 'sumber')>Sumber</option>
-        <option value="sub" @selected($routeType === 'sub')>Sub</option>
-    </select>
+    <div class="grid grid-cols-2 gap-2 rounded-lg border border-white/10 bg-slate-950/60 p-1">
+        @foreach (['sumber' => 'Sumber', 'sub' => 'Sub'] as $value => $text)
+            <label class="cursor-pointer">
+                <input class="peer sr-only" type="radio" name="route_type" value="{{ $value }}" required data-route-type-option @checked($routeType === $value)>
+                <span class="flex h-11 items-center justify-center rounded-md border border-transparent px-3 text-sm font-black text-slate-300 transition peer-checked:border-cyan-400/70 peer-checked:bg-cyan-500/20 peer-checked:text-cyan-100 peer-focus-visible:ring-2 peer-focus-visible:ring-cyan-400/60">
+                    {{ $text }}
+                </span>
+            </label>
+        @endforeach
+    </div>
 </div>
 <div id="{{ $prefix }}-customer-wrap" data-route-customer-wrap>
-    <label class="label">Nomor Tiang Listrik</label>
+    <label class="label">Nomor Tiang (Sumber)</label>
     <input class="field" name="customer_id" value="{{ $poleValue('customer_id') }}" required data-route-customer-input>
 </div>
 <div id="{{ $prefix }}-sub-wrap" data-route-sub-wrap>
