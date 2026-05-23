@@ -46,8 +46,11 @@
     $ownership = fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
     $poleTitle = $pole->displayName();
     $poleMapData = [
-        ...$pole->only(['customer_id', 'street_name', 'latitude', 'longitude', 'power_usage', 'condition']),
+        ...$pole->only(['customer_id', 'street_name', 'address', 'village', 'district', 'regency', 'province', 'latitude', 'longitude', 'power_usage', 'condition']),
         'display_name' => $poleTitle,
+        'address_line' => $pole->addressLine(),
+        'administrative_address' => $pole->administrativeAddress(),
+        'location_label' => $pole->locationLabel(),
     ];
 @endphp
 
@@ -61,7 +64,7 @@
             <h2 class="break-words text-2xl font-black text-slate-100 sm:text-3xl">{{ $poleTitle }}</h2>
             <span class="badge badge-{{ $pole->condition }}">{{ $label($pole->condition) }}</span>
         </div>
-        <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-400">{{ $pole->street_name }}</p>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-400">{{ $pole->locationLabel() }}</p>
     </div>
     <div class="flex flex-wrap gap-2">
         @if ($canManagePoles)
@@ -94,7 +97,11 @@
                 <p class="text-sm text-slate-400">Informasi aset, koordinat, dan riwayat input.</p>
             </div>
             <div class="grid gap-5 p-5 md:grid-cols-2">
-                @include('partials.detail-item', ['label' => 'Alamat', 'value' => $pole->street_name, 'class' => 'md:col-span-2'])
+                @include('partials.detail-item', ['label' => 'Alamat', 'value' => $pole->addressLine(), 'class' => 'md:col-span-2'])
+                @include('partials.detail-item', ['label' => 'Kelurahan', 'value' => $pole->village ?: '-'])
+                @include('partials.detail-item', ['label' => 'Kecamatan', 'value' => $pole->district ?: '-'])
+                @include('partials.detail-item', ['label' => 'Kabupaten', 'value' => $pole->regency ?: '-'])
+                @include('partials.detail-item', ['label' => 'Provinsi', 'value' => $pole->province ?: '-'])
                 @include('partials.detail-item', ['label' => 'Latitude', 'value' => number_format((float) $pole->latitude, 7)])
                 @include('partials.detail-item', ['label' => 'Longitude', 'value' => number_format((float) $pole->longitude, 7)])
                 @include('partials.detail-item', ['label' => 'Tipe Ornamen', 'value' => $label($pole->ornament_type)])
@@ -272,7 +279,7 @@
                     <p class="truncate text-lg font-black text-slate-100">${escapeHtml(pole.display_name || pole.customer_id)}</p>
                     <span class="badge badge-${pole.condition} mt-5 shrink-0">${escapeHtml(formatOption(pole.condition))}</span>
                 </div>
-                <p class="mt-1 text-sm leading-5 text-slate-300">${escapeHtml(pole.street_name)}</p>
+                <p class="mt-1 text-sm leading-5 text-slate-300">${escapeHtml(pole.location_label || pole.address_line || pole.street_name)}</p>
                 <p class="mt-3 text-sm font-semibold text-slate-100">Daya lampu ${Number(pole.power_usage || 0).toLocaleString('id-ID')} W</p>
             </div>
         `, { maxWidth: 300, className: 'pju-marker-popup' });

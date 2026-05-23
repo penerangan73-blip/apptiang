@@ -7,6 +7,7 @@ use App\Models\Pole;
 use Illuminate\Support\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
@@ -51,11 +52,16 @@ class MapPageController extends Controller
             trim((string) ($validated['query'] ?? '')),
             $validated['condition'] ?? null
         )
-            ->select($summary ? [
+            ->select($this->poleColumns($summary ? [
                 'id',
                 'sub_name',
                 'customer_id',
                 'street_name',
+                'address',
+                'village',
+                'district',
+                'regency',
+                'province',
                 'latitude',
                 'longitude',
                 'power_usage',
@@ -65,6 +71,11 @@ class MapPageController extends Controller
                 'sub_name',
                 'customer_id',
                 'street_name',
+                'address',
+                'village',
+                'district',
+                'regency',
+                'province',
                 'latitude',
                 'longitude',
                 'power_usage',
@@ -81,7 +92,7 @@ class MapPageController extends Controller
                 'ownership',
                 'photo_url',
                 'notes',
-            ])
+            ]))
             ->latest()
             ->get();
 
@@ -89,6 +100,9 @@ class MapPageController extends Controller
             'data' => $markers->map(fn (Pole $pole) => [
                 ...$pole->toArray(),
                 'display_name' => $pole->displayName(),
+                'address_line' => $pole->addressLine(),
+                'administrative_address' => $pole->administrativeAddress(),
+                'location_label' => $pole->locationLabel(),
             ])->values(),
         ]);
     }
@@ -122,11 +136,16 @@ class MapPageController extends Controller
     private function exportPoleQuery(string $query, ?string $condition)
     {
         return $this->filteredPoleQuery($query, $condition)
-            ->select([
+            ->select($this->poleColumns([
                 'id',
                 'sub_name',
                 'customer_id',
                 'street_name',
+                'address',
+                'village',
+                'district',
+                'regency',
+                'province',
                 'latitude',
                 'longitude',
                 'power_usage',
@@ -144,7 +163,7 @@ class MapPageController extends Controller
                 'notes',
                 'created_at',
                 'updated_at',
-            ])
+            ]))
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->latest();
@@ -186,7 +205,7 @@ class MapPageController extends Controller
 
             return '<Placemark>'.
                 '<name>'.e($pole->displayName()).'</name>'.
-                '<description>'.e($pole->street_name).'</description>'.
+                '<description>'.e($pole->locationLabel()).'</description>'.
                 '<ExtendedData>'.$properties.'</ExtendedData>'.
                 '<Point><coordinates>'.e((string) $pole->longitude).','.e((string) $pole->latitude).',0</coordinates></Point>'.
                 '</Placemark>';
@@ -288,7 +307,12 @@ class MapPageController extends Controller
             'id' => $pole->id,
             'display_name' => $pole->displayName(),
             'customer_id' => $pole->customer_id,
-            'street_name' => $pole->street_name,
+            'street_name' => $pole->addressLine(),
+            'address' => $pole->addressLine(),
+            'village' => $pole->village,
+            'district' => $pole->district,
+            'regency' => $pole->regency,
+            'province' => $pole->province,
             'power_usage' => $pole->power_usage,
             'condition' => $pole->condition,
             'pole_type' => $pole->pole_type,
@@ -313,7 +337,11 @@ class MapPageController extends Controller
             'ID' => (int) $pole->id,
             'DISPLAY' => $pole->displayName(),
             'CUSTOMER' => $pole->customer_id,
-            'STREET' => $pole->street_name,
+            'ADDRESS' => $pole->addressLine(),
+            'VILLAGE' => $pole->village,
+            'DISTRICT' => $pole->district,
+            'REGENCY' => $pole->regency,
+            'PROVINCE' => $pole->province,
             'POWER' => (int) $pole->power_usage,
             'CONDITION' => $pole->condition,
             'POLETYPE' => $pole->pole_type,
@@ -388,7 +416,11 @@ class MapPageController extends Controller
             ['ID', 'N', 10, 0],
             ['DISPLAY', 'C', 120, 0],
             ['CUSTOMER', 'C', 80, 0],
-            ['STREET', 'C', 160, 0],
+            ['ADDRESS', 'C', 200, 0],
+            ['VILLAGE', 'C', 80, 0],
+            ['DISTRICT', 'C', 80, 0],
+            ['REGENCY', 'C', 80, 0],
+            ['PROVINCE', 'C', 80, 0],
             ['POWER', 'N', 10, 0],
             ['CONDITION', 'C', 24, 0],
             ['POLETYPE', 'C', 40, 0],
@@ -453,5 +485,12 @@ class MapPageController extends Controller
     private function exportFilename(string $extension): string
     {
         return 'data-tiang-pju-'.now()->format('Y-m-d-His').'.'.$extension;
+    }
+
+    private function poleColumns(array $columns): array
+    {
+        $existingColumns = Schema::getColumnListing('poles');
+
+        return array_values(array_intersect($columns, $existingColumns));
     }
 }

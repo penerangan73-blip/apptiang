@@ -43,12 +43,28 @@
                 </button>
             </div>
         </div>
-        <div id="{{ $prefix }}-coordinate-map" class="h-72 overflow-hidden rounded-lg border border-white/10 bg-slate-800" data-coordinate-picker data-lat-input="{{ $prefix }}-latitude" data-lng-input="{{ $prefix }}-longitude" data-street-input="{{ $prefix }}-street" data-notice-id="{{ $prefix }}-coordinate-notice"></div>
+        <div id="{{ $prefix }}-coordinate-map" class="h-72 overflow-hidden rounded-lg border border-white/10 bg-slate-800" data-coordinate-picker data-lat-input="{{ $prefix }}-latitude" data-lng-input="{{ $prefix }}-longitude" data-address-input="{{ $prefix }}-address" data-village-input="{{ $prefix }}-village" data-district-input="{{ $prefix }}-district" data-regency-input="{{ $prefix }}-regency" data-province-input="{{ $prefix }}-province" data-notice-id="{{ $prefix }}-coordinate-notice"></div>
     </div>
 </div>
 <div class="md:col-span-2">
     <label class="label">Alamat</label>
-    <textarea id="{{ $prefix }}-street" class="field" name="street_name" rows="3" required placeholder="Contoh: Jalan Brigjen Katamso Wonosari - Titik 1">{{ $poleValue('street_name') }}</textarea>
+    <textarea id="{{ $prefix }}-address" class="field" name="address" rows="3" required placeholder="Contoh: Jalan Brigjen Katamso Wonosari - Titik 1">{{ old('address', $pole?->addressLine() ?? '') }}</textarea>
+</div>
+<div>
+    <label class="label">Kelurahan</label>
+    <input id="{{ $prefix }}-village" class="field" name="village" value="{{ $poleValue('village') }}">
+</div>
+<div>
+    <label class="label">Kecamatan</label>
+    <input id="{{ $prefix }}-district" class="field" name="district" value="{{ $poleValue('district') }}">
+</div>
+<div>
+    <label class="label">Kabupaten</label>
+    <input id="{{ $prefix }}-regency" class="field" name="regency" value="{{ $poleValue('regency') }}">
+</div>
+<div>
+    <label class="label">Provinsi</label>
+    <input id="{{ $prefix }}-province" class="field" name="province" value="{{ $poleValue('province') }}">
 </div>
 <div>
     <label class="label">Latitude</label>

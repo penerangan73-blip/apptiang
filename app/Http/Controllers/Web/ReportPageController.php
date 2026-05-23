@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\DailyReport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class ReportPageController extends Controller
@@ -14,7 +15,18 @@ class ReportPageController extends Controller
         $date = $request->query('date');
 
         $reports = DailyReport::query()
-            ->with(['user:id,name,role', 'pole:id,sub_name,customer_id,street_name,photo_url', 'pole.photos', 'photos'])
+            ->with(['user:id,name,role', 'pole' => fn ($query) => $query->select($this->poleColumns([
+                'id',
+                'sub_name',
+                'customer_id',
+                'street_name',
+                'address',
+                'village',
+                'district',
+                'regency',
+                'province',
+                'photo_url',
+            ])), 'pole.photos', 'photos'])
             ->when($date, fn ($query, string $date) => $query->whereDate('report_date', $date))
             ->latest()
             ->paginate(10)
@@ -26,5 +38,12 @@ class ReportPageController extends Controller
             'user' => $request->user(),
             'canManagePoles' => in_array($request->user()->role, ['superadmin', 'surveyor'], true),
         ]);
+    }
+
+    private function poleColumns(array $columns): array
+    {
+        $existingColumns = Schema::getColumnListing('poles');
+
+        return array_values(array_intersect($columns, $existingColumns));
     }
 }

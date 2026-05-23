@@ -53,6 +53,9 @@
                 <tr>
                     <th class="px-5 py-3">Nomor Tiang Listrik</th>
                     <th class="px-5 py-3">Lokasi</th>
+                    <th class="px-5 py-3">Desa</th>
+                    <th class="px-5 py-3">Kecamatan</th>
+                    <th class="px-5 py-3">Kabupaten</th>
                     <th class="px-5 py-3">Daya Lampu</th>
                     <th class="px-5 py-3">Kondisi Tiang</th>
                     <th class="px-5 py-3">Jenis Tiang</th>
@@ -77,8 +80,11 @@
                             <p class="min-w-44 whitespace-nowrap font-bold text-slate-100">{{ $pole->displayName() }}</p>
                         </td>
                         <td class="px-5 py-4 font-medium text-slate-300">
-                            <span class="pju-location-cell" title="{{ $pole->street_name }}">{{ $pole->street_name }}</span>
+                            <span class="pju-location-cell" title="{{ $pole->locationLabel() }}">{{ $pole->addressLine() }}</span>
                         </td>
+                        <td class="px-5 py-4 text-slate-300">{{ $pole->village ?: '-' }}</td>
+                        <td class="px-5 py-4 text-slate-300">{{ $pole->district ?: '-' }}</td>
+                        <td class="px-5 py-4 text-slate-300">{{ $pole->regency ?: '-' }}</td>
                         <td class="px-5 py-4">{{ number_format($pole->power_usage) }} Watt</td>
                         <td class="px-5 py-4"><span class="badge badge-{{ $pole->condition }}">{{ $label($pole->condition) }}</span></td>
                         <td class="px-5 py-4 text-slate-300">{{ $label($pole->pole_type) }}</td>
@@ -122,7 +128,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="{{ $showTimestamps ? 14 : 13 }}" class="px-5 py-10 text-center text-slate-400">
+                        <td colspan="{{ $showTimestamps ? 17 : 16 }}" class="px-5 py-10 text-center text-slate-400">
                             Tidak ada tiang untuk filter ini.
                         </td>
                     </tr>

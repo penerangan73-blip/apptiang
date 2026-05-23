@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DailyReport;
 use App\Models\Pole;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -19,7 +20,17 @@ class DashboardController extends Controller
             ->get();
 
         $reports = DailyReport::query()
-            ->with(['user:id,name,role', 'pole:id,sub_name,customer_id,street_name'])
+            ->with(['user:id,name,role', 'pole' => fn ($query) => $query->select($this->poleColumns([
+                'id',
+                'sub_name',
+                'customer_id',
+                'street_name',
+                'address',
+                'village',
+                'district',
+                'regency',
+                'province',
+            ]))])
             ->latest()
             ->limit(8)
             ->get();
@@ -57,5 +68,12 @@ class DashboardController extends Controller
             'user' => $request->user(),
             'canManagePoles' => in_array($request->user()->role, ['superadmin', 'surveyor'], true),
         ]);
+    }
+
+    private function poleColumns(array $columns): array
+    {
+        $existingColumns = Schema::getColumnListing('poles');
+
+        return array_values(array_intersect($columns, $existingColumns));
     }
 }

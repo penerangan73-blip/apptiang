@@ -88,6 +88,10 @@ class DatabaseSeeder extends Seeder
             return [
                 'customer_id' => sprintf('GK-PEL-%03d', $number),
                 'street_name' => "{$location['street']} - Titik {$sequence}",
+                'address' => "{$location['street']} - Titik {$sequence}",
+                'district' => $location['kapanewon'],
+                'regency' => 'Gunungkidul',
+                'province' => 'Daerah Istimewa Yogyakarta',
                 'latitude' => $this->jitter($location['lat'], 0.008),
                 'longitude' => $this->jitter($location['lon'], 0.008),
                 'power_usage' => $this->pick($powerUsages),

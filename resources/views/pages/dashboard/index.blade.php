@@ -122,7 +122,7 @@
             @forelse ($todayReports as $report)
                 <div class="rounded-lg border bg-slate-900/5 p-3">
                     <p class="font-bold text-slate-100">{{ $report->pole?->displayName() ?? 'Tiang tidak ditemukan' }}</p>
-                    <p class="text-sm text-slate-400">{{ $report->pole?->street_name }}</p>
+                    <p class="text-sm text-slate-400">{{ $report->pole?->locationLabel() }}</p>
                     <p class="mt-2 text-sm leading-6 text-slate-300">{{ $report->notes }}</p>
                 </div>
             @empty
@@ -207,7 +207,7 @@
                     </div>
                     <span class="badge badge-${pole.condition} mt-5 shrink-0">${escapeHtml(formatOption(pole.condition))}</span>
                 </div>
-                <p class="mt-1 text-sm leading-5 text-slate-300">${escapeHtml(pole.street_name)}</p>
+                <p class="mt-1 text-sm leading-5 text-slate-300">${escapeHtml(pole.location_label || pole.address_line || pole.street_name)}</p>
                 <dl class="mt-3 grid grid-cols-[74px_1fr] gap-x-3 gap-y-1.5 text-sm">
                     <dt class="font-bold text-slate-500">Daya Lampu</dt>
                     <dd class="font-semibold text-slate-100">${Number(pole.power_usage || 0).toLocaleString('id-ID')} W</dd>

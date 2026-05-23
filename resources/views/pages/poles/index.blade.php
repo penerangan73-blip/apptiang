@@ -44,6 +44,33 @@
     $label = fn ($value) => ucfirst(str_replace('_', ' ', (string) $value));
     $ownership = fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
     $canDeletePoles = $user->role === 'superadmin';
+    $filterColumns = [
+        'customer_id' => 'Nomor Tiang',
+        'address' => 'Lokasi',
+        'village' => 'Desa',
+        'district' => 'Kecamatan',
+        'regency' => 'Kabupaten',
+        'province' => 'Provinsi',
+        'latitude' => 'Latitude',
+        'longitude' => 'Longitude',
+        'power_usage' => 'Daya Lampu',
+        'condition' => 'Kondisi Tiang',
+        'pole_type' => 'Jenis Tiang',
+        'height' => 'Tinggi Tiang',
+        'ornament_type' => 'Tipe Ornamen',
+        'lamp_type' => 'Jenis Lampu',
+        'lamp_status' => 'Kondisi Lampu',
+        'lamp_house_type' => 'Jenis Rumah Lampu',
+        'lamp_house_condition' => 'Kondisi Rumah Lampu',
+        'light_point_count' => 'Jumlah Titik Lampu',
+        'kwh_meter' => 'KWH Meter',
+        'ownership' => 'Kepemilikan',
+        'created_at' => 'Tanggal Input',
+        'created_by' => 'Diinput Oleh',
+        'updated_at' => 'Tanggal Update',
+        'updated_by' => 'Update Oleh',
+        'notes' => 'Catatan',
+    ];
 @endphp
 
 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -69,10 +96,31 @@
     </div>
 </div>
 
-<div class="card p-4">
-    <div class="grid gap-3 xl:grid-cols-[minmax(0,844px)_1fr] xl:items-center">
-        <div class="grid gap-3 md:grid-cols-[minmax(0,560px)_180px_104px] md:items-center">
+<div class="card p-4" style="overflow: visible;">
+    <div class="grid gap-3 xl:grid-cols-[minmax(0,1040px)_1fr] xl:items-center">
+        <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px_180px_104px] md:items-center">
             <input class="field" id="poles-datatable-search" value="{{ $query }}" placeholder="Cari semua kolom data tiang...">
+            <div class="relative" id="poles-column-filter-wrap">
+                <button type="button" id="poles-column-filter-toggle" class="field flex h-11 w-full items-center justify-between gap-2 text-left text-sm font-bold" aria-expanded="false" aria-controls="poles-column-filter-menu">
+                    <span id="poles-column-filter-label">Semua kolom</span>
+                    <i data-lucide="chevron-down" class="size-4"></i>
+                </button>
+                <div id="poles-column-filter-menu" class="absolute left-0 right-0 z-[1000] mt-2 hidden max-h-[min(320px,55vh)] overflow-y-auto rounded-lg border border-white/10 bg-slate-950 p-3 shadow-2xl sm:right-auto sm:w-80">
+                    <div class="grid gap-2">
+                        <label class="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm font-bold text-slate-200 transition hover:bg-white/10">
+                            <input type="checkbox" class="size-4 rounded border-white/20 bg-slate-900 text-cyan-500" id="poles-column-filter-all" checked>
+                            Semua kolom
+                        </label>
+                        <div class="border-t border-white/10"></div>
+                        @foreach ($filterColumns as $value => $text)
+                            <label class="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-300 transition hover:bg-white/10">
+                                <input type="checkbox" class="poles-column-filter-option size-4 rounded border-white/20 bg-slate-900 text-cyan-500" value="{{ $value }}">
+                                {{ $text }}
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
             <select class="field" id="poles-datatable-year">
                 <option value="">Semua tahun</option>
                 @foreach ($years as $optionYear)
@@ -105,6 +153,9 @@
                     @endif
                     <th class="px-5 py-3">Nomor Tiang Listrik</th>
                     <th class="px-5 py-3">Lokasi</th>
+                    <th class="px-5 py-3">Desa</th>
+                    <th class="px-5 py-3">Kecamatan</th>
+                    <th class="px-5 py-3">Kabupaten</th>
                     <th class="px-5 py-3">Daya Lampu</th>
                     <th class="px-5 py-3">Kondisi Tiang</th>
                     <th class="px-5 py-3">Jenis Tiang</th>
@@ -214,6 +265,11 @@
         const resetButton = document.getElementById('poles-datatable-reset');
         const countLabel = document.getElementById('poles-datatable-count');
         const exportButton = document.getElementById('poles-export-button');
+        const columnFilterToggle = document.getElementById('poles-column-filter-toggle');
+        const columnFilterMenu = document.getElementById('poles-column-filter-menu');
+        const columnFilterLabel = document.getElementById('poles-column-filter-label');
+        const columnFilterAll = document.getElementById('poles-column-filter-all');
+        const columnFilterOptions = Array.from(document.querySelectorAll('.poles-column-filter-option'));
         const selectAllCheckbox = document.getElementById('poles-select-all');
         const bulkDeleteButton = document.getElementById('poles-bulk-delete-button');
         const bulkDeleteCount = document.getElementById('pole-bulk-delete-count');
@@ -232,16 +288,20 @@
                 data: function (data) {
                     data.search = data.search || {};
                     data.search.value = searchInput?.value || '';
+                    data.search_columns = getSelectedSearchColumns();
                     data.year = yearSelect?.value || '';
                 },
             },
-            order: [[canDeletePoles ? 14 : 13, 'desc']],
+            order: [[canDeletePoles ? 17 : 16, 'desc']],
             pageLength: 15,
             lengthMenu: [[10, 15, 25, 50, 100], [10, 15, 25, 50, 100]],
             columns: [
                 ...(canDeletePoles ? [{ data: 'select', name: 'select', orderable: false, searchable: false }] : []),
                 { data: 'customer', name: 'customer_id', width: '220px' },
                 { data: 'street_name', name: 'street_name' },
+                { data: 'village', name: 'village' },
+                { data: 'district', name: 'district' },
+                { data: 'regency', name: 'regency' },
                 { data: 'power_usage', name: 'power_usage' },
                 { data: 'condition', name: 'condition' },
                 { data: 'pole_type', name: 'pole_type' },
@@ -258,7 +318,7 @@
             ],
             columnDefs: [
                 { targets: '_all', className: 'px-5 py-4 align-top text-slate-300' },
-                { targets: [canDeletePoles ? 15 : 14], className: 'px-5 py-4 align-top text-right' },
+                { targets: [canDeletePoles ? 18 : 17], className: 'px-5 py-4 align-top text-right' },
             ],
             language: {
                 emptyTable: 'Tidak ada tiang untuk filter ini.',
@@ -288,12 +348,14 @@
             if (!exportButton) return;
             const params = new URLSearchParams();
             const query = searchInput?.value?.trim() || '';
+            const selectedColumns = getSelectedSearchColumns();
             if (query) params.set('query', query);
+            selectedColumns.forEach((column) => params.append('search_columns[]', column));
             if (yearSelect?.value) params.set('year', yearSelect.value);
             exportButton.href = `${exportUrl}${params.toString() ? `?${params.toString()}` : ''}`;
         };
         const updateResetButton = () => {
-            resetButton?.classList.toggle('hidden', !(searchInput?.value?.trim()) && !yearSelect?.value);
+            resetButton?.classList.toggle('hidden', !(searchInput?.value?.trim()) && !yearSelect?.value && getSelectedSearchColumns().length === 0);
             if (window.lucide) lucide.createIcons();
         };
         const redraw = debounce(() => {
@@ -303,6 +365,7 @@
         }, 300);
 
         searchInput?.addEventListener('input', redraw);
+        setupColumnFilter();
         yearSelect?.addEventListener('change', () => {
             updateExportUrl();
             updateResetButton();
@@ -312,6 +375,7 @@
             if (!searchInput) return;
             searchInput.value = '';
             if (yearSelect) yearSelect.value = '';
+            resetColumnFilter();
             updateExportUrl();
             updateResetButton();
             table.ajax.reload();
@@ -356,6 +420,80 @@
         });
         updateExportUrl();
         updateResetButton();
+        syncColumnFilterLabel();
+
+        function setupColumnFilter() {
+            columnFilterToggle?.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const isOpen = !columnFilterMenu?.classList.contains('hidden');
+                columnFilterMenu?.classList.toggle('hidden', isOpen);
+                columnFilterToggle.setAttribute('aria-expanded', String(!isOpen));
+            });
+
+            columnFilterMenu?.addEventListener('click', (event) => {
+                event.stopPropagation();
+            });
+
+            document.addEventListener('click', (event) => {
+                if (!columnFilterMenu || !columnFilterToggle) return;
+                if (columnFilterToggle.contains(event.target) || columnFilterMenu.contains(event.target)) return;
+                columnFilterMenu.classList.add('hidden');
+                columnFilterToggle.setAttribute('aria-expanded', 'false');
+            });
+
+            columnFilterAll?.addEventListener('change', () => {
+                if (columnFilterAll.checked) {
+                    columnFilterOptions.forEach((option) => {
+                        option.checked = false;
+                    });
+                } else if (!getSelectedSearchColumns().length) {
+                    columnFilterAll.checked = true;
+                }
+
+                syncColumnFilterLabel();
+                redraw();
+            });
+
+            columnFilterOptions.forEach((option) => {
+                option.addEventListener('change', () => {
+                    if (option.checked && columnFilterAll) {
+                        columnFilterAll.checked = false;
+                    }
+
+                    if (!getSelectedSearchColumns().length && columnFilterAll) {
+                        columnFilterAll.checked = true;
+                    }
+
+                    syncColumnFilterLabel();
+                    redraw();
+                });
+            });
+        }
+
+        function getSelectedSearchColumns() {
+            if (columnFilterAll?.checked) return [];
+
+            return columnFilterOptions
+                .filter((option) => option.checked)
+                .map((option) => option.value);
+        }
+
+        function syncColumnFilterLabel() {
+            if (!columnFilterLabel) return;
+            const selectedColumns = getSelectedSearchColumns();
+            columnFilterLabel.textContent = selectedColumns.length
+                ? `${selectedColumns.length} kolom`
+                : 'Semua kolom';
+        }
+
+        function resetColumnFilter() {
+            if (columnFilterAll) columnFilterAll.checked = true;
+            columnFilterOptions.forEach((option) => {
+                option.checked = false;
+            });
+            syncColumnFilterLabel();
+        }
 
         function syncVisibleSelection() {
             document.querySelectorAll('.pju-pole-select').forEach((checkbox) => {

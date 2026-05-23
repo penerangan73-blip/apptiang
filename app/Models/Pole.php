@@ -14,6 +14,11 @@ class Pole extends Model
         'sub_name',
         'customer_id',
         'street_name',
+        'address',
+        'village',
+        'district',
+        'regency',
+        'province',
         'latitude',
         'longitude',
         'power_usage',
@@ -63,7 +68,27 @@ class Pole extends Model
             ->implode('/');
     }
 
-    public function scopeSearch(Builder $query, ?string $term): Builder
+    public function addressLine(): string
+    {
+        return trim((string) ($this->address ?: $this->street_name));
+    }
+
+    public function administrativeAddress(): string
+    {
+        return collect([$this->village, $this->district, $this->regency, $this->province])
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->implode(', ');
+    }
+
+    public function locationLabel(): string
+    {
+        return collect([$this->addressLine(), $this->administrativeAddress()])
+            ->filter()
+            ->implode(', ');
+    }
+
+    public function scopeSearch(Builder $query, ?string $term, ?array $searchColumns = null): Builder
     {
         $term = trim((string) $term);
 
@@ -77,11 +102,16 @@ class Pole extends Model
             str_replace('_', ' ', $term),
         ])->map(fn (string $value) => trim($value))->filter()->unique()->values();
 
-        $columns = [
+        $defaultColumns = [
             'id',
             'sub_name',
             'customer_id',
             'street_name',
+            'address',
+            'village',
+            'district',
+            'regency',
+            'province',
             'latitude',
             'longitude',
             'power_usage',
@@ -107,9 +137,20 @@ class Pole extends Model
             'updated_at',
         ];
 
+        $requestedColumns = $searchColumns === null ? null : collect($searchColumns)
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->unique()
+            ->values();
+        $searchCreatedBy = $requestedColumns === null || $requestedColumns->contains('created_by');
+        $searchUpdatedBy = $requestedColumns === null || $requestedColumns->contains('updated_by');
+        $searchDate = $requestedColumns === null || $requestedColumns->intersect(['created_at', 'updated_at'])->isNotEmpty();
+        $columns = $requestedColumns === null
+            ? $defaultColumns
+            : $requestedColumns->reject(fn ($column) => in_array($column, ['created_by', 'updated_by'], true))->all();
         $columns = $this->existingColumns($this->getTable(), $columns);
 
-        return $query->where(function (Builder $builder) use ($term, $terms, $columns) {
+        return $query->where(function (Builder $builder) use ($term, $terms, $columns, $searchCreatedBy, $searchUpdatedBy, $searchDate) {
             foreach ($terms as $searchTerm) {
                 foreach ($columns as $column) {
                     $builder->orWhere($column, 'like', "%{$searchTerm}%");
@@ -117,14 +158,14 @@ class Pole extends Model
             }
 
             $builder
-                ->when(preg_match('/^\d{4}-\d{2}-\d{2}$/', $term), function (Builder $builder) use ($term) {
+                ->when($searchDate && preg_match('/^\d{4}-\d{2}-\d{2}$/', $term), function (Builder $builder) use ($term) {
                     $builder->orWhereDate('created_at', $term)->orWhereDate('updated_at', $term);
                 })
-                ->when(preg_match('/^\d{4}$/', $term), function (Builder $builder) use ($term) {
+                ->when($searchDate && preg_match('/^\d{4}$/', $term), function (Builder $builder) use ($term) {
                     $builder->orWhereYear('created_at', (int) $term)->orWhereYear('updated_at', (int) $term);
                 })
-                ->orWhereHas('createdBy', fn (Builder $userQuery) => $this->searchUserColumns($userQuery, $terms))
-                ->orWhereHas('updatedBy', fn (Builder $userQuery) => $this->searchUserColumns($userQuery, $terms));
+                ->when($searchCreatedBy, fn (Builder $builder) => $builder->orWhereHas('createdBy', fn (Builder $userQuery) => $this->searchUserColumns($userQuery, $terms)))
+                ->when($searchUpdatedBy, fn (Builder $builder) => $builder->orWhereHas('updatedBy', fn (Builder $userQuery) => $this->searchUserColumns($userQuery, $terms)));
         });
     }
 

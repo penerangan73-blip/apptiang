@@ -285,7 +285,7 @@
                         <div class="min-w-0">
                             <p class="text-xs font-black uppercase tracking-widest text-cyan-400">Tiang Terpilih</p>
                             <p class="mt-1 truncate text-2xl font-black text-slate-100">${escapeHtml(pole.display_name || pole.customer_id)}</p>
-                            <p class="mt-2 text-sm leading-6 text-slate-400">${escapeHtml(pole.street_name)}</p>
+                            <p class="mt-2 text-sm leading-6 text-slate-400">${escapeHtml(pole.location_label || pole.address_line || pole.street_name)}</p>
                         </div>
                         <span class="badge badge-${pole.condition} shrink-0">${formatOption(pole.condition)}</span>
                     </div>
@@ -326,7 +326,7 @@
                     </div>
                     <span class="badge badge-${pole.condition} mt-5 shrink-0">${formatOption(pole.condition)}</span>
                 </div>
-                <p class="mt-1 text-sm leading-5 text-slate-300">${escapeHtml(pole.street_name)}</p>
+                <p class="mt-1 text-sm leading-5 text-slate-300">${escapeHtml(pole.location_label || pole.address_line || pole.street_name)}</p>
                 <dl class="mt-3 grid grid-cols-[72px_1fr] gap-x-3 gap-y-1.5 text-sm">
                     <dt class="font-bold text-slate-500">Daya Lampu</dt>
                     <dd class="font-semibold text-slate-100">${pole.power_usage} W</dd>

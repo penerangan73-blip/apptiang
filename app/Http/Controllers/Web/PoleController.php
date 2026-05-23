@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PoleController extends Controller
 {
@@ -21,13 +22,16 @@ class PoleController extends Controller
     {
         $validated = $request->validate([
             'query' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'search_columns' => ['sometimes', 'array', 'max:30'],
+            'search_columns.*' => ['string', Rule::in(array_keys($this->searchColumnMap()))],
             'year' => ['sometimes', 'nullable', 'integer', 'min:2000', 'max:2100'],
             'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh'])],
         ]);
+        $searchColumns = $this->resolveSearchColumns($validated['search_columns'] ?? []);
 
         $poles = Pole::query()
             ->with(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email', 'photos'])
-            ->search($validated['query'] ?? null)
+            ->search($validated['query'] ?? null, $searchColumns)
             ->when($validated['year'] ?? null, fn ($query, $year) => $query->whereYear('created_at', (int) $year))
             ->condition($validated['condition'] ?? null)
             ->latest()
@@ -35,7 +39,11 @@ class PoleController extends Controller
 
         $headers = [
             'Nomor Tiang Listrik',
-            'Nama Jalan',
+            'Alamat',
+            'Kelurahan',
+            'Kecamatan',
+            'Kabupaten',
+            'Provinsi',
             'Latitude',
             'Longitude',
             'Daya Lampu',
@@ -67,7 +75,11 @@ class PoleController extends Controller
         foreach ($poles as $pole) {
             $row = [
                 $pole->displayName(),
-                $pole->street_name,
+                $pole->addressLine(),
+                $pole->village,
+                $pole->district,
+                $pole->regency,
+                $pole->province,
                 $pole->latitude,
                 $pole->longitude,
                 $pole->power_usage,
@@ -112,6 +124,8 @@ class PoleController extends Controller
             'start' => ['sometimes', 'integer', 'min:0'],
             'length' => ['sometimes', 'integer', 'min:-1', 'max:100'],
             'search.value' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'search_columns' => ['sometimes', 'array', 'max:30'],
+            'search_columns.*' => ['string', Rule::in(array_keys($this->searchColumnMap()))],
             'year' => ['sometimes', 'nullable', 'integer', 'min:2000', 'max:2100'],
             'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh'])],
             'order.0.column' => ['sometimes', 'integer', 'min:0'],
@@ -121,55 +135,65 @@ class PoleController extends Controller
         $start = (int) ($validated['start'] ?? 0);
         $length = (int) ($validated['length'] ?? 10);
         $search = trim((string) data_get($validated, 'search.value', ''));
+        $searchColumns = $this->resolveSearchColumns($validated['search_columns'] ?? []);
         $year = $validated['year'] ?? null;
         $condition = $validated['condition'] ?? null;
         $canDeletePoles = $this->canDeletePoles($request);
-        $orderColumn = (int) data_get($validated, 'order.0.column', $canDeletePoles ? 14 : 13);
+        $orderColumn = (int) data_get($validated, 'order.0.column', $canDeletePoles ? 17 : 16);
         $orderDirection = data_get($validated, 'order.0.dir', 'desc') === 'asc' ? 'asc' : 'desc';
         $orderMap = $canDeletePoles
             ? [
                 1 => 'customer_id',
-                2 => 'street_name',
-                3 => 'power_usage',
-                4 => 'condition',
-                5 => 'pole_type',
-                6 => 'height',
-                7 => 'ornament_type',
-                8 => 'lamp_type',
-                9 => 'lamp_status',
-                10 => 'lamp_house_type',
-                11 => 'lamp_house_condition',
-                12 => 'light_point_count',
-                13 => 'kwh_meter',
-                14 => 'created_at',
+                2 => 'address',
+                3 => 'village',
+                4 => 'district',
+                5 => 'regency',
+                6 => 'power_usage',
+                7 => 'condition',
+                8 => 'pole_type',
+                9 => 'height',
+                10 => 'ornament_type',
+                11 => 'lamp_type',
+                12 => 'lamp_status',
+                13 => 'lamp_house_type',
+                14 => 'lamp_house_condition',
+                15 => 'light_point_count',
+                16 => 'kwh_meter',
+                17 => 'created_at',
             ]
             : [
                 0 => 'customer_id',
-                1 => 'street_name',
-                2 => 'power_usage',
-                3 => 'condition',
-                4 => 'pole_type',
-                5 => 'height',
-                6 => 'ornament_type',
-                7 => 'lamp_type',
-                8 => 'lamp_status',
-                9 => 'lamp_house_type',
-                10 => 'lamp_house_condition',
-                11 => 'light_point_count',
-                12 => 'kwh_meter',
-                13 => 'created_at',
+                1 => 'address',
+                2 => 'village',
+                3 => 'district',
+                4 => 'regency',
+                5 => 'power_usage',
+                6 => 'condition',
+                7 => 'pole_type',
+                8 => 'height',
+                9 => 'ornament_type',
+                10 => 'lamp_type',
+                11 => 'lamp_status',
+                12 => 'lamp_house_type',
+                13 => 'lamp_house_condition',
+                14 => 'light_point_count',
+                15 => 'kwh_meter',
+                16 => 'created_at',
             ];
 
         $baseQuery = Pole::query();
         $filteredQuery = Pole::query()
             ->with(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email'])
-            ->search($search)
+            ->search($search, $searchColumns)
             ->when($year, fn ($query) => $query->whereYear('created_at', (int) $year))
             ->condition($condition);
 
         $recordsTotal = (clone $baseQuery)->count();
         $recordsFiltered = (clone $filteredQuery)->count();
         $sortColumn = $orderMap[$orderColumn] ?? 'created_at';
+        if ($sortColumn === 'address' && ! Schema::hasColumn('poles', 'address')) {
+            $sortColumn = 'street_name';
+        }
 
         if (! Schema::hasColumn('poles', $sortColumn)) {
             $sortColumn = 'created_at';
@@ -299,7 +323,12 @@ class PoleController extends Controller
                 'max:80',
                 Rule::unique('poles', 'customer_id')->ignore($pole?->id),
             ],
-            'street_name' => ['required', 'string', 'max:160'],
+            'street_name' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'address' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'village' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'district' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'regency' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'province' => ['sometimes', 'nullable', 'string', 'max:120'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'power_usage' => ['required', 'integer', 'min:1', 'max:100000'],
@@ -325,6 +354,26 @@ class PoleController extends Controller
         }
 
         unset($validated['route_type']);
+
+        return $this->normalizeAddressInput($validated);
+    }
+
+    private function normalizeAddressInput(array $validated): array
+    {
+        $address = trim((string) ($validated['address'] ?? $validated['street_name'] ?? ''));
+
+        if ($address === '') {
+            throw ValidationException::withMessages([
+                'address' => 'Alamat wajib diisi.',
+            ]);
+        }
+
+        $validated['address'] = $address;
+        $validated['street_name'] = $address;
+
+        foreach (['village', 'district', 'regency', 'province'] as $field) {
+            $validated[$field] = trim((string) ($validated[$field] ?? '')) ?: null;
+        }
 
         return $validated;
     }
@@ -371,12 +420,15 @@ class PoleController extends Controller
         $actions = '<a class="btn btn-muted px-3 py-2" href="'.e(route('poles.show', $pole)).'"><i data-lucide="eye" class="icon"></i> Detail</a>';
 
         if ($canDeletePoles) {
-            $actions .= '<button type="button" class="btn btn-danger px-3 py-2" data-open-dialog="pole-datatable-delete-dialog" data-delete-url="'.e(route('poles.destroy', $pole)).'" data-delete-code="'.e($pole->displayName()).'" data-delete-street="'.e($pole->street_name).'"><i data-lucide="trash-2" class="icon"></i> Hapus</button>';
+            $actions .= '<button type="button" class="btn btn-danger px-3 py-2" data-open-dialog="pole-datatable-delete-dialog" data-delete-url="'.e(route('poles.destroy', $pole)).'" data-delete-code="'.e($pole->displayName()).'" data-delete-street="'.e($pole->locationLabel()).'"><i data-lucide="trash-2" class="icon"></i> Hapus</button>';
         }
 
         $row = [
             'customer' => '<p class="min-w-44 whitespace-nowrap font-bold text-slate-100">'.e($pole->displayName()).'</p>',
-            'street_name' => '<span class="pju-location-cell font-medium text-slate-300" title="'.e($pole->street_name).'">'.e($pole->street_name).'</span>',
+            'street_name' => '<span class="pju-location-cell font-medium text-slate-300" title="'.e($pole->locationLabel()).'">'.e($pole->addressLine()).'</span>',
+            'village' => e($pole->village ?: '-'),
+            'district' => e($pole->district ?: '-'),
+            'regency' => e($pole->regency ?: '-'),
             'power_usage' => e(number_format((int) $pole->power_usage)).' Watt',
             'condition' => '<span class="badge badge-'.e((string) $pole->condition).'">'.e($this->formatOption($pole->condition)).'</span>',
             'pole_type' => e($this->formatOption($pole->pole_type)),
@@ -407,6 +459,54 @@ class PoleController extends Controller
     private function canDeletePoles(Request $request): bool
     {
         return $request->user()?->role === 'superadmin';
+    }
+
+    private function searchColumnMap(): array
+    {
+        return [
+            'customer_id' => ['customer_id', 'sub_name'],
+            'address' => ['address', 'street_name'],
+            'village' => ['village'],
+            'district' => ['district'],
+            'regency' => ['regency'],
+            'province' => ['province'],
+            'latitude' => ['latitude'],
+            'longitude' => ['longitude'],
+            'power_usage' => ['power_usage'],
+            'condition' => ['condition'],
+            'pole_type' => ['pole_type'],
+            'height' => ['height'],
+            'ornament_type' => ['ornament_type'],
+            'lamp_type' => ['lamp_type'],
+            'lamp_status' => ['lamp_status'],
+            'lamp_house_type' => ['lamp_house_type'],
+            'lamp_house_condition' => ['lamp_house_condition'],
+            'light_point_count' => ['light_point_count'],
+            'kwh_meter' => ['kwh_meter'],
+            'ownership' => ['ownership'],
+            'created_at' => ['created_at'],
+            'updated_at' => ['updated_at'],
+            'created_by' => ['created_by'],
+            'updated_by' => ['updated_by'],
+            'notes' => ['notes'],
+        ];
+    }
+
+    private function resolveSearchColumns(array $selectedColumns): ?array
+    {
+        $selectedColumns = array_values(array_filter(array_unique($selectedColumns)));
+
+        if ($selectedColumns === []) {
+            return null;
+        }
+
+        $map = $this->searchColumnMap();
+
+        return collect($selectedColumns)
+            ->flatMap(fn (string $column) => $map[$column] ?? [])
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function formatOption(?string $value): string

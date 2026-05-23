@@ -43,7 +43,7 @@
                     <select id="report-pole-id" class="field" name="pole_id" required>
                         <option value="">Pilih tiang</option>
                         @foreach ($reportPoles as $p)
-                            <option value="{{ $p->id }}">{{ $p->displayName() }} - {{ $p->street_name }}</option>
+                            <option value="{{ $p->id }}">{{ $p->displayName() }} - {{ $p->addressLine() }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -72,7 +72,7 @@
                 <div class="flex items-start justify-between gap-4 border-b border-white/10 p-5">
                     <div>
                         <h2 class="text-xl font-black">Edit Data Tiang</h2>
-                        <p class="text-sm text-slate-400">{{ $pole->displayName() }} - {{ $pole->street_name }}</p>
+                        <p class="text-sm text-slate-400">{{ $pole->displayName() }} - {{ $pole->addressLine() }}</p>
                     </div>
                     <button type="button" class="btn btn-muted px-3 py-2" data-close-dialog><i data-lucide="x" class="icon"></i></button>
                 </div>
@@ -104,7 +104,7 @@
                     <div class="p-5">
                         <div class="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
                             <p class="font-bold text-slate-100">{{ $pole->displayName() }}</p>
-                            <p class="mt-1">{{ $pole->street_name }}</p>
+                            <p class="mt-1">{{ $pole->locationLabel() }}</p>
                         </div>
                         <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                             <button type="button" class="btn btn-muted" data-close-dialog>Batal</button>

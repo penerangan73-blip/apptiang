@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PoleController extends Controller
 {
@@ -99,7 +100,12 @@ class PoleController extends Controller
                 'max:80',
                 Rule::unique('poles', 'customer_id')->ignore($pole?->id),
             ],
-            'street_name' => ['required', 'string', 'max:160'],
+            'street_name' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'address' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'village' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'district' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'regency' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'province' => ['sometimes', 'nullable', 'string', 'max:120'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'power_usage' => ['required', 'integer', 'min:1', 'max:100000'],
@@ -119,6 +125,26 @@ class PoleController extends Controller
             'photo' => ['sometimes', 'nullable', 'image', 'max:10240'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        return $this->normalizeAddressInput($validated);
+    }
+
+    private function normalizeAddressInput(array $validated): array
+    {
+        $address = trim((string) ($validated['address'] ?? $validated['street_name'] ?? ''));
+
+        if ($address === '') {
+            throw ValidationException::withMessages([
+                'address' => 'Alamat wajib diisi.',
+            ]);
+        }
+
+        $validated['address'] = $address;
+        $validated['street_name'] = $address;
+
+        foreach (['village', 'district', 'regency', 'province'] as $field) {
+            $validated[$field] = trim((string) ($validated[$field] ?? '')) ?: null;
+        }
 
         return $validated;
     }

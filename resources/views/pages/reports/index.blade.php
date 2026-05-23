@@ -26,7 +26,7 @@
                 <tr>
                     <th class="px-5 py-3">Tanggal & Waktu</th>
                     <th class="px-5 py-3">ID Pelanggan</th>
-                    <th class="px-5 py-3">Jalan</th>
+                    <th class="px-5 py-3">Lokasi</th>
                     <th class="px-5 py-3">Catatan</th>
                     <th class="px-5 py-3">Foto</th>
                 </tr>
@@ -39,7 +39,7 @@
                             <p class="mt-1 text-xs font-bold text-slate-400">{{ $report->created_at?->format('H:i') }} WIB</p>
                         </td>
                         <td class="px-5 py-4">{{ $report->pole?->displayName() ?? 'Tiang tidak ditemukan' }}</td>
-                        <td class="px-5 py-4">{{ $report->pole?->street_name }}</td>
+                        <td class="px-5 py-4">{{ $report->pole?->locationLabel() }}</td>
                         <td class="px-5 py-4">{{ $report->notes }}</td>
                         <td class="px-5 py-4">
                             @php

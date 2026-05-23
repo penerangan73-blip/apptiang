@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Pole;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class PolePageController extends Controller
@@ -15,7 +16,7 @@ class PolePageController extends Controller
         $condition = $request->query('condition');
 
         $allPoles = Pole::query()
-            ->select(['id', 'sub_name', 'customer_id', 'street_name'])
+            ->select($this->poleColumns(['id', 'sub_name', 'customer_id', 'street_name', 'address', 'village', 'district', 'regency', 'province']))
             ->latest()
             ->get();
 
@@ -39,5 +40,12 @@ class PolePageController extends Controller
             'user' => $user,
             'canManagePoles' => in_array($user->role, ['superadmin', 'surveyor'], true),
         ]);
+    }
+
+    private function poleColumns(array $columns): array
+    {
+        $existingColumns = Schema::getColumnListing('poles');
+
+        return array_values(array_intersect($columns, $existingColumns));
     }
 }

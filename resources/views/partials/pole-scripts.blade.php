@@ -64,7 +64,13 @@
 
             const latInput = document.getElementById(container.dataset.latInput);
             const lngInput = document.getElementById(container.dataset.lngInput);
-            const streetInput = document.getElementById(container.dataset.streetInput);
+            const addressInput = document.getElementById(container.dataset.addressInput || container.dataset.streetInput);
+            const adminInputs = {
+                village: document.getElementById(container.dataset.villageInput),
+                district: document.getElementById(container.dataset.districtInput),
+                regency: document.getElementById(container.dataset.regencyInput),
+                province: document.getElementById(container.dataset.provinceInput),
+            };
             const notice = document.getElementById(container.dataset.noticeId);
 
             if (!window.L || !latInput || !lngInput) {
@@ -80,6 +86,7 @@
             const map = L.map(container).setView([initialCoordinates.latitude, initialCoordinates.longitude], 16);
             window.pjuMaps[container.id] = map;
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+            window.pjuAddAdministrativeLayersToMap?.(map);
             const pinIcon = L.divIcon({ className: '', html: '<span style="display:flex;width:24px;height:24px;align-items:center;justify-content:center;border-radius:999px;background:#2563eb;border:3px solid white;box-shadow:0 10px 24px rgba(15,23,42,.35)"><span style="display:block;width:6px;height:6px;border-radius:999px;background:white"></span></span>', iconSize: [24, 24], iconAnchor: [12, 12] });
             const marker = L.marker([initialCoordinates.latitude, initialCoordinates.longitude], { draggable: true, icon: pinIcon }).addTo(map);
             window.pjuCoordinatePickerState[container.id] = {
@@ -89,7 +96,8 @@
                 map,
                 marker,
                 notice,
-                streetInput,
+                addressInput,
+                adminInputs,
             };
 
             const updateDraft = (latlng, message = 'Titik dipilih. Tekan Set Lokasi untuk memasukkan ke input.') => {
@@ -160,33 +168,53 @@
         if (!state) return;
 
         const { latitude, longitude } = state.draft;
+        const lookupRequestId = (state.lookupRequestId || 0) + 1;
+        state.lookupRequestId = lookupRequestId;
         state.latInput.value = latitude;
         state.lngInput.value = longitude;
+        if (state.addressInput) state.addressInput.value = '';
+        Object.values(state.adminInputs || {}).forEach((input) => {
+            if (input) input.value = '';
+        });
 
-        if (state.notice) state.notice.textContent = `Koordinat sudah dikirim ke input. Mengambil alamat marker... (${latitude}, ${longitude})`;
+        if (state.notice) state.notice.textContent = `Koordinat sudah dikirim ke input. Membaca layer administrasi... (${latitude}, ${longitude})`;
 
-        if (state.streetInput) {
-            reverseAddress(latitude, longitude).then((address) => {
-                if (address) {
-                    state.streetInput.value = address;
-                    if (state.notice) state.notice.textContent = `Koordinat dan alamat marker sudah diset. (${latitude}, ${longitude})`;
-                } else if (state.notice) {
-                    state.notice.textContent = `Koordinat sudah diset, tetapi alamat marker tidak ditemukan. (${latitude}, ${longitude})`;
-                }
+        Promise.all([
+            (window.pjuAdministrativeAddressAtPoint?.(latitude, longitude) || Promise.resolve({})).catch(() => ({})),
+            reverseAddress(latitude, longitude).catch(() => ({})),
+        ]).then(([layerAddress, reverseAddressData]) => {
+            if (state.lookupRequestId !== lookupRequestId) return;
+
+            const mergedAddress = {
+                ...reverseAddressData,
+                ...Object.fromEntries(Object.entries(layerAddress || {}).filter(([, value]) => String(value || '').trim() !== '')),
+            };
+
+            if (state.addressInput) {
+                state.addressInput.value = reverseAddressData.address || '';
+            }
+
+            Object.entries(state.adminInputs || {}).forEach(([key, input]) => {
+                if (input) input.value = mergedAddress[key] || '';
             });
-        } else if (state.notice) {
-            state.notice.textContent = `Koordinat sudah dikirim ke input Latitude dan Longitude. (${latitude}, ${longitude})`;
-        }
+
+            const hasLayerAddress = ['village', 'district', 'regency', 'province'].some((key) => mergedAddress[key]);
+            if (state.notice) {
+                state.notice.textContent = hasLayerAddress
+                    ? `Koordinat dan administrasi sudah diset dari layer. (${latitude}, ${longitude})`
+                    : `Koordinat sudah diset, tetapi administrasi tidak ditemukan pada layer. (${latitude}, ${longitude})`;
+            }
+        });
     }
 
     async function reverseAddress(lat, lng) {
         try {
             const params = new URLSearchParams({ format: 'jsonv2', lat, lon: lng, zoom: 18, addressdetails: 1, 'accept-language': 'id' });
             const response = await fetch(`https://nominatim.openstreetmap.org/reverse?${params.toString()}`, { headers: { Accept: 'application/json' } });
-            if (!response.ok) return '';
+            if (!response.ok) return {};
             const data = await response.json();
             return formatReverseAddress(data);
-        } catch { return ''; }
+        } catch { return {}; }
     }
 
     function formatReverseAddress(data) {
@@ -207,9 +235,197 @@
             'lombok',
         ].filter(Boolean));
 
-        return String(data?.display_name || '')
-            .split(',')
-            .map((part) => part.trim())
-            .filter((part) => part && !excludedParts.has(part.toLowerCase()))
+        return {
+            address: compactAddressFromGeocode(data, excludedParts),
+            village: address.village || address.suburb || address.neighbourhood || '',
+            district: address.district || address.city_district || '',
+            regency: address.city || address.town || address.municipality || address.county || '',
+            province: address.state || '',
+        };
+    }
+
+    function compactAddressFromGeocode(data, excludedParts) {
+        const address = data?.address || {};
+        const firstPart = firstFilled([
+            address.road,
+            address.pedestrian,
+            address.footway,
+            address.path,
+            address.residential,
+            address.cycleway,
+            data?.name,
+        ]);
+        const secondPart = firstFilled([
+            address.hamlet,
+            address.neighbourhood,
+            address.suburb,
+            address.village,
+        ]);
+
+        return [firstPart, secondPart]
+            .map((part) => String(part || '').trim())
+            .filter((part, index, parts) => part && !excludedParts.has(part.toLowerCase()) && parts.indexOf(part) === index)
             .join(', ');
+    }
+
+    function firstFilled(values) {
+        return values.find((value) => String(value || '').trim() !== '') || '';
+    }
+
+    // Administrative layer support for coordinate pickers
+    window.pjuAdministrativeLayerConfigs = window.pjuAdministrativeLayerConfigs || [
+        { id: 'administrasi-area', label: 'Administrasi Area', url: '/data/peta/administrasi_ar_340320240807001259.zip', style: { color: '#075985', fillColor: '#38bdf8', fillOpacity: 0.16, opacity: 0.95, weight: 1.2 }, hover: { fillOpacity: 0.28, weight: 2.2 } },
+        { id: 'administrasi-garis', label: 'Batas Administrasi', url: '/data/peta/administrasi_ln_340320240806233638.zip', style: { color: '#0e7490', fillOpacity: 0, opacity: 0.95, weight: 1.5, dashArray: '4 3' }, hover: { opacity: 1, weight: 2.4 } },
+    ];
+    window.pjuAdministrativeLayers = window.pjuAdministrativeLayers || [];
+    window.pjuAdministrativeLayerPromise = window.pjuAdministrativeLayerPromise || null;
+    window.pjuShpScriptPromise = window.pjuShpScriptPromise || null;
+
+    window.pjuEnsureShpJs = async function pjuEnsureShpJs() {
+        if (window.shp) return window.shp;
+        if (!window.pjuShpScriptPromise) {
+            window.pjuShpScriptPromise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/shpjs@6.2.0/dist/shp.min.js';
+                script.async = true;
+                script.onload = () => resolve(window.shp);
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        return window.pjuShpScriptPromise;
+    };
+
+    window.pjuLoadAdministrativeLayers = async function pjuLoadAdministrativeLayers() {
+        if (window.pjuAdministrativeLayers.length) return window.pjuAdministrativeLayers;
+        if (window.pjuAdministrativeLayerPromise) return window.pjuAdministrativeLayerPromise;
+
+        window.pjuAdministrativeLayerPromise = (async () => {
+            const parseShp = await window.pjuEnsureShpJs();
+            const settled = await Promise.allSettled(window.pjuAdministrativeLayerConfigs.map(async (config) => {
+                const response = await fetch(config.url);
+                if (!response.ok) throw new Error(config.label);
+                const payload = await parseShp(await response.arrayBuffer());
+                return {
+                    ...config,
+                    data: Array.isArray(payload)
+                        ? { type: 'FeatureCollection', features: payload.flatMap((item) => item.features || []) }
+                        : payload,
+                };
+            }));
+
+            window.pjuAdministrativeLayers.push(...settled.flatMap((item) => item.status === 'fulfilled' ? [item.value] : []));
+            return window.pjuAdministrativeLayers;
+        })();
+
+        return window.pjuAdministrativeLayerPromise;
+    };
+
+    window.pjuAddAdministrativeLayersToMap = function pjuAddAdministrativeLayersToMap(map) {
+        if (!map || map._pjuCoordinateAdminLayerGroup) return;
+
+        window.pjuLoadAdministrativeLayers().then((layers) => {
+            if (!layers.length || map._pjuCoordinateAdminLayerGroup) return;
+            const group = L.layerGroup();
+
+            layers.forEach((layerConfig) => {
+                group.addLayer(L.geoJSON(layerConfig.data, {
+                    style: (feature) => layerConfig.id === 'administrasi-area'
+                        ? { ...layerConfig.style, fillColor: adminColor(feature) }
+                        : layerConfig.style,
+                    onEachFeature: (feature, featureLayer) => bindAdminFeature(layerConfig, feature, featureLayer),
+                }));
+            });
+
+            group.addTo(map);
+            map._pjuCoordinateAdminLayerGroup = group;
+        }).catch(() => {});
+    };
+
+    window.pjuAdministrativeAddressAtPoint = async function pjuAdministrativeAddressAtPoint(latitude, longitude) {
+        const layers = await window.pjuLoadAdministrativeLayers();
+        const areaLayer = layers.find((layer) => layer.id === 'administrasi-area');
+        const features = areaLayer?.data?.features || [];
+        const point = [Number(longitude), Number(latitude)];
+        const feature = features.find((item) => pointInGeometry(point, item.geometry));
+
+        return feature ? adminAddressFromProperties(feature.properties || {}) : {};
+    };
+
+    function bindAdminFeature(layerConfig, feature, layer) {
+        if (layer.setStyle) {
+            const base = layerConfig.id === 'administrasi-area' ? { ...layerConfig.style, fillColor: adminColor(feature) } : layerConfig.style;
+            layer.on({
+                mouseover: () => layer.setStyle({ ...base, ...layerConfig.hover }),
+                mouseout: () => layer.setStyle(base),
+            });
+        }
+
+        const admin = adminAddressFromProperties(feature.properties || {});
+        const name = admin.village || prop(feature.properties || {}, 'namobj') || layerConfig.label;
+        layer.bindTooltip(name, { sticky: true, direction: 'top', opacity: 0.92 });
+    }
+
+    function adminAddressFromProperties(properties) {
+        return {
+            village: propAny(properties, ['wadmkd', 'desa', 'kelurahan', 'kalurahan', 'namobj']),
+            district: propAny(properties, ['wadmkc', 'kecamatan', 'kapanewon', 'kecamata_1']),
+            regency: propAny(properties, ['wadmkk', 'kabupaten', 'kab_kota', 'kabkot']),
+            province: propAny(properties, ['wadmpr', 'provinsi', 'province', 'prov']),
+        };
+    }
+
+    function pointInGeometry(point, geometry) {
+        if (!geometry) return false;
+        if (geometry.type === 'Polygon') return pointInPolygon(point, geometry.coordinates || []);
+        if (geometry.type === 'MultiPolygon') return (geometry.coordinates || []).some((polygon) => pointInPolygon(point, polygon));
+
+        return false;
+    }
+
+    function pointInPolygon(point, polygon) {
+        if (!polygon.length || !pointInRing(point, polygon[0])) return false;
+
+        return !polygon.slice(1).some((ring) => pointInRing(point, ring));
+    }
+
+    function pointInRing(point, ring) {
+        const [x, y] = point;
+        let inside = false;
+
+        for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+            const xi = Number(ring[i][0]);
+            const yi = Number(ring[i][1]);
+            const xj = Number(ring[j][0]);
+            const yj = Number(ring[j][1]);
+            const intersects = ((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / ((yj - yi) || Number.EPSILON) + xi);
+            if (intersects) inside = !inside;
+        }
+
+        return inside;
+    }
+
+    function adminColor(feature) {
+        const key = propAny(feature.properties || {}, ['wadmkd', 'desa', 'kelurahan', 'kalurahan', 'namobj']) || JSON.stringify(feature.geometry?.type || 'area');
+        const palette = ['#7dd3fc','#93c5fd','#a5b4fc','#c4b5fd','#f0abfc','#f9a8d4','#fca5a5','#fdba74','#fde68a','#bef264','#86efac','#5eead4'];
+        let hash = 0;
+        for (let index = 0; index < key.length; index++) hash = (hash * 31 + key.charCodeAt(index)) >>> 0;
+
+        return palette[hash % palette.length];
+    }
+
+    function propAny(properties, keys) {
+        for (const key of keys) {
+            const value = prop(properties, key);
+            if (value) return value;
+        }
+
+        return '';
+    }
+
+    function prop(properties, key) {
+        const match = Object.keys(properties).find((item) => item.toLowerCase() === key.toLowerCase());
+
+        return match && properties[match] != null ? String(properties[match]).trim() : '';
     }
