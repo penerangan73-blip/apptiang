@@ -297,6 +297,11 @@
                     return;
                 }
 
+                if (dialog.id === 'pole-create-dialog') {
+                    const lampHouseType = dialog.querySelector('[name="lamp_house_type"]');
+                    if (lampHouseType) lampHouseType.value = '';
+                }
+
                 if (openButton.dataset.reportPole) {
                     const select = document.getElementById('report-pole-id');
                     if (select) select.value = openButton.dataset.reportPole;

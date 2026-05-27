@@ -106,7 +106,7 @@
             <select class="field" name="lamp_house_type" required>
                 <option value="" @selected($poleValue('lamp_house_type') === '')>Pilihan</option>
                 @foreach (['caping' => 'Caping', 'konvensional' => 'Konvensional', 'tidak_ada' => 'Tidak Ada'] as $value => $text)
-                    <option value="{{ $value }}" @selected($poleValue('lamp_house_type', 'caping') === $value)>{{ $text }}</option>
+                    <option value="{{ $value }}" @selected($poleValue('lamp_house_type') === $value)>{{ $text }}</option>
                 @endforeach
             </select>
         </div>

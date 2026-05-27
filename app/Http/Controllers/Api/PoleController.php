@@ -115,7 +115,7 @@ class PoleController extends Controller
             'ornament_type' => ['required', Rule::in(['single_arm', 'double_arm', 'high_mast', 'lainnya'])],
             'lamp_type' => ['required', Rule::in(['led', 'hps', 'son_t', 'mercury', 'lainnya'])],
             'lamp_status' => ['required', Rule::in(['menyala', 'redup', 'berkedip', 'mati', 'rusak_pecah', 'tidak_ada_lampu'])],
-            'lamp_house_type' => ['sometimes', Rule::in(['caping', 'konvensional', 'tidak_ada'])],
+            'lamp_house_type' => ['required', Rule::in(['caping', 'konvensional', 'tidak_ada'])],
             'lamp_house_condition' => ['required', Rule::in(['baik', 'rusak'])],
             'light_point_count' => ['required', 'integer', 'min:1', 'max:1000'],
             'kwh_meter' => ['required', Rule::in(['sudah_ada', 'belum'])],
@@ -125,8 +125,6 @@ class PoleController extends Controller
             'photo' => ['sometimes', 'nullable', 'image', 'max:10240'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
-
-        $validated['lamp_house_type'] ??= 'caping';
 
         return $this->normalizeAddressInput($validated);
     }
