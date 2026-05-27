@@ -2,7 +2,7 @@
     $label = $label ?? fn ($value) => ucfirst(str_replace('_', ' ', (string) $value));
     $ownership = $ownership ?? fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
     $canManagePoles = $canManagePoles ?? in_array(auth()->user()->role, ['superadmin', 'surveyor'], true);
-    $canDeletePoles = auth()->user()->role === 'superadmin';
+    $canDeletePoles = in_array(auth()->user()->role, ['superadmin', 'surveyor'], true);
     $reportPoles = $reportPoles ?? ($allPoles ?? collect());
 @endphp
 

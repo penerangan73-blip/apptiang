@@ -3,7 +3,7 @@
         <input class="field" id="search-query" name="query" value="{{ $query }}" placeholder="Cari semua kolom data tiang...">
         <select class="field" id="search-condition" name="condition">
             <option value="">Semua kondisi tiang</option>
-            @foreach (['kokoh' => 'Kokoh', 'keropos' => 'Keropos', 'miring' => 'Miring', 'berkarat' => 'Berkarat'] as $option => $text)
+            @foreach (['kokoh' => 'Kokoh', 'keropos' => 'Keropos', 'miring' => 'Miring', 'berkarat' => 'Berkarat', 'lainnya' => 'Lainnya'] as $option => $text)
                 <option value="{{ $option }}" @selected($condition === $option)>{{ $text }}</option>
             @endforeach
         </select>

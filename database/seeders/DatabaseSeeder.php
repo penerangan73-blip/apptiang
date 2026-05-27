@@ -59,12 +59,13 @@ class DatabaseSeeder extends Seeder
             ['kapanewon' => 'Wonosari', 'street' => 'Jalan Siyono-Wonosari', 'lat' => -7.9492, 'lon' => 110.5891],
             ['kapanewon' => 'Karangmojo', 'street' => 'Jalan Bejiharjo-Karangmojo', 'lat' => -7.9286, 'lon' => 110.6492],
         ];
-        $conditions = ['kokoh', 'kokoh', 'kokoh', 'keropos', 'miring', 'berkarat'];
-        $poleTypes = ['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln'];
-        $ornamentTypes = ['single_arm', 'double_arm', 'high_mast'];
+        $conditions = ['kokoh', 'kokoh', 'kokoh', 'keropos', 'miring', 'berkarat', 'lainnya'];
+        $poleTypes = ['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln', 'menempel_pohon'];
+        $ornamentTypes = ['single_arm', 'double_arm', 'high_mast', 'lainnya'];
         $lampTypes = ['led', 'hps', 'son_t', 'mercury', 'lainnya'];
         $lampStatuses = ['menyala', 'menyala', 'menyala', 'mati', 'redup', 'berkedip'];
-        $lampHouseConditions = ['kusam', 'kusam', 'kemasukan_air', 'pecah'];
+        $lampHouseTypes = ['caping', 'konvensional', 'tidak_ada'];
+        $lampHouseConditions = ['baik', 'baik', 'rusak'];
         $ownerships = ['dpu_kp', 'dishub', 'pln', 'lainnya'];
         $powerUsages = [60, 80, 90, 100, 120, 150];
 
@@ -77,6 +78,7 @@ class DatabaseSeeder extends Seeder
             $ornamentTypes,
             $lampTypes,
             $lampStatuses,
+            $lampHouseTypes,
             $lampHouseConditions,
             $ownerships,
             $powerUsages,
@@ -97,10 +99,11 @@ class DatabaseSeeder extends Seeder
                 'power_usage' => $this->pick($powerUsages),
                 'condition' => $this->pick($conditions),
                 'pole_type' => $poleType,
-                'height' => $poleType === 'menempel_tiang_pln' ? null : $this->randomFloat(5.5, 10.5, 1),
+                'height' => in_array($poleType, ['menempel_tiang_pln', 'menempel_pohon'], true) ? null : $this->randomFloat(5.5, 10.5, 1),
                 'ornament_type' => $this->pick($ornamentTypes),
                 'lamp_type' => $this->pick($lampTypes),
                 'lamp_status' => $this->pick($lampStatuses),
+                'lamp_house_type' => $this->pick($lampHouseTypes),
                 'lamp_house_condition' => $this->pick($lampHouseConditions),
                 'light_point_count' => mt_rand(1, 4),
                 'kwh_meter' => $number % 3 === 0 ? 'belum' : 'sudah_ada',

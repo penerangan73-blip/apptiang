@@ -3,8 +3,8 @@
 @section('content')
 @php
     $label = fn ($value) => [
-        'baik' => 'Kokoh',
-        'rusak' => 'Keropos',
+        'baik' => 'Baik',
+        'rusak' => 'Rusak',
         'perbaikan' => 'Berkarat',
         'lurus' => 'Tiang Baja (Galvanis)',
         'lengkung' => 'Tiang Baja (Galvanis)',
@@ -17,6 +17,7 @@
         'tiang_baja_galvanis' => 'Tiang Baja (Galvanis)',
         'tiang_beton' => 'Tiang Beton',
         'menempel_tiang_pln' => 'Menempel Tiang PLN',
+        'menempel_pohon' => 'Menempel Pohon',
         'single_arm' => 'Single Arm',
         'double_arm' => 'Double Arm',
         'high_mast' => 'High Mast',
@@ -37,6 +38,7 @@
         'tidak_ada_lampu' => 'Tidak Ada Lampu',
         'caping' => 'Caping',
         'konvensional' => 'Konvensional',
+        'tidak_ada' => 'Tidak Ada',
         'pecah' => 'Pecah',
         'kusam' => 'Kusam',
         'kemasukan_air' => 'Kemasukan Air',
@@ -265,7 +267,7 @@
         const map = L.map(el).setView([lat, lng], 17);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
 
-        const colors = { kokoh: '#059669', keropos: '#e11d48', miring: '#d97706', berkarat: '#b45309' };
+        const colors = { kokoh: '#059669', keropos: '#e11d48', miring: '#d97706', berkarat: '#b45309', lainnya: '#64748b' };
         L.marker([lat, lng], {
             icon: L.divIcon({
                 className: '',

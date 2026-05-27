@@ -63,6 +63,7 @@
         .badge-keropos, .badge-rusak { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171; }
         .badge-miring, .badge-perbaikan { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); color: #fbbf24; }
         .badge-berkarat { background: rgba(217, 119, 6, 0.12); border: 1px solid rgba(217, 119, 6, 0.25); color: #fdba74; }
+        .badge-lainnya { background: rgba(100, 116, 139, 0.12); border: 1px solid rgba(148, 163, 184, 0.24); color: #cbd5e1; }
         .pju-location-cell { display: inline-block; max-width: none; overflow: visible; text-overflow: clip; white-space: nowrap; }
         .tab-panel[hidden] { display: none; }
         .tab-button.active { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border-left: 3px solid #22d3ee; border-radius: 0 8px 8px 0; }

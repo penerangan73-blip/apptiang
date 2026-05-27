@@ -1,7 +1,7 @@
 @php
     $label = $label ?? fn ($value) => [
-        'baik' => 'Kokoh',
-        'rusak' => 'Keropos',
+        'baik' => 'Baik',
+        'rusak' => 'Rusak',
         'perbaikan' => 'Berkarat',
         'lurus' => 'Tiang Baja (Galvanis)',
         'lengkung' => 'Tiang Baja (Galvanis)',
@@ -14,6 +14,7 @@
         'tiang_baja_galvanis' => 'Tiang Baja (Galvanis)',
         'tiang_beton' => 'Tiang Beton',
         'menempel_tiang_pln' => 'Menempel Tiang PLN',
+        'menempel_pohon' => 'Menempel Pohon',
         'single_arm' => 'Single Arm',
         'double_arm' => 'Double Arm',
         'high_mast' => 'High Mast',
@@ -34,6 +35,7 @@
         'tidak_ada_lampu' => 'Tidak Ada Lampu',
         'caping' => 'Caping',
         'konvensional' => 'Konvensional',
+        'tidak_ada' => 'Tidak Ada',
         'pecah' => 'Pecah',
         'kusam' => 'Kusam',
         'kemasukan_air' => 'Kemasukan Air',
@@ -43,7 +45,7 @@
     $ownership = $ownership ?? fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
     $showManageActions = $showManageActions ?? true;
     $showDirectionActions = $showDirectionActions ?? false;
-    $canDeletePoles = auth()->user()->role === 'superadmin';
+    $canDeletePoles = in_array(auth()->user()->role, ['superadmin', 'surveyor'], true);
 @endphp
 
 <div class="card overflow-hidden">

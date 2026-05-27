@@ -4,6 +4,7 @@
         ['label' => 'Keropos', 'color' => '#e11d48'],
         ['label' => 'Miring', 'color' => '#d97706'],
         ['label' => 'Berkarat', 'color' => '#b45309'],
+        ['label' => 'Lainnya', 'color' => '#64748b'],
     ];
 @endphp
 

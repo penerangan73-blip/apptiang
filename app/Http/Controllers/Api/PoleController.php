@@ -18,7 +18,7 @@ class PoleController extends Controller
     {
         $validated = $request->validate([
             'query' => ['sometimes', 'nullable', 'string', 'max:120'],
-            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh'])],
+            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
         ]);
 
         $poles = Pole::query()
@@ -109,14 +109,14 @@ class PoleController extends Controller
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'power_usage' => ['required', 'integer', 'min:1', 'max:100000'],
-            'condition' => ['required', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh'])],
-            'pole_type' => ['required', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln'])],
+            'condition' => ['required', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
+            'pole_type' => ['required', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln', 'menempel_pohon'])],
             'height' => ['nullable', 'numeric', 'min:0', 'max:1000'],
-            'ornament_type' => ['required', Rule::in(['single_arm', 'double_arm', 'high_mast'])],
+            'ornament_type' => ['required', Rule::in(['single_arm', 'double_arm', 'high_mast', 'lainnya'])],
             'lamp_type' => ['required', Rule::in(['led', 'hps', 'son_t', 'mercury', 'lainnya'])],
             'lamp_status' => ['required', Rule::in(['menyala', 'redup', 'berkedip', 'mati', 'rusak_pecah', 'tidak_ada_lampu'])],
-            'lamp_house_type' => ['sometimes', Rule::in(['caping', 'konvensional'])],
-            'lamp_house_condition' => ['required', Rule::in(['pecah', 'kusam', 'kemasukan_air'])],
+            'lamp_house_type' => ['sometimes', Rule::in(['caping', 'konvensional', 'tidak_ada'])],
+            'lamp_house_condition' => ['required', Rule::in(['baik', 'rusak'])],
             'light_point_count' => ['required', 'integer', 'min:1', 'max:1000'],
             'kwh_meter' => ['required', Rule::in(['sudah_ada', 'belum'])],
             'ownership' => ['required', Rule::in(['dpu_kp', 'dishub', 'pln', 'lainnya'])],
@@ -125,6 +125,8 @@ class PoleController extends Controller
             'photo' => ['sometimes', 'nullable', 'image', 'max:10240'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        $validated['lamp_house_type'] ??= 'caping';
 
         return $this->normalizeAddressInput($validated);
     }

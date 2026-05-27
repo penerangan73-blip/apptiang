@@ -43,7 +43,7 @@ class MapPageController extends Controller
     {
         $validated = $request->validate([
             'query' => ['sometimes', 'nullable', 'string', 'max:120'],
-            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh'])],
+            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
             'summary' => ['sometimes', 'boolean'],
         ]);
         $summary = $request->boolean('summary');
@@ -111,7 +111,7 @@ class MapPageController extends Controller
     {
         $validated = $request->validate([
             'query' => ['sometimes', 'nullable', 'string', 'max:120'],
-            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh'])],
+            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
             'include_layers' => ['sometimes', 'boolean'],
         ]);
         $includeLayers = $request->boolean('include_layers');

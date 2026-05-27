@@ -43,7 +43,7 @@
 @php
     $label = fn ($value) => ucfirst(str_replace('_', ' ', (string) $value));
     $ownership = fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
-    $canDeletePoles = $user->role === 'superadmin';
+    $canDeletePoles = in_array($user->role, ['superadmin', 'surveyor'], true);
     $filterColumns = [
         'customer_id' => 'Nomor Tiang',
         'address' => 'Lokasi',

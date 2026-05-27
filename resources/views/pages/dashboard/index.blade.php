@@ -9,6 +9,7 @@
         'miring' => 'Miring',
         'berkarat' => 'Berkarat',
         'kokoh' => 'Kokoh',
+        'lainnya' => 'Lainnya',
     ][$value] ?? ucfirst(str_replace('_', ' ', (string) $value));
 @endphp
 
@@ -88,7 +89,7 @@
             <h3 class="text-lg font-black">Kondisi Tiang</h3>
             <p class="text-sm text-slate-400">Distribusi kondisi aset PJU.</p>
             <div class="mt-4 space-y-4">
-                @foreach (['kokoh', 'keropos', 'miring', 'berkarat'] as $conditionName)
+                @foreach (['kokoh', 'keropos', 'miring', 'berkarat', 'lainnya'] as $conditionName)
                     @php
                         $count = $stats[$conditionName];
                         $percent = (int) round(($count / max($stats['total'], 1)) * 100);
@@ -186,7 +187,7 @@
 
     function addDashboardMarkers(map, poles) {
         const bounds = [];
-        const markerColors = { kokoh: '#059669', keropos: '#e11d48', miring: '#d97706', berkarat: '#b45309' };
+        const markerColors = { kokoh: '#059669', keropos: '#e11d48', miring: '#d97706', berkarat: '#b45309', lainnya: '#64748b' };
         poles.forEach((pole) => {
             const lat = Number(pole.latitude), lng = Number(pole.longitude);
             if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;

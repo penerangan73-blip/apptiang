@@ -41,6 +41,7 @@ class DashboardController extends Controller
             ->selectRaw("SUM(CASE WHEN `condition` = 'keropos' THEN 1 ELSE 0 END) as keropos")
             ->selectRaw("SUM(CASE WHEN `condition` = 'miring' THEN 1 ELSE 0 END) as miring")
             ->selectRaw("SUM(CASE WHEN `condition` = 'berkarat' THEN 1 ELSE 0 END) as berkarat")
+            ->selectRaw("SUM(CASE WHEN `condition` = 'lainnya' THEN 1 ELSE 0 END) as lainnya")
             ->selectRaw("SUM(CASE WHEN `lamp_status` = 'menyala' THEN 1 ELSE 0 END) as lamp_menyala")
             ->selectRaw("SUM(CASE WHEN `lamp_status` = 'redup' THEN 1 ELSE 0 END) as lamp_redup")
             ->selectRaw("SUM(CASE WHEN `lamp_status` = 'berkedip' THEN 1 ELSE 0 END) as lamp_berkedip")
@@ -54,6 +55,7 @@ class DashboardController extends Controller
             'keropos' => (int) $poleStats->keropos,
             'miring' => (int) $poleStats->miring,
             'berkarat' => (int) $poleStats->berkarat,
+            'lainnya' => (int) $poleStats->lainnya,
             'lamp_menyala' => (int) $poleStats->lamp_menyala,
             'lamp_redup' => (int) $poleStats->lamp_redup,
             'lamp_berkedip' => (int) $poleStats->lamp_berkedip,

@@ -195,7 +195,7 @@ class Pole extends Model
 
     public function scopeCondition(Builder $query, ?string $condition): Builder
     {
-        if (! in_array($condition, ['keropos', 'miring', 'berkarat', 'kokoh'], true)) {
+        if (! in_array($condition, ['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'], true)) {
             return $query;
         }
 

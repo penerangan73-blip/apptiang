@@ -409,8 +409,8 @@
 
     function formatOption(value) {
         return {
-            baik: 'Kokoh',
-            rusak: 'Keropos',
+            baik: 'Baik',
+            rusak: 'Rusak',
             perbaikan: 'Berkarat',
             lurus: 'Tiang Baja (Galvanis)',
             lengkung: 'Tiang Baja (Galvanis)',
@@ -423,6 +423,7 @@
             tiang_baja_galvanis: 'Tiang Baja (Galvanis)',
             tiang_beton: 'Tiang Beton',
             menempel_tiang_pln: 'Menempel Tiang PLN',
+            menempel_pohon: 'Menempel Pohon',
             single_arm: 'Single Arm',
             double_arm: 'Double Arm',
             high_mast: 'High Mast',
@@ -443,6 +444,7 @@
             tidak_ada_lampu: 'Tidak Ada Lampu',
             caping: 'Caping',
             konvensional: 'Konvensional',
+            tidak_ada: 'Tidak Ada',
             pecah: 'Pecah',
             kusam: 'Kusam',
             kemasukan_air: 'Kemasukan Air',

@@ -25,7 +25,7 @@ class PoleController extends Controller
             'search_columns' => ['sometimes', 'array', 'max:30'],
             'search_columns.*' => ['string', Rule::in(array_keys($this->searchColumnMap()))],
             'year' => ['sometimes', 'nullable', 'integer', 'min:2000', 'max:2100'],
-            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh'])],
+            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
         ]);
         $searchColumns = $this->resolveSearchColumns($validated['search_columns'] ?? []);
 
@@ -127,7 +127,7 @@ class PoleController extends Controller
             'search_columns' => ['sometimes', 'array', 'max:30'],
             'search_columns.*' => ['string', Rule::in(array_keys($this->searchColumnMap()))],
             'year' => ['sometimes', 'nullable', 'integer', 'min:2000', 'max:2100'],
-            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh'])],
+            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
             'order.0.column' => ['sometimes', 'integer', 'min:0'],
             'order.0.dir' => ['sometimes', Rule::in(['asc', 'desc'])],
         ]);
@@ -332,14 +332,14 @@ class PoleController extends Controller
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'power_usage' => ['required', 'integer', 'min:1', 'max:100000'],
-            'condition' => ['required', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh'])],
-            'pole_type' => ['required', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln'])],
+            'condition' => ['required', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
+            'pole_type' => ['required', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln', 'menempel_pohon'])],
             'height' => ['nullable', 'numeric', 'min:0', 'max:1000'],
-            'ornament_type' => ['required', Rule::in(['single_arm', 'double_arm', 'high_mast'])],
+            'ornament_type' => ['required', Rule::in(['single_arm', 'double_arm', 'high_mast', 'lainnya'])],
             'lamp_type' => ['required', Rule::in(['led', 'hps', 'son_t', 'mercury', 'lainnya'])],
             'lamp_status' => ['required', Rule::in(['menyala', 'redup', 'berkedip', 'mati', 'rusak_pecah', 'tidak_ada_lampu'])],
-            'lamp_house_type' => ['required', Rule::in(['caping', 'konvensional'])],
-            'lamp_house_condition' => ['required', Rule::in(['pecah', 'kusam', 'kemasukan_air'])],
+            'lamp_house_type' => ['required', Rule::in(['caping', 'konvensional', 'tidak_ada'])],
+            'lamp_house_condition' => ['required', Rule::in(['baik', 'rusak'])],
             'light_point_count' => ['required', 'integer', 'min:1', 'max:1000'],
             'kwh_meter' => ['required', Rule::in(['sudah_ada', 'belum'])],
             'ownership' => ['required', Rule::in(['dpu_kp', 'dishub', 'pln', 'lainnya'])],
@@ -458,7 +458,7 @@ class PoleController extends Controller
 
     private function canDeletePoles(Request $request): bool
     {
-        return $request->user()?->role === 'superadmin';
+        return in_array($request->user()?->role, ['superadmin', 'surveyor'], true);
     }
 
     private function searchColumnMap(): array
@@ -512,8 +512,8 @@ class PoleController extends Controller
     private function formatOption(?string $value): string
     {
         return [
-            'baik' => 'Kokoh',
-            'rusak' => 'Keropos',
+            'baik' => 'Baik',
+            'rusak' => 'Rusak',
             'perbaikan' => 'Berkarat',
             'lurus' => 'Tiang Baja (Galvanis)',
             'lengkung' => 'Tiang Baja (Galvanis)',
@@ -526,6 +526,7 @@ class PoleController extends Controller
             'tiang_baja_galvanis' => 'Tiang Baja (Galvanis)',
             'tiang_beton' => 'Tiang Beton',
             'menempel_tiang_pln' => 'Menempel Tiang PLN',
+            'menempel_pohon' => 'Menempel Pohon',
             'single_arm' => 'Single Arm',
             'double_arm' => 'Double Arm',
             'high_mast' => 'High Mast',
@@ -546,6 +547,7 @@ class PoleController extends Controller
             'tidak_ada_lampu' => 'Tidak Ada Lampu',
             'caping' => 'Caping',
             'konvensional' => 'Konvensional',
+            'tidak_ada' => 'Tidak Ada',
             'pecah' => 'Pecah',
             'kusam' => 'Kusam',
             'kemasukan_air' => 'Kemasukan Air',

@@ -105,7 +105,7 @@
             <label class="label">Jenis Rumah Lampu</label>
             <select class="field" name="lamp_house_type" required>
                 <option value="" @selected($poleValue('lamp_house_type') === '')>Pilihan</option>
-                @foreach (['caping' => 'Caping', 'konvensional' => 'Konvensional'] as $value => $text)
+                @foreach (['caping' => 'Caping', 'konvensional' => 'Konvensional', 'tidak_ada' => 'Tidak Ada'] as $value => $text)
                     <option value="{{ $value }}" @selected($poleValue('lamp_house_type', 'caping') === $value)>{{ $text }}</option>
                 @endforeach
             </select>
@@ -114,7 +114,7 @@
             <label class="label">Kondisi Rumah Lampu</label>
             <select class="field" name="lamp_house_condition" required>
                 <option value="" @selected($poleValue('lamp_house_condition') === '')>Pilihan</option>
-                @foreach (['pecah' => 'Pecah', 'kusam' => 'Kusam', 'kemasukan_air' => 'Kemasukan Air'] as $value => $text)
+                @foreach (['baik' => 'Baik', 'rusak' => 'Rusak'] as $value => $text)
                     <option value="{{ $value }}" @selected($poleValue('lamp_house_condition') === $value)>{{ $text }}</option>
                 @endforeach
             </select>
@@ -134,7 +134,7 @@
             <label class="label">Jenis Tiang</label>
             <select class="field" name="pole_type" required>
                 <option value="" @selected($poleValue('pole_type') === '')>Pilihan</option>
-                @foreach (['tiang_baja_galvanis' => 'Tiang Baja (Galvanis)', 'tiang_beton' => 'Tiang Beton', 'menempel_tiang_pln' => 'Menempel Tiang PLN'] as $value => $text)
+                @foreach (['tiang_baja_galvanis' => 'Tiang Baja (Galvanis)', 'tiang_beton' => 'Tiang Beton', 'menempel_tiang_pln' => 'Menempel Tiang PLN', 'menempel_pohon' => 'Menempel Pohon'] as $value => $text)
                     <option value="{{ $value }}" @selected($poleValue('pole_type') === $value)>{{ $text }}</option>
                 @endforeach
             </select>
@@ -147,7 +147,7 @@
             <label class="label">Tipe Ornamen</label>
             <select class="field" name="ornament_type" required>
                 <option value="" @selected($poleValue('ornament_type') === '')>Pilihan</option>
-                @foreach (['single_arm' => 'Single Arm', 'double_arm' => 'Double Arm', 'high_mast' => 'High Mast'] as $value => $text)
+                @foreach (['single_arm' => 'Single Arm', 'double_arm' => 'Double Arm', 'high_mast' => 'High Mast', 'lainnya' => 'Lainnya'] as $value => $text)
                     <option value="{{ $value }}" @selected($poleValue('ornament_type') === $value)>{{ $text }}</option>
                 @endforeach
             </select>
@@ -156,7 +156,7 @@
             <label class="label">Kondisi Tiang</label>
             <select class="field" name="condition" required>
                 <option value="" @selected($poleValue('condition') === '')>Pilihan</option>
-                @foreach (['keropos' => 'Keropos', 'miring' => 'Miring', 'berkarat' => 'Berkarat', 'kokoh' => 'Kokoh'] as $value => $text)
+                @foreach (['keropos' => 'Keropos', 'miring' => 'Miring', 'berkarat' => 'Berkarat', 'kokoh' => 'Kokoh', 'lainnya' => 'Lainnya'] as $value => $text)
                     <option value="{{ $value }}" @selected($poleValue('condition') === $value)>{{ $text }}</option>
                 @endforeach
             </select>

@@ -53,7 +53,7 @@
                 <input class="field" name="query" value="{{ $query }}" placeholder="Cari nomor tiang atau alamat...">
                 <select class="field" id="map-search-condition" name="condition">
                     <option value="">Semua kondisi tiang</option>
-                    @foreach (['kokoh' => 'Kokoh', 'keropos' => 'Keropos', 'miring' => 'Miring', 'berkarat' => 'Berkarat'] as $option => $text)
+                    @foreach (['kokoh' => 'Kokoh', 'keropos' => 'Keropos', 'miring' => 'Miring', 'berkarat' => 'Berkarat', 'lainnya' => 'Lainnya'] as $option => $text)
                         <option value="{{ $option }}" @selected($condition === $option)>{{ $text }}</option>
                     @endforeach
                 </select>
@@ -112,7 +112,7 @@
     window.pjuCanManagePoles = @json($canManagePoles);
     @include('partials.pole-scripts')
 
-    const markerColors = { kokoh: '#059669', keropos: '#e11d48', miring: '#d97706', berkarat: '#b45309' };
+    const markerColors = { kokoh: '#059669', keropos: '#e11d48', miring: '#d97706', berkarat: '#b45309', lainnya: '#64748b' };
     const mainMaps = {};
     const mapMarkerUrl = @json(route('map.markers', request()->only(['query', 'condition'])));
     const mapBaseLayers = {
