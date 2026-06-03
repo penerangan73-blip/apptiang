@@ -25,27 +25,6 @@
                 <button type="button" id="toggle-map-layers" class="btn btn-muted inline-flex px-3 py-2 text-xs">
                     <i data-lucide="layers" class="icon"></i> Tampilkan 2 Layer
                 </button>
-                <div class="relative">
-                    <button type="button" id="map-download-toggle" class="btn btn-muted inline-flex px-3 py-2 text-xs" aria-expanded="false" aria-controls="map-download-menu">
-                        <i data-lucide="download" class="icon"></i>
-                        Download
-                        <i data-lucide="chevron-down" class="icon"></i>
-                    </button>
-                    <div id="map-download-menu" class="absolute left-0 z-[1000] mt-2 hidden w-44 overflow-hidden rounded-lg border border-white/10 bg-slate-950/95 p-1 shadow-2xl backdrop-blur sm:left-auto sm:right-0">
-                        <a class="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-bold text-slate-200 transition hover:bg-white/10" href="{{ route('map.export', ['format' => 'shp'] + request()->only(['query', 'condition'])) }}" data-map-download-link>
-                            <i data-lucide="download" class="icon"></i>
-                            SHP
-                        </a>
-                        <a class="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-bold text-slate-200 transition hover:bg-white/10" href="{{ route('map.export', ['format' => 'geojson'] + request()->only(['query', 'condition'])) }}" data-map-download-link>
-                            <i data-lucide="braces" class="icon"></i>
-                            GeoJSON
-                        </a>
-                        <a class="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-bold text-slate-200 transition hover:bg-white/10" href="{{ route('map.export', ['format' => 'kml'] + request()->only(['query', 'condition'])) }}" data-map-download-link>
-                            <i data-lucide="file-code-2" class="icon"></i>
-                            KML
-                        </a>
-                    </div>
-                </div>
             </div>
         </div>
         <div class="border-b border-white/10 p-4 sm:p-5">
@@ -105,7 +84,7 @@
 @endsection
 
 @section('dialogs')
-    @include('partials.pole-dialogs', ['dialogPoles' => $dialogPoles])
+    @include('partials.pole-dialogs', ['dialogPoles' => $dialogPoles, 'sourcePoles' => $sourcePoles])
 @endsection
 
 @section('page-scripts')
@@ -141,7 +120,6 @@
     initPoleMap('main-map', true);
     document.getElementById('toggle-map-layers')?.addEventListener('click', () => toggleMapLayers());
     setupMapStyleMenu();
-    setupMapDownloadMenu();
     setupMapPoleListToggle();
     setupMapSearchFilter();
 
@@ -197,25 +175,6 @@
             if (map._pjuBaseLayer) map.removeLayer(map._pjuBaseLayer);
             map._pjuBaseLayer = createBaseLayer(style).addTo(map);
             map._pjuBaseStyle = style;
-        });
-    }
-
-    function setupMapDownloadMenu() {
-        const toggle = document.getElementById('map-download-toggle');
-        const menu = document.getElementById('map-download-menu');
-
-        if (!toggle || !menu) return;
-
-        toggle.addEventListener('click', () => {
-            const isOpen = !menu.classList.contains('hidden');
-            menu.classList.toggle('hidden', isOpen);
-            toggle.setAttribute('aria-expanded', String(!isOpen));
-        });
-
-        document.addEventListener('click', (event) => {
-            if (toggle.contains(event.target) || menu.contains(event.target)) return;
-            menu.classList.add('hidden');
-            toggle.setAttribute('aria-expanded', 'false');
         });
     }
 
@@ -405,7 +364,6 @@
         try {
             const layers = await loadLayers();
             Object.values(mainMaps).forEach(m => addLayersToMap(m, layers));
-            syncLayerDownloadLinks(layers.length > 0);
             if (btn) btn.innerHTML = layers.length ? '<i data-lucide="eye-off" class="icon"></i> Tutup 2 Layer' : '<i data-lucide="layers" class="icon"></i> Layer gagal';
             btn?.classList.toggle('btn-danger', layers.length > 0);
             btn?.classList.toggle('btn-muted', layers.length === 0);
@@ -448,22 +406,7 @@
             btn.classList.remove('btn-danger');
             btn.classList.add('btn-muted');
         }
-        syncLayerDownloadLinks(false);
         if (window.lucide) lucide.createIcons();
-    }
-
-    function syncLayerDownloadLinks(includeLayers) {
-        document.querySelectorAll('[data-map-download-link]').forEach((link) => {
-            const url = new URL(link.href, window.location.origin);
-
-            if (includeLayers) {
-                url.searchParams.set('include_layers', '1');
-            } else {
-                url.searchParams.delete('include_layers');
-            }
-
-            link.href = url.toString();
-        });
     }
 
     function bindFeature(ml, feature, layer) {

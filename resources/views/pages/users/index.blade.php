@@ -6,7 +6,7 @@
 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
         <h2 class="text-2xl font-bold text-slate-100">Manajemen User</h2>
-        <p class="text-sm text-slate-400">Kelola akun superadmin, surveyor, dan user read-only.</p>
+        <p class="text-sm text-slate-400">Kelola akun superadmin, surveyor, verifikator, dan user read-only.</p>
     </div>
     <button type="button" class="btn btn-primary" data-open-dialog="user-create-dialog">
         <i data-lucide="plus-circle" class="icon"></i> Tambah User

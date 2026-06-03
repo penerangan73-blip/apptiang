@@ -90,16 +90,47 @@ class PoleController extends Controller
         ]);
     }
 
-    private function validatedPoleInput(Request $request, ?Pole $pole = null): array
+    public function verify(Request $request, Pole $pole): JsonResponse
     {
         $validated = $request->validate([
+            'is_verified' => ['required', 'boolean'],
+        ]);
+
+        $isVerified = (bool) $validated['is_verified'];
+
+        $pole->forceFill([
+            'is_verified' => $isVerified,
+            'verified_by_id' => $isVerified ? $request->user()->id : null,
+            'verified_at' => $isVerified ? now() : null,
+        ])->save();
+
+        return response()->json([
+            'data' => $pole->load(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email', 'verifiedBy:id,name,role,email', 'photos']),
+        ]);
+    }
+
+    private function validatedPoleInput(Request $request, ?Pole $pole = null): array
+    {
+        $routeType = (string) $request->input('route_type', '');
+        $subNameForUnique = $this->normalizedSubNameForRequest($request, $pole);
+        $customerIdRules = [
+            'required',
+            'string',
+            'max:80',
+        ];
+
+        if ($routeType === 'sub') {
+            $customerIdRules[] = Rule::exists('poles', 'customer_id');
+        }
+
+        $customerIdRules[] = Rule::unique('poles', 'customer_id')
+            ->where(fn ($query) => $query->where('sub_name', $subNameForUnique))
+            ->ignore($pole?->id);
+
+        $validated = $request->validate([
+            'route_type' => ['sometimes', Rule::in(['sumber', 'sub'])],
             'sub_name' => ['sometimes', 'nullable', 'string', 'max:120'],
-            'customer_id' => [
-                'required',
-                'string',
-                'max:80',
-                Rule::unique('poles', 'customer_id')->ignore($pole?->id),
-            ],
+            'customer_id' => $customerIdRules,
             'street_name' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'address' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'village' => ['sometimes', 'nullable', 'string', 'max:120'],
@@ -126,7 +157,29 @@ class PoleController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        $validated['sub_name'] = $subNameForUnique;
+        unset($validated['route_type']);
+
         return $this->normalizeAddressInput($validated);
+    }
+
+    private function normalizedSubNameForRequest(Request $request, ?Pole $pole = null): string
+    {
+        if ($request->input('route_type') !== 'sub') {
+            return trim((string) $request->input('sub_name', ''));
+        }
+
+        if ($pole && trim((string) $pole->sub_name) !== '') {
+            return trim((string) $pole->sub_name);
+        }
+
+        $subName = trim((string) $request->input('sub_name', ''));
+
+        if ($subName !== '') {
+            return $subName;
+        }
+
+        return Pole::nextSubNameForCustomer(trim((string) $request->input('customer_id', '')));
     }
 
     private function normalizeAddressInput(array $validated): array

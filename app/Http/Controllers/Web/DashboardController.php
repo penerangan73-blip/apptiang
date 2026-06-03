@@ -63,12 +63,18 @@ class DashboardController extends Controller
             'daya' => (int) $poleStats->daya,
         ];
 
+        $sourcePoles = Pole::query()
+            ->sourceOptions()
+            ->get();
+
         return view('pages.dashboard.index', [
             'recentPoles' => $recentPoles,
+            'sourcePoles' => $sourcePoles,
             'reports' => $reports,
             'stats' => $stats,
             'user' => $request->user(),
-            'canManagePoles' => in_array($request->user()->role, ['superadmin', 'surveyor'], true),
+            'canCreatePoles' => in_array($request->user()->role, ['superadmin', 'surveyor'], true),
+            'canManagePoles' => in_array($request->user()->role, ['superadmin', 'surveyor', 'verifikator'], true),
         ]);
     }
 

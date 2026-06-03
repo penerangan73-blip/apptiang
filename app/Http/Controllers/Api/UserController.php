@@ -25,7 +25,7 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:160', Rule::unique('users', 'email')],
             'phone' => ['nullable', 'string', 'max:40'],
             'address' => ['nullable', 'string', 'max:2000'],
-            'role' => ['required', Rule::in(['superadmin', 'surveyor', 'user'])],
+            'role' => ['required', Rule::in(['superadmin', 'surveyor', 'verifikator', 'user'])],
             'password' => ['required', 'string', 'min:6', 'max:160'],
         ]);
 
@@ -43,7 +43,7 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:160', Rule::unique('users', 'email')->ignore($user->id)],
             'phone' => ['nullable', 'string', 'max:40'],
             'address' => ['nullable', 'string', 'max:2000'],
-            'role' => ['required', Rule::in(['superadmin', 'surveyor', 'user'])],
+            'role' => ['required', Rule::in(['superadmin', 'surveyor', 'verifikator', 'user'])],
             'password' => ['nullable', 'string', 'min:6', 'max:160'],
         ]);
 

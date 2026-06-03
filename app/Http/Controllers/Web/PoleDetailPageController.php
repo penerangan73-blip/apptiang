@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Pole;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class PoleDetailPageController extends Controller
@@ -14,6 +15,7 @@ class PoleDetailPageController extends Controller
         $pole->load([
             'createdBy:id,name,role,email',
             'updatedBy:id,name,role,email',
+            'verifiedBy:id,name,role,email',
             'photos',
         ]);
 
@@ -25,12 +27,24 @@ class PoleDetailPageController extends Controller
             ->withQueryString();
 
         $user = $request->user();
+        $sourcePoles = Pole::query()
+            ->sourceOptions()
+            ->get();
 
         return view('pages.poles.show', [
             'pole' => $pole,
             'reports' => $reports,
+            'sourcePoles' => $sourcePoles,
             'user' => $user,
-            'canManagePoles' => in_array($user->role, ['superadmin', 'surveyor'], true),
+            'canCreatePoles' => in_array($user->role, ['superadmin', 'surveyor'], true),
+            'canManagePoles' => in_array($user->role, ['superadmin', 'surveyor', 'verifikator'], true),
         ]);
+    }
+
+    private function poleColumns(array $columns): array
+    {
+        $existingColumns = Schema::getColumnListing('poles');
+
+        return array_values(array_intersect($columns, $existingColumns));
     }
 }

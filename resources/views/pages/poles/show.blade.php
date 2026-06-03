@@ -69,11 +69,13 @@
         <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-400">{{ $pole->locationLabel() }}</p>
     </div>
     <div class="flex flex-wrap gap-2">
-        @if ($canManagePoles)
+        @if ($canCreatePoles ?? false)
             <button type="button" class="btn btn-muted" data-open-dialog="report-dialog" data-report-pole="{{ $pole->id }}">
                 <i data-lucide="file-plus-2" class="icon"></i>
                 Laporan Kerusakan
             </button>
+        @endif
+        @if ($canManagePoles)
             <button type="button" class="btn btn-primary" data-open-dialog="pole-edit-{{ $pole->id }}">
                 <i data-lucide="edit-3" class="icon"></i>
                 Edit Tiang
@@ -117,6 +119,8 @@
                 @include('partials.detail-item', ['label' => 'Diinput Oleh', 'value' => $pole->createdBy?->name ?? '-'])
                 @include('partials.detail-item', ['label' => 'Update Terakhir', 'value' => optional($pole->updated_at)->format('H:i d-m-Y') ?: '-'])
                 @include('partials.detail-item', ['label' => 'Update Oleh', 'value' => $pole->updatedBy?->name ?? '-'])
+                @include('partials.detail-item', ['label' => 'Verifikasi', 'value' => $pole->is_verified ? 'Terverifikasi' : 'Belum diverifikasi'])
+                @include('partials.detail-item', ['label' => 'Diverifikasi Oleh', 'value' => $pole->is_verified ? (($pole->verifiedBy?->name ?? '-').' / '.(optional($pole->verified_at)->format('H:i d-m-Y') ?: '-')) : '-'])
                 @include('partials.detail-item', ['label' => 'Keterangan', 'value' => $pole->notes ?: '-', 'class' => 'md:col-span-2'])
             </div>
         </div>
@@ -127,7 +131,7 @@
                     <h3 class="text-lg font-black">Histori Aktivitas</h3>
                     <p class="text-sm text-slate-400">{{ $reports->total() }} aktivitas tercatat untuk tiang ini.</p>
                 </div>
-                @if ($canManagePoles)
+                @if ($canCreatePoles ?? false)
                     <button type="button" class="btn btn-muted" data-open-dialog="report-dialog" data-report-pole="{{ $pole->id }}">
                         <i data-lucide="plus-circle" class="icon"></i>
                         Tambah Laporan
@@ -246,7 +250,7 @@
 @endsection
 
 @section('dialogs')
-    @include('partials.pole-dialogs', ['dialogPoles' => collect([$pole]), 'reportPoles' => collect([$pole])])
+    @include('partials.pole-dialogs', ['dialogPoles' => collect([$pole]), 'reportPoles' => collect([$pole]), 'sourcePoles' => $sourcePoles])
 @endsection
 
 @section('page-scripts')

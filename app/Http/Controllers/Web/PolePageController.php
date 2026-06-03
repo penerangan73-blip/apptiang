@@ -20,6 +20,10 @@ class PolePageController extends Controller
             ->latest()
             ->get();
 
+        $sourcePoles = Pole::query()
+            ->sourceOptions()
+            ->get();
+
         $years = Pole::query()
             ->whereNotNull('created_at')
             ->latest('created_at')
@@ -28,17 +32,25 @@ class PolePageController extends Controller
             ->filter()
             ->unique()
             ->values();
+        $attributeOptions = [
+            'village' => $this->distinctPoleOptions('village'),
+            'district' => $this->distinctPoleOptions('district'),
+            'province' => $this->distinctPoleOptions('province'),
+        ];
 
         $user = $request->user();
 
         return view('pages.poles.index', [
             'allPoles' => $allPoles,
+            'sourcePoles' => $sourcePoles,
             'years' => $years,
+            'attributeOptions' => $attributeOptions,
             'query' => $query,
             'year' => $request->query('year'),
             'condition' => $condition,
             'user' => $user,
-            'canManagePoles' => in_array($user->role, ['superadmin', 'surveyor'], true),
+            'canCreatePoles' => in_array($user->role, ['superadmin', 'surveyor'], true),
+            'canManagePoles' => in_array($user->role, ['superadmin', 'surveyor', 'verifikator'], true),
         ]);
     }
 
@@ -47,5 +59,20 @@ class PolePageController extends Controller
         $existingColumns = Schema::getColumnListing('poles');
 
         return array_values(array_intersect($columns, $existingColumns));
+    }
+
+    private function distinctPoleOptions(string $column)
+    {
+        if (! Schema::hasColumn('poles', $column)) {
+            return collect();
+        }
+
+        return Pole::query()
+            ->whereNotNull($column)
+            ->where($column, '<>', '')
+            ->orderBy($column)
+            ->distinct()
+            ->pluck($column)
+            ->values();
     }
 }

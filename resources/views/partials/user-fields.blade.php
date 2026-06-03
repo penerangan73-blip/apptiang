@@ -13,7 +13,7 @@
 <div>
     <label class="label">Role</label>
     <select class="field" name="role" required>
-        @foreach (['superadmin' => 'Superadmin', 'surveyor' => 'Surveyor', 'user' => 'User'] as $value => $text)
+        @foreach (['superadmin' => 'Superadmin', 'surveyor' => 'Surveyor', 'verifikator' => 'Verifikator', 'user' => 'User'] as $value => $text)
             <option value="{{ $value }}" @selected($userValue('role', 'user') === $value)>{{ $text }}</option>
         @endforeach
     </select>

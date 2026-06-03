@@ -96,6 +96,68 @@ class PjuApiTest extends TestCase
         $this->assertDatabaseCount('daily_reports', 2);
     }
 
+    public function test_sub_names_are_generated_from_existing_sources(): void
+    {
+        $surveyor = $this->seedUser('surveyor');
+        $token = $surveyor->createToken('test')->plainTextToken;
+
+        $this->withToken($token)
+            ->postJson('/api/poles', $this->polePayload())
+            ->assertCreated();
+
+        $this->withToken($token)
+            ->postJson('/api/poles', [
+                ...$this->polePayload(),
+                'route_type' => 'sub',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.customer_id', 'PEL-TST-001')
+            ->assertJsonPath('data.sub_name', '001');
+
+        $this->withToken($token)
+            ->postJson('/api/poles', [
+                ...$this->polePayload(),
+                'route_type' => 'sub',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.customer_id', 'PEL-TST-001')
+            ->assertJsonPath('data.sub_name', '002');
+
+        $this->withToken($token)
+            ->postJson('/api/poles', [
+                ...$this->polePayload('PEL-TST-404'),
+                'route_type' => 'sub',
+            ])
+            ->assertUnprocessable();
+    }
+
+    public function test_source_can_be_changed_to_sub_with_generated_number(): void
+    {
+        $surveyor = $this->seedUser('surveyor');
+        $token = $surveyor->createToken('test')->plainTextToken;
+
+        $sourceToConvert = $this->withToken($token)
+            ->postJson('/api/poles', $this->polePayload('PEL-TST-001'))
+            ->assertCreated();
+
+        $this->withToken($token)
+            ->patchJson('/api/poles/'.$sourceToConvert->json('data.id'), [
+                ...$this->polePayload('PEL-TST-001'),
+                'route_type' => 'sub',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.customer_id', 'PEL-TST-001')
+            ->assertJsonPath('data.sub_name', '001');
+
+        $this->withToken($token)
+            ->postJson('/api/poles', [
+                ...$this->polePayload('PEL-TST-001'),
+                'route_type' => 'sub',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.sub_name', '002');
+    }
+
     public function test_damage_report_uploads_photo_and_marks_pole_as_damaged(): void
     {
         Storage::fake('public');
@@ -207,6 +269,47 @@ class PjuApiTest extends TestCase
         ])->assertForbidden();
     }
 
+    public function test_verifikator_can_update_delete_and_verify_poles_but_cannot_create_or_manage_users(): void
+    {
+        $surveyor = $this->seedUser('surveyor');
+        $verifikator = $this->seedUser('verifikator');
+        $token = $verifikator->createToken('test')->plainTextToken;
+        $pole = Pole::query()->create([
+            ...$this->polePayload(),
+            'created_by_id' => $surveyor->id,
+            'updated_by_id' => $surveyor->id,
+        ]);
+
+        $this->withToken($token)
+            ->postJson('/api/poles', $this->polePayload('PEL-TST-002'))
+            ->assertForbidden();
+
+        $this->withToken($token)
+            ->patchJson('/api/poles/'.$pole->id, [
+                ...$this->polePayload(),
+                'condition' => 'berkarat',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.condition', 'berkarat')
+            ->assertJsonPath('data.updated_by.email', 'verifikator@pju.local');
+
+        $this->withToken($token)
+            ->patchJson('/api/poles/'.$pole->id.'/verification', ['is_verified' => true])
+            ->assertOk()
+            ->assertJsonPath('data.is_verified', true)
+            ->assertJsonPath('data.verified_by.email', 'verifikator@pju.local');
+
+        $this->assertDatabaseHas('poles', [
+            'id' => $pole->id,
+            'is_verified' => true,
+            'verified_by_id' => $verifikator->id,
+        ]);
+
+        $this->withToken($token)->getJson('/api/users')->assertForbidden();
+        $this->withToken($token)->deleteJson('/api/poles/'.$pole->id)->assertOk();
+        $this->assertDatabaseMissing('poles', ['id' => $pole->id]);
+    }
+
     public function test_superadmin_can_manage_users(): void
     {
         $superadmin = $this->seedUser('superadmin');
@@ -216,11 +319,11 @@ class PjuApiTest extends TestCase
             ->postJson('/api/users', [
                 'name' => 'Viewer Baru',
                 'email' => 'viewerbaru@pju.local',
-                'role' => 'user',
+                'role' => 'verifikator',
                 'password' => 'password',
             ])
             ->assertCreated()
-            ->assertJsonPath('data.role', 'user');
+            ->assertJsonPath('data.role', 'verifikator');
 
         $this->withToken($token)
             ->patchJson('/api/users/'.$created->json('data.id'), [
@@ -283,12 +386,14 @@ class PjuApiTest extends TestCase
             'name' => match ($role) {
                 'superadmin' => 'Superadmin PJU',
                 'user' => 'Viewer PJU',
+                'verifikator' => 'Verifikator PJU',
                 default => 'Dimas Pratama',
             },
             'role' => $role,
             'email' => match ($role) {
                 'superadmin' => 'superadmin@pju.local',
                 'user' => 'user@pju.local',
+                'verifikator' => 'verifikator@pju.local',
                 default => 'surveyor@pju.local',
             },
             'password' => Hash::make('password'),

@@ -33,6 +33,17 @@ class RbacUsersSeeder extends Seeder
         );
 
         User::query()->updateOrCreate(
+            ['email' => 'verifikator@pju.local'],
+            [
+                'name' => 'Verifikator PJU',
+                'role' => 'verifikator',
+                'phone' => '0812-0000-0003',
+                'address' => 'Kabupaten Gunungkidul',
+                'password' => Hash::make('password'),
+            ],
+        );
+
+        User::query()->updateOrCreate(
             ['email' => 'user@pju.local'],
             [
                 'name' => 'Viewer PJU',

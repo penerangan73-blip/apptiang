@@ -27,15 +27,20 @@ class MapPageController extends Controller
             ->withQueryString();
 
         $dialogPoles = $poles->getCollection()->unique('id')->values();
+        $sourcePoles = Pole::query()
+            ->sourceOptions()
+            ->get();
         $user = $request->user();
 
         return view('pages.map.index', [
             'poles' => $poles,
             'dialogPoles' => $dialogPoles,
+            'sourcePoles' => $sourcePoles,
             'query' => $query,
             'condition' => $condition,
             'user' => $user,
-            'canManagePoles' => in_array($user->role, ['superadmin', 'surveyor'], true),
+            'canCreatePoles' => in_array($user->role, ['superadmin', 'surveyor'], true),
+            'canManagePoles' => in_array($user->role, ['superadmin', 'surveyor', 'verifikator'], true),
         ]);
     }
 
@@ -111,14 +116,18 @@ class MapPageController extends Controller
     {
         $validated = $request->validate([
             'query' => ['sometimes', 'nullable', 'string', 'max:120'],
-            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
+            'search_columns' => ['sometimes', 'array', 'max:30'],
+            'search_columns.*' => ['string', Rule::in(array_keys($this->searchColumnMap()))],
+            'year' => ['sometimes', 'nullable', 'integer', 'min:2000', 'max:2100'],
+            ...$this->filterValidationRules(),
             'include_layers' => ['sometimes', 'boolean'],
         ]);
         $includeLayers = $request->boolean('include_layers');
 
         $poles = $this->exportPoleQuery(
             trim((string) ($validated['query'] ?? '')),
-            $validated['condition'] ?? null
+            $this->resolveSearchColumns($validated['search_columns'] ?? []),
+            $validated
         )->get();
 
         return match ($format) {
@@ -133,9 +142,12 @@ class MapPageController extends Controller
         return Pole::query()->search($query)->condition($condition);
     }
 
-    private function exportPoleQuery(string $query, ?string $condition)
+    private function exportPoleQuery(string $query, ?array $searchColumns, array $filters)
     {
-        return $this->filteredPoleQuery($query, $condition)
+        return Pole::query()
+            ->search($query, $searchColumns)
+            ->when($filters['year'] ?? null, fn ($query, $year) => $query->whereYear('created_at', (int) $year))
+            ->tap(fn ($query) => $this->applyAttributeFilters($query, $filters))
             ->select($this->poleColumns([
                 'id',
                 'sub_name',
@@ -160,6 +172,8 @@ class MapPageController extends Controller
                 'light_point_count',
                 'kwh_meter',
                 'ownership',
+                'is_verified',
+                'verified_at',
                 'notes',
                 'created_at',
                 'updated_at',
@@ -167,6 +181,81 @@ class MapPageController extends Controller
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->latest();
+    }
+
+    private function filterValidationRules(): array
+    {
+        return [
+            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
+            'village' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'district' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'regency' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'province' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'pole_type' => ['sometimes', 'nullable', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln', 'menempel_pohon'])],
+            'lamp_type' => ['sometimes', 'nullable', Rule::in(['led', 'hps', 'son_t', 'mercury', 'lainnya'])],
+            'lamp_status' => ['sometimes', 'nullable', Rule::in(['menyala', 'redup', 'berkedip', 'mati', 'rusak_pecah', 'tidak_ada_lampu'])],
+            'lamp_house_type' => ['sometimes', 'nullable', Rule::in(['caping', 'konvensional', 'tidak_ada'])],
+            'lamp_house_condition' => ['sometimes', 'nullable', Rule::in(['baik', 'rusak'])],
+            'kwh_meter' => ['sometimes', 'nullable', Rule::in(['sudah_ada', 'belum'])],
+            'ownership' => ['sometimes', 'nullable', Rule::in(['dpu_kp', 'dishub', 'pln', 'lainnya'])],
+        ];
+    }
+
+    private function applyAttributeFilters($query, array $filters): void
+    {
+        foreach (array_keys($this->filterValidationRules()) as $field) {
+            $value = trim((string) ($filters[$field] ?? ''));
+
+            if ($value !== '' && Schema::hasColumn('poles', $field)) {
+                $query->where($field, $value);
+            }
+        }
+    }
+
+    private function searchColumnMap(): array
+    {
+        return [
+            'customer_id' => ['customer_id', 'sub_name'],
+            'address' => ['address', 'street_name'],
+            'village' => ['village'],
+            'district' => ['district'],
+            'regency' => ['regency'],
+            'province' => ['province'],
+            'latitude' => ['latitude'],
+            'longitude' => ['longitude'],
+            'power_usage' => ['power_usage'],
+            'condition' => ['condition'],
+            'pole_type' => ['pole_type'],
+            'height' => ['height'],
+            'ornament_type' => ['ornament_type'],
+            'lamp_type' => ['lamp_type'],
+            'lamp_status' => ['lamp_status'],
+            'lamp_house_type' => ['lamp_house_type'],
+            'lamp_house_condition' => ['lamp_house_condition'],
+            'light_point_count' => ['light_point_count'],
+            'kwh_meter' => ['kwh_meter'],
+            'ownership' => ['ownership'],
+            'created_at' => ['created_at'],
+            'updated_at' => ['updated_at'],
+            'notes' => ['notes'],
+        ];
+    }
+
+    private function resolveSearchColumns(array $selectedColumns): ?array
+    {
+        $selectedColumns = array_values(array_filter(array_unique($selectedColumns)));
+
+        if ($selectedColumns === []) {
+            return null;
+        }
+
+        $map = $this->searchColumnMap();
+
+        return collect($selectedColumns)
+            ->flatMap(fn (string $column) => $map[$column] ?? [])
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function downloadGeoJson(Collection $poles, bool $includeLayers = false): Response
@@ -325,6 +414,8 @@ class MapPageController extends Controller
             'light_point_count' => $pole->light_point_count,
             'kwh_meter' => $pole->kwh_meter,
             'ownership' => $pole->ownership,
+            'is_verified' => (bool) $pole->is_verified,
+            'verified_at' => optional($pole->verified_at)->toDateTimeString(),
             'notes' => $pole->notes,
             'created_at' => optional($pole->created_at)->toDateTimeString(),
             'updated_at' => optional($pole->updated_at)->toDateTimeString(),
@@ -352,6 +443,7 @@ class MapPageController extends Controller
             'HOUSE' => $pole->lamp_house_type,
             'KWH' => $pole->kwh_meter,
             'OWNER' => $pole->ownership,
+            'VERIFIED' => $pole->is_verified ? 'YA' : 'TIDAK',
         ];
     }
 

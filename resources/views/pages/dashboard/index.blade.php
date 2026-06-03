@@ -56,7 +56,7 @@
             </div>
         </div>
         <div class="flex flex-row flex-wrap gap-3 mt-2 lg:mt-0">
-            @if ($canManagePoles)
+            @if ($canCreatePoles ?? false)
                 <a href="{{ route('poles.index') }}" class="btn btn-primary px-4 py-2 text-sm">
                     <i data-lucide="plus-circle" class="icon size-4 sm:size-5"></i>
                     Tambah Tiang
@@ -160,10 +160,13 @@
 @endsection
 
 @section('dialogs')
-    @include('partials.pole-dialogs', ['dialogPoles' => $recentPoles])
+    @include('partials.pole-dialogs', ['dialogPoles' => $recentPoles, 'sourcePoles' => $sourcePoles])
 @endsection
 
 @section('page-scripts')
+    window.pjuCanManagePoles = @json($canManagePoles);
+    @include('partials.pole-scripts')
+
     initDashboardMap();
 
     function initDashboardMap() {

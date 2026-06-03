@@ -45,7 +45,7 @@
     $ownership = $ownership ?? fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
     $showManageActions = $showManageActions ?? true;
     $showDirectionActions = $showDirectionActions ?? false;
-    $canDeletePoles = in_array(auth()->user()->role, ['superadmin', 'surveyor'], true);
+    $canDeletePoles = in_array(auth()->user()->role, ['superadmin', 'surveyor', 'verifikator'], true);
 @endphp
 
 <div class="card overflow-hidden">

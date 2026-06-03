@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
 
 class Pole extends Model
@@ -37,6 +38,9 @@ class Pole extends Model
         'notes',
         'created_by_id',
         'updated_by_id',
+        'is_verified',
+        'verified_by_id',
+        'verified_at',
     ];
 
     protected function casts(): array
@@ -47,7 +51,16 @@ class Pole extends Model
             'power_usage' => 'integer',
             'height' => 'float',
             'light_point_count' => 'integer',
+            'is_verified' => 'boolean',
+            'verified_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (Pole $pole) {
+            $pole->sub_name = trim((string) $pole->sub_name);
+        });
     }
 
     public function reports(): HasMany
@@ -66,6 +79,24 @@ class Pole extends Model
             ->map(fn ($value) => trim((string) $value))
             ->filter()
             ->implode('/');
+    }
+
+    public static function nextSubNameForCustomer(string $customerId): string
+    {
+        $subNames = static::query()
+            ->where('customer_id', $customerId)
+            ->where(fn (Builder $query) => $query->whereNotNull('sub_name')->where('sub_name', '<>', ''))
+            ->pluck('sub_name');
+
+        $maxSequence = $subNames
+            ->map(fn ($value) => Str::of((string) $value)->match('/(\d+)$/')->toString())
+            ->filter()
+            ->map(fn ($value) => (int) $value)
+            ->max() ?? 0;
+
+        $nextSequence = max($maxSequence, $subNames->count()) + 1;
+
+        return str_pad((string) $nextSequence, 3, '0', STR_PAD_LEFT);
     }
 
     public function addressLine(): string
@@ -169,6 +200,24 @@ class Pole extends Model
         });
     }
 
+    public function scopeSources(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $builder) => $builder
+            ->whereNull('sub_name')
+            ->orWhere('sub_name', '')
+        );
+    }
+
+    public function scopeSourceOptions(Builder $query): Builder
+    {
+        return $query
+            ->selectRaw('MIN(id) as id, customer_id')
+            ->whereNotNull('customer_id')
+            ->where('customer_id', '<>', '')
+            ->groupBy('customer_id')
+            ->orderBy('customer_id');
+    }
+
     private function searchUserColumns(Builder $query, $terms): void
     {
         $columns = $this->existingColumns('users', ['name', 'email', 'role', 'phone', 'address']);
@@ -210,5 +259,10 @@ class Pole extends Model
     public function updatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by_id');
+    }
+
+    public function verifiedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by_id');
     }
 }

@@ -44,4 +44,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Pole::class, 'updated_by_id');
     }
+
+    public function verifiedPoles(): HasMany
+    {
+        return $this->hasMany(Pole::class, 'verified_by_id');
+    }
 }

@@ -25,15 +25,15 @@ class PoleController extends Controller
             'search_columns' => ['sometimes', 'array', 'max:30'],
             'search_columns.*' => ['string', Rule::in(array_keys($this->searchColumnMap()))],
             'year' => ['sometimes', 'nullable', 'integer', 'min:2000', 'max:2100'],
-            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
+            ...$this->filterValidationRules(),
         ]);
         $searchColumns = $this->resolveSearchColumns($validated['search_columns'] ?? []);
 
         $poles = Pole::query()
-            ->with(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email', 'photos'])
+            ->with(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email', 'verifiedBy:id,name,role,email', 'photos'])
             ->search($validated['query'] ?? null, $searchColumns)
             ->when($validated['year'] ?? null, fn ($query, $year) => $query->whereYear('created_at', (int) $year))
-            ->condition($validated['condition'] ?? null)
+            ->tap(fn ($query) => $this->applyAttributeFilters($query, $validated))
             ->latest()
             ->get();
 
@@ -62,6 +62,9 @@ class PoleController extends Controller
             'Diinput Oleh',
             'Update Terakhir',
             'Update Oleh',
+            'Verifikasi',
+            'Diverifikasi Oleh',
+            'Tanggal Verifikasi',
             'Foto URL',
             'Keterangan',
         ];
@@ -98,6 +101,9 @@ class PoleController extends Controller
                 $pole->createdBy?->name,
                 optional($pole->updated_at)->format('H:i d-m-Y'),
                 $pole->updatedBy?->name,
+                $pole->is_verified ? 'Terverifikasi' : 'Belum',
+                $pole->verifiedBy?->name,
+                optional($pole->verified_at)->format('H:i d-m-Y'),
                 $pole->photos->pluck('photo_url')->implode(', ') ?: $pole->photo_url,
                 $pole->notes,
             ];
@@ -127,7 +133,7 @@ class PoleController extends Controller
             'search_columns' => ['sometimes', 'array', 'max:30'],
             'search_columns.*' => ['string', Rule::in(array_keys($this->searchColumnMap()))],
             'year' => ['sometimes', 'nullable', 'integer', 'min:2000', 'max:2100'],
-            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
+            ...$this->filterValidationRules(),
             'order.0.column' => ['sometimes', 'integer', 'min:0'],
             'order.0.dir' => ['sometimes', Rule::in(['asc', 'desc'])],
         ]);
@@ -139,7 +145,7 @@ class PoleController extends Controller
         $year = $validated['year'] ?? null;
         $condition = $validated['condition'] ?? null;
         $canDeletePoles = $this->canDeletePoles($request);
-        $orderColumn = (int) data_get($validated, 'order.0.column', $canDeletePoles ? 17 : 16);
+        $orderColumn = (int) data_get($validated, 'order.0.column', $canDeletePoles ? 18 : 17);
         $orderDirection = data_get($validated, 'order.0.dir', 'desc') === 'asc' ? 'asc' : 'desc';
         $orderMap = $canDeletePoles
             ? [
@@ -159,7 +165,8 @@ class PoleController extends Controller
                 14 => 'lamp_house_condition',
                 15 => 'light_point_count',
                 16 => 'kwh_meter',
-                17 => 'created_at',
+                17 => 'is_verified',
+                18 => 'created_at',
             ]
             : [
                 0 => 'customer_id',
@@ -178,15 +185,16 @@ class PoleController extends Controller
                 13 => 'lamp_house_condition',
                 14 => 'light_point_count',
                 15 => 'kwh_meter',
-                16 => 'created_at',
+                16 => 'is_verified',
+                17 => 'created_at',
             ];
 
         $baseQuery = Pole::query();
         $filteredQuery = Pole::query()
-            ->with(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email'])
+            ->with(['createdBy:id,name,role,email', 'updatedBy:id,name,role,email', 'verifiedBy:id,name,role,email'])
             ->search($search, $searchColumns)
             ->when($year, fn ($query) => $query->whereYear('created_at', (int) $year))
-            ->condition($condition);
+            ->tap(fn ($query) => $this->applyAttributeFilters($query, $validated));
 
         $recordsTotal = (clone $baseQuery)->count();
         $recordsFiltered = (clone $filteredQuery)->count();
@@ -271,6 +279,29 @@ class PoleController extends Controller
         return back()->with('status', "Data {$customerId} berhasil dihapus.");
     }
 
+    public function verify(Request $request, Pole $pole): RedirectResponse|JsonResponse
+    {
+        $validated = $request->validate([
+            'is_verified' => ['required', 'boolean'],
+        ]);
+
+        $isVerified = (bool) $validated['is_verified'];
+
+        $pole->forceFill([
+            'is_verified' => $isVerified,
+            'verified_by_id' => $isVerified ? $request->user()->id : null,
+            'verified_at' => $isVerified ? now() : null,
+        ])->save();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'data' => $pole->load('verifiedBy:id,name,role,email'),
+            ]);
+        }
+
+        return back()->with('status', $isVerified ? 'Data tiang berhasil diverifikasi.' : 'Verifikasi data tiang dibatalkan.');
+    }
+
     public function bulkDestroy(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -314,15 +345,26 @@ class PoleController extends Controller
 
     private function validatedPoleInput(Request $request, ?Pole $pole = null): array
     {
+        $routeType = (string) $request->input('route_type', '');
+        $subNameForUnique = $this->normalizedSubNameForRequest($request, $pole);
+        $customerIdRules = [
+            'required',
+            'string',
+            'max:80',
+        ];
+
+        if ($routeType === 'sub') {
+            $customerIdRules[] = Rule::exists('poles', 'customer_id');
+        }
+
+        $customerIdRules[] = Rule::unique('poles', 'customer_id')
+            ->where(fn ($query) => $query->where('sub_name', $subNameForUnique))
+            ->ignore($pole?->id);
+
         $validated = $request->validate([
             'route_type' => ['required', Rule::in(['sumber', 'sub'])],
-            'sub_name' => ['required_if:route_type,sub', 'nullable', 'string', 'max:120'],
-            'customer_id' => [
-                'required',
-                'string',
-                'max:80',
-                Rule::unique('poles', 'customer_id')->ignore($pole?->id),
-            ],
+            'sub_name' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'customer_id' => $customerIdRules,
             'street_name' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'address' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'village' => ['sometimes', 'nullable', 'string', 'max:120'],
@@ -350,12 +392,33 @@ class PoleController extends Controller
         ]);
 
         if (($validated['route_type'] ?? null) === 'sumber') {
-            $validated['sub_name'] = null;
+            $validated['sub_name'] = '';
+        } else {
+            $validated['sub_name'] = $subNameForUnique;
         }
 
         unset($validated['route_type']);
 
         return $this->normalizeAddressInput($validated);
+    }
+
+    private function normalizedSubNameForRequest(Request $request, ?Pole $pole = null): string
+    {
+        if ($request->input('route_type') !== 'sub') {
+            return '';
+        }
+
+        if ($pole && trim((string) $pole->sub_name) !== '') {
+            return trim((string) $pole->sub_name);
+        }
+
+        $subName = trim((string) $request->input('sub_name', ''));
+
+        if ($subName !== '') {
+            return $subName;
+        }
+
+        return Pole::nextSubNameForCustomer(trim((string) $request->input('customer_id', '')));
     }
 
     private function normalizeAddressInput(array $validated): array
@@ -417,10 +480,10 @@ class PoleController extends Controller
 
     private function datatableRow(Pole $pole, bool $canDeletePoles): array
     {
-        $actions = '<a class="btn btn-muted px-3 py-2" href="'.e(route('poles.show', $pole)).'"><i data-lucide="eye" class="icon"></i> Detail</a>';
+        $actions = '<a class="btn btn-muted pju-action-button px-3 py-2" href="'.e(route('poles.show', $pole)).'"><i data-lucide="eye" class="icon"></i> Detail</a>';
 
         if ($canDeletePoles) {
-            $actions .= '<button type="button" class="btn btn-danger px-3 py-2" data-open-dialog="pole-datatable-delete-dialog" data-delete-url="'.e(route('poles.destroy', $pole)).'" data-delete-code="'.e($pole->displayName()).'" data-delete-street="'.e($pole->locationLabel()).'"><i data-lucide="trash-2" class="icon"></i> Hapus</button>';
+            $actions .= '<button type="button" class="btn btn-danger pju-action-button px-3 py-2" data-open-dialog="pole-datatable-delete-dialog" data-delete-url="'.e(route('poles.destroy', $pole)).'" data-delete-code="'.e($pole->displayName()).'" data-delete-street="'.e($pole->locationLabel()).'"><i data-lucide="trash-2" class="icon"></i> Hapus</button>';
         }
 
         $row = [
@@ -439,12 +502,13 @@ class PoleController extends Controller
             'lamp_house_type' => e($this->formatOption($pole->lamp_house_type)),
             'lamp_house_condition' => e($this->formatOption($pole->lamp_house_condition)),
             'light_point_count' => e($pole->light_point_count ? number_format((int) $pole->light_point_count) : '-'),
-            'kwh_meter' => e($this->formatOption($pole->kwh_meter)),
-            'created_at' => e(optional($pole->created_at)->format('H:i d-m-Y') ?: '-'),
+            'kwh_meter' => '<span class="whitespace-nowrap">'.e($this->formatOption($pole->kwh_meter)).'</span>',
+            'verification' => $this->verificationCell($pole),
+            'created_at' => '<span class="whitespace-nowrap">'.e(optional($pole->created_at)->format('H:i d-m-Y') ?: '-').'</span>',
             'created_by' => e($pole->createdBy?->name ?? '-'),
             'updated_at' => e(optional($pole->updated_at)->format('H:i d-m-Y') ?: '-'),
             'updated_by' => e($pole->updatedBy?->name ?? '-'),
-            'actions' => '<div class="flex justify-end gap-2">'.$actions.'</div>',
+            'actions' => '<div class="pju-actions-cell flex justify-end gap-2">'.$actions.'</div>',
         ];
 
         if ($canDeletePoles) {
@@ -458,7 +522,52 @@ class PoleController extends Controller
 
     private function canDeletePoles(Request $request): bool
     {
-        return in_array($request->user()?->role, ['superadmin', 'surveyor'], true);
+        return in_array($request->user()?->role, ['superadmin', 'surveyor', 'verifikator'], true);
+    }
+
+    private function verificationCell(Pole $pole): string
+    {
+        $isVerified = (bool) $pole->is_verified;
+        $label = $isVerified ? 'Terverifikasi' : 'Belum';
+        $checked = $isVerified ? 'checked' : '';
+        $disabled = auth()->user()?->role === 'verifikator' ? '' : 'disabled';
+        $title = $isVerified
+            ? ($pole->verifiedBy?->name ?? 'Verifikator').' - '.(optional($pole->verified_at)->format('d-m-Y H:i') ?: '-')
+            : 'Belum diverifikasi';
+
+        return '<label class="pju-verification-cell inline-flex items-center gap-2 whitespace-nowrap text-xs font-bold text-slate-300" title="'.e($title).'">'.
+            '<input type="checkbox" class="size-4 rounded border-white/20 bg-slate-900 text-cyan-500" data-pole-verification-url="'.e(route('poles.verify', $pole)).'" '.$checked.' '.$disabled.'>'.
+            '<span>'.e($label).'</span>'.
+            '</label>';
+    }
+
+    private function filterValidationRules(): array
+    {
+        return [
+            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
+            'village' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'district' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'regency' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'province' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'pole_type' => ['sometimes', 'nullable', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln', 'menempel_pohon'])],
+            'lamp_type' => ['sometimes', 'nullable', Rule::in(['led', 'hps', 'son_t', 'mercury', 'lainnya'])],
+            'lamp_status' => ['sometimes', 'nullable', Rule::in(['menyala', 'redup', 'berkedip', 'mati', 'rusak_pecah', 'tidak_ada_lampu'])],
+            'lamp_house_type' => ['sometimes', 'nullable', Rule::in(['caping', 'konvensional', 'tidak_ada'])],
+            'lamp_house_condition' => ['sometimes', 'nullable', Rule::in(['baik', 'rusak'])],
+            'kwh_meter' => ['sometimes', 'nullable', Rule::in(['sudah_ada', 'belum'])],
+            'ownership' => ['sometimes', 'nullable', Rule::in(['dpu_kp', 'dishub', 'pln', 'lainnya'])],
+        ];
+    }
+
+    private function applyAttributeFilters($query, array $filters): void
+    {
+        foreach (array_keys($this->filterValidationRules()) as $field) {
+            $value = trim((string) ($filters[$field] ?? ''));
+
+            if ($value !== '' && Schema::hasColumn('poles', $field)) {
+                $query->where($field, $value);
+            }
+        }
     }
 
     private function searchColumnMap(): array

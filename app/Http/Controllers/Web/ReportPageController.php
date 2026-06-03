@@ -36,7 +36,7 @@ class ReportPageController extends Controller
             'date' => $date,
             'reports' => $reports,
             'user' => $request->user(),
-            'canManagePoles' => in_array($request->user()->role, ['superadmin', 'surveyor'], true),
+            'canManagePoles' => in_array($request->user()->role, ['superadmin', 'surveyor', 'verifikator'], true),
         ]);
     }
 

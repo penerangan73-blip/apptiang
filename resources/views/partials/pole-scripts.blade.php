@@ -14,32 +14,53 @@
 
             const form = group.closest('form') || document;
             const options = [...group.querySelectorAll('[data-route-type-option]')];
-            const customerWrap = form.querySelector('[data-route-customer-wrap]');
+            const sourceInputWrap = form.querySelector('[data-route-source-input-wrap]');
+            const sourceSelectWrap = form.querySelector('[data-route-source-select-wrap]');
             const subWrap = form.querySelector('[data-route-sub-wrap]');
-            const customerInput = form.querySelector('[data-route-customer-input]');
-            const subInput = form.querySelector('[data-route-sub-input]');
+            const sourceInput = form.querySelector('[data-route-source-input]');
+            const sourceSelect = form.querySelector('[data-route-source-select]');
+            const subPreview = form.querySelector('[data-route-sub-preview]');
+            const syncSubPreview = () => {
+                if (!sourceSelect || !subPreview) return;
+
+                const selectedOption = sourceSelect.selectedOptions?.[0];
+                const nextSubName = selectedOption?.dataset?.nextSub || '';
+                const currentSource = subPreview.dataset.currentSource || '';
+                const currentSub = subPreview.dataset.currentSub || '';
+                const previewValue = currentSub && sourceSelect.value === currentSource
+                    ? currentSub
+                    : nextSubName || 'Pilih sumber';
+                subPreview.value = previewValue;
+            };
 
             const sync = () => {
                 const routeType = options.find((option) => option.checked)?.value || '';
                 const isSource = routeType === 'sumber';
                 const isSub = routeType === 'sub';
 
-                customerWrap?.classList.toggle('hidden', !isSource && !isSub);
+                sourceInputWrap?.classList.toggle('hidden', !isSource);
+                sourceSelectWrap?.classList.toggle('hidden', !isSub);
                 subWrap?.classList.toggle('hidden', !isSub);
 
-                if (customerInput) {
-                    customerInput.required = isSource || isSub;
-                    customerInput.disabled = !isSource && !isSub;
+                if (sourceInput) {
+                    sourceInput.required = isSource;
+                    sourceInput.disabled = !isSource;
                 }
 
-                if (subInput) {
-                    subInput.required = isSub;
-                    subInput.disabled = !isSub;
-                    if (!isSub) subInput.value = '';
+                if (sourceSelect) {
+                    sourceSelect.required = isSub;
+                    sourceSelect.disabled = !isSub;
+                }
+
+                if (isSub) {
+                    syncSubPreview();
+                } else if (subPreview) {
+                    subPreview.value = '';
                 }
             };
 
             options.forEach((option) => option.addEventListener('change', sync));
+            sourceSelect?.addEventListener('change', syncSubPreview);
             sync();
         });
     };

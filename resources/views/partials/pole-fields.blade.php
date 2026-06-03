@@ -2,6 +2,11 @@
     $poleValue = fn ($field, $fallback = '') => old($field, $pole?->{$field} ?? $fallback);
     $prefix = $prefix ?? 'pole';
     $routeType = old('route_type', $pole?->sub_name ? 'sub' : ($pole?->customer_id ? 'sumber' : ''));
+    $sourcePoles = $sourcePoles ?? collect();
+    $selectedCustomerId = old('customer_id', $pole?->customer_id ?? '');
+    $selectedSubName = old('sub_name', $pole?->sub_name ?? '');
+    $availableSourcePoles = $sourcePoles;
+    $hasSelectedSourceOption = $availableSourcePoles->contains(fn ($sourcePole) => $sourcePole->customer_id === $selectedCustomerId);
 @endphp
 
 <div class="md:col-span-2" data-route-type-group>
@@ -17,13 +22,29 @@
         @endforeach
     </div>
 </div>
-<div id="{{ $prefix }}-customer-wrap" data-route-customer-wrap>
+<div id="{{ $prefix }}-source-input-wrap" data-route-source-input-wrap>
     <label class="label">Nomor Tiang (Sumber)</label>
-    <input class="field" name="customer_id" value="{{ $poleValue('customer_id') }}" required data-route-customer-input>
+    <input class="field" name="customer_id" value="{{ $selectedCustomerId }}" required data-route-source-input>
+</div>
+<div id="{{ $prefix }}-source-select-wrap" data-route-source-select-wrap>
+    <label class="label">Nomor Tiang Sumber</label>
+    <select class="field" name="customer_id" required disabled data-route-source-select>
+        <option value="">Pilih sumber</option>
+        @if ($selectedCustomerId && ! $hasSelectedSourceOption)
+            <option value="{{ $selectedCustomerId }}" data-next-sub="{{ $selectedSubName ?: \App\Models\Pole::nextSubNameForCustomer($selectedCustomerId) }}" selected>
+                {{ $selectedCustomerId }}
+            </option>
+        @endif
+        @foreach ($availableSourcePoles as $sourcePole)
+            <option value="{{ $sourcePole->customer_id }}" data-next-sub="{{ \App\Models\Pole::nextSubNameForCustomer($sourcePole->customer_id) }}" @selected($selectedCustomerId === $sourcePole->customer_id)>
+                {{ $sourcePole->customer_id }}
+            </option>
+        @endforeach
+    </select>
 </div>
 <div id="{{ $prefix }}-sub-wrap" data-route-sub-wrap>
-    <label class="label">Sub</label>
-    <input class="field" id="{{ $prefix }}-sub-name" name="sub_name" value="{{ $poleValue('sub_name') }}" data-route-sub-input>
+    <label class="label">Nomor Sub</label>
+    <input class="field" id="{{ $prefix }}-sub-name-preview" value="{{ $selectedSubName ?: 'Pilih sumber' }}" readonly data-route-sub-preview data-current-source="{{ $selectedCustomerId }}" data-current-sub="{{ $selectedSubName }}">
 </div>
 <div class="md:col-span-2">
     <div class="rounded-xl border border-cyan-400/20 bg-slate-900/70 p-3">

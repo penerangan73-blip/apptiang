@@ -1,12 +1,13 @@
 @php
     $label = $label ?? fn ($value) => ucfirst(str_replace('_', ' ', (string) $value));
     $ownership = $ownership ?? fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
-    $canManagePoles = $canManagePoles ?? in_array(auth()->user()->role, ['superadmin', 'surveyor'], true);
-    $canDeletePoles = in_array(auth()->user()->role, ['superadmin', 'surveyor'], true);
+    $canCreatePoles = $canCreatePoles ?? in_array(auth()->user()->role, ['superadmin', 'surveyor'], true);
+    $canManagePoles = $canManagePoles ?? in_array(auth()->user()->role, ['superadmin', 'surveyor', 'verifikator'], true);
+    $canDeletePoles = in_array(auth()->user()->role, ['superadmin', 'surveyor', 'verifikator'], true);
     $reportPoles = $reportPoles ?? ($allPoles ?? collect());
 @endphp
 
-@if ($canManagePoles)
+@if ($canCreatePoles)
     <dialog id="pole-create-dialog">
         <div class="modal-card">
             <div class="flex items-start justify-between gap-4 border-b border-white/10 p-5">

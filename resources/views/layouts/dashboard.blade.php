@@ -3,7 +3,7 @@
 @section('body')
 @php
     $user = auth()->user();
-    $canManagePoles = in_array($user->role, ['superadmin', 'surveyor'], true);
+    $canManagePoles = in_array($user->role, ['superadmin', 'surveyor', 'verifikator'], true);
     $isSuperadmin = $user->role === 'superadmin';
     $label = fn ($value) => ucfirst(str_replace('_', ' ', (string) $value));
     $ownership = fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
