@@ -373,12 +373,12 @@ class PoleController extends Controller
             'province' => ['sometimes', 'nullable', 'string', 'max:120'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
-            'power_usage' => ['required', 'integer', 'min:1', 'max:100000'],
+            'power_usage' => ['required', 'integer', 'min:0', 'max:100000'],
             'condition' => ['required', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
-            'pole_type' => ['required', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln', 'menempel_pohon'])],
+            'pole_type' => ['required', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln', 'menempel_pohon', 'tanpa_penyangga'])],
             'height' => ['nullable', 'numeric', 'min:0', 'max:1000'],
             'ornament_type' => ['required', Rule::in(['single_arm', 'double_arm', 'high_mast', 'lainnya'])],
-            'lamp_type' => ['required', Rule::in(['led', 'hps', 'son_t', 'mercury', 'lainnya'])],
+            'lamp_type' => ['required', Rule::in(['led', 'cfl', 'hps', 'son_t', 'mercury', 'lainnya'])],
             'lamp_status' => ['required', Rule::in(['menyala', 'redup', 'berkedip', 'mati', 'rusak_pecah', 'tidak_ada_lampu'])],
             'lamp_house_type' => ['required', Rule::in(['caping', 'konvensional', 'tidak_ada'])],
             'lamp_house_condition' => ['required', Rule::in(['baik', 'rusak'])],
@@ -390,6 +390,14 @@ class PoleController extends Controller
             'photo' => ['sometimes', 'nullable', 'image', 'max:10240'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        if (($validated['lamp_status'] ?? null) === 'tidak_ada_lampu') {
+            $validated['power_usage'] = 0;
+        } elseif ((int) ($validated['power_usage'] ?? 0) < 1) {
+            throw ValidationException::withMessages([
+                'power_usage' => 'Daya lampu minimal 1 watt kecuali kondisi lampu Tidak Ada Lampu.',
+            ]);
+        }
 
         if (($validated['route_type'] ?? null) === 'sumber') {
             $validated['sub_name'] = '';
@@ -549,8 +557,8 @@ class PoleController extends Controller
             'district' => ['sometimes', 'nullable', 'string', 'max:120'],
             'regency' => ['sometimes', 'nullable', 'string', 'max:120'],
             'province' => ['sometimes', 'nullable', 'string', 'max:120'],
-            'pole_type' => ['sometimes', 'nullable', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln', 'menempel_pohon'])],
-            'lamp_type' => ['sometimes', 'nullable', Rule::in(['led', 'hps', 'son_t', 'mercury', 'lainnya'])],
+            'pole_type' => ['sometimes', 'nullable', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln', 'menempel_pohon', 'tanpa_penyangga'])],
+            'lamp_type' => ['sometimes', 'nullable', Rule::in(['led', 'cfl', 'hps', 'son_t', 'mercury', 'lainnya'])],
             'lamp_status' => ['sometimes', 'nullable', Rule::in(['menyala', 'redup', 'berkedip', 'mati', 'rusak_pecah', 'tidak_ada_lampu'])],
             'lamp_house_type' => ['sometimes', 'nullable', Rule::in(['caping', 'konvensional', 'tidak_ada'])],
             'lamp_house_condition' => ['sometimes', 'nullable', Rule::in(['baik', 'rusak'])],
@@ -636,6 +644,7 @@ class PoleController extends Controller
             'tiang_beton' => 'Tiang Beton',
             'menempel_tiang_pln' => 'Menempel Tiang PLN',
             'menempel_pohon' => 'Menempel Pohon',
+            'tanpa_penyangga' => 'Tanpa Penyangga',
             'single_arm' => 'Single Arm',
             'double_arm' => 'Double Arm',
             'high_mast' => 'High Mast',
@@ -644,6 +653,7 @@ class PoleController extends Controller
             'berkarat' => 'Berkarat',
             'kokoh' => 'Kokoh',
             'led' => 'LED',
+            'cfl' => 'CFL',
             'hps' => 'HPS (Sodium Tekanan Tinggi)',
             'son_t' => 'SON-T',
             'mercury' => 'Mercury',

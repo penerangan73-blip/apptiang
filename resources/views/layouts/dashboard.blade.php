@@ -328,6 +328,9 @@
                 if (typeof window.setupCoordinatePickers === 'function') {
                     window.setupCoordinatePickers(dialog);
                 }
+                if (typeof window.setupLampTechnicalFields === 'function') {
+                    window.setupLampTechnicalFields(dialog);
+                }
                 if (window.pjuMaps) {
                     setTimeout(() => Object.values(window.pjuMaps).forEach((map) => map.invalidateSize()), 120);
                     setTimeout(() => Object.values(window.pjuMaps).forEach((map) => map.invalidateSize()), 350);
@@ -429,6 +432,7 @@
             tiang_beton: 'Tiang Beton',
             menempel_tiang_pln: 'Menempel Tiang PLN',
             menempel_pohon: 'Menempel Pohon',
+            tanpa_penyangga: 'Tanpa Penyangga',
             single_arm: 'Single Arm',
             double_arm: 'Double Arm',
             high_mast: 'High Mast',
@@ -437,6 +441,7 @@
             berkarat: 'Berkarat',
             kokoh: 'Kokoh',
             led: 'LED',
+            cfl: 'CFL',
             hps: 'HPS (Sodium Tekanan Tinggi)',
             son_t: 'SON-T',
             mercury: 'Mercury',

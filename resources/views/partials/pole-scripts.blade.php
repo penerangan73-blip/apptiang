@@ -67,6 +67,42 @@
 
     window.setupRouteTypeFields();
 
+    // Lamp technical fields
+    window.setupLampTechnicalFields = function setupLampTechnicalFields(scope = document) {
+        scope.querySelectorAll('[data-lamp-technical-group]').forEach((group) => {
+            if (group.dataset.lampTechnicalInitialized === '1') return;
+            group.dataset.lampTechnicalInitialized = '1';
+
+            const statusSelect = group.querySelector('[data-lamp-status-select]');
+            const powerInput = group.querySelector('[data-power-usage-input]');
+            if (!statusSelect || !powerInput) return;
+
+            const defaultPower = Number(powerInput.dataset.defaultPower || 40) || 40;
+            const sync = () => {
+                const hasNoLamp = statusSelect.value === 'tidak_ada_lampu';
+                if (hasNoLamp) {
+                    powerInput.value = 0;
+                    powerInput.min = 0;
+                    powerInput.readOnly = true;
+                    powerInput.classList.add('opacity-70');
+                    return;
+                }
+
+                powerInput.min = 1;
+                powerInput.readOnly = false;
+                powerInput.classList.remove('opacity-70');
+                if (Number(powerInput.value || 0) <= 0) {
+                    powerInput.value = defaultPower;
+                }
+            };
+
+            statusSelect.addEventListener('change', sync);
+            sync();
+        });
+    };
+
+    window.setupLampTechnicalFields();
+
     // Coordinate picker maps
     window.pjuMaps = window.pjuMaps || {};
     window.pjuCoordinatePickerState = window.pjuCoordinatePickerState || {};

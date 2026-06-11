@@ -95,30 +95,30 @@
     <label class="label">Longitude</label>
     <input id="{{ $prefix }}-longitude" class="field no-spinner" name="longitude" type="number" step="0.0000001" value="{{ $poleValue('longitude', 110.603) }}" required>
 </div>
-<div class="md:col-span-2 rounded-xl border border-white/10 bg-white/5 p-4">
+<div class="md:col-span-2 rounded-xl border border-white/10 bg-white/5 p-4" data-lamp-technical-group>
     <div class="mb-4">
         <h3 class="text-sm font-black uppercase tracking-wide text-cyan-400">Parameter Teknis Lampu (Luminer)</h3>
     </div>
     <div class="grid gap-4 md:grid-cols-2">
         <div>
+            <label class="label">Kondisi Lampu</label>
+            <select class="field" name="lamp_status" required data-lamp-status-select>
+                <option value="" @selected($poleValue('lamp_status') === '')>Pilihan</option>
+                @foreach (['menyala' => 'Menyala', 'redup' => 'Redup', 'berkedip' => 'Berkedip', 'mati' => 'Mati', 'rusak_pecah' => 'Rusak Pecah', 'tidak_ada_lampu' => 'Tidak Ada Lampu'] as $value => $text)
+                    <option value="{{ $value }}" @selected($poleValue('lamp_status') === $value)>{{ $text }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
             <label class="label">Daya Lampu</label>
-            <input class="field" name="power_usage" type="number" min="1" value="{{ $poleValue('power_usage', 40) }}" required>
+            <input class="field" name="power_usage" type="number" min="0" value="{{ $poleValue('power_usage', 40) }}" required data-power-usage-input data-default-power="{{ $poleValue('power_usage', 40) ?: 40 }}">
         </div>
         <div>
             <label class="label">Jenis Lampu</label>
             <select class="field" name="lamp_type" required>
                 <option value="" @selected($poleValue('lamp_type') === '')>Pilihan</option>
-                @foreach (['led' => 'LED', 'hps' => 'HPS (Sodium Tekanan Tinggi)', 'son_t' => 'SON-T', 'mercury' => 'Mercury', 'lainnya' => 'Lainnya'] as $value => $text)
+                @foreach (['led' => 'LED', 'cfl' => 'CFL', 'hps' => 'HPS (Sodium Tekanan Tinggi)', 'son_t' => 'SON-T', 'mercury' => 'Mercury', 'lainnya' => 'Lainnya'] as $value => $text)
                     <option value="{{ $value }}" @selected($poleValue('lamp_type') === $value)>{{ $text }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div>
-            <label class="label">Kondisi Lampu</label>
-            <select class="field" name="lamp_status" required>
-                <option value="" @selected($poleValue('lamp_status') === '')>Pilihan</option>
-                @foreach (['menyala' => 'Menyala', 'redup' => 'Redup', 'berkedip' => 'Berkedip', 'mati' => 'Mati', 'rusak_pecah' => 'Rusak Pecah', 'tidak_ada_lampu' => 'Tidak Ada Lampu'] as $value => $text)
-                    <option value="{{ $value }}" @selected($poleValue('lamp_status') === $value)>{{ $text }}</option>
                 @endforeach
             </select>
         </div>
@@ -155,7 +155,7 @@
             <label class="label">Jenis Tiang</label>
             <select class="field" name="pole_type" required>
                 <option value="" @selected($poleValue('pole_type') === '')>Pilihan</option>
-                @foreach (['tiang_baja_galvanis' => 'Tiang Baja (Galvanis)', 'tiang_beton' => 'Tiang Beton', 'menempel_tiang_pln' => 'Menempel Tiang PLN', 'menempel_pohon' => 'Menempel Pohon'] as $value => $text)
+                @foreach (['tiang_baja_galvanis' => 'Tiang Baja (Galvanis)', 'tiang_beton' => 'Tiang Beton', 'menempel_tiang_pln' => 'Menempel Tiang PLN', 'menempel_pohon' => 'Menempel Pohon', 'tanpa_penyangga' => 'Tanpa Penyangga'] as $value => $text)
                     <option value="{{ $value }}" @selected($poleValue('pole_type') === $value)>{{ $text }}</option>
                 @endforeach
             </select>

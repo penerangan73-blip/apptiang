@@ -135,15 +135,30 @@
 
 {{-- Dashboard Map --}}
 <div class="card">
-    <div class="flex items-center justify-between gap-4 border-b border-white/10 p-5">
+    <div class="flex flex-col gap-4 border-b border-white/10 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h3 class="flex items-center gap-2 text-lg font-black"><i data-lucide="gauge" class="icon text-cyan-400"></i> Dashboard Operasional</h3>
             <p class="text-sm text-slate-400">Ringkasan aset, aktivitas harian, dan prioritas tindak lanjut.</p>
         </div>
+        <div class="flex flex-wrap gap-2 sm:items-center sm:justify-end">
+            <div class="relative">
+                <button type="button" id="dashboard-map-style-toggle" class="btn btn-muted inline-flex px-3 py-2 text-xs" aria-expanded="false" aria-controls="dashboard-map-style-menu">
+                    <i data-lucide="map" class="icon"></i>
+                    <span id="dashboard-map-style-label">Satelit</span>
+                    <i data-lucide="chevron-down" class="icon"></i>
+                </button>
+                <div id="dashboard-map-style-menu" class="absolute left-0 z-[1000] mt-2 hidden w-56 overflow-hidden rounded-lg border border-white/10 bg-slate-950/95 p-1 shadow-2xl backdrop-blur sm:left-auto sm:right-0">
+                    <button type="button" class="w-full rounded-md px-3 py-2 text-left text-xs font-bold text-slate-200 transition hover:bg-white/10" data-dashboard-map-style="standard">Standar</button>
+                    <button type="button" class="w-full rounded-md px-3 py-2 text-left text-xs font-bold text-slate-200 transition hover:bg-white/10" data-dashboard-map-style="satellite">Satelit</button>
+                    <button type="button" class="w-full rounded-md px-3 py-2 text-left text-xs font-bold text-slate-200 transition hover:bg-white/10" data-dashboard-map-style="topography">Topografi</button>
+                    <button type="button" class="w-full rounded-md px-3 py-2 text-left text-xs font-bold text-slate-200 transition hover:bg-white/10" data-dashboard-map-style="streets">Jalan Detail</button>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="p-5">
         <div class="relative">
-            <div id="dashboard-map" class="glass-panel h-[400px] sm:h-[500px] overflow-hidden rounded-lg"></div>
+            <div id="dashboard-map" class="glass-panel h-[500px] sm:h-[640px] overflow-hidden rounded-lg"></div>
             @include('partials.marker-status-legend')
         </div>
     </div>
@@ -167,14 +182,97 @@
     window.pjuCanManagePoles = @json($canManagePoles);
     @include('partials.pole-scripts')
 
+    const dashboardMaps = {};
+    const dashboardMapBaseLayers = {
+        standard: {
+            label: 'Standar',
+            url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            options: { maxZoom: 19, attribution: '&copy; OpenStreetMap' },
+        },
+        satellite: {
+            label: 'Satelit',
+            url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            options: { maxZoom: 19, attribution: 'Tiles &copy; Esri' },
+        },
+        topography: {
+            label: 'Topografi',
+            url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+            options: { maxZoom: 17, attribution: '&copy; OpenTopoMap &copy; OpenStreetMap' },
+        },
+        streets: {
+            label: 'Jalan Detail',
+            url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+            options: { maxZoom: 19, attribution: '&copy; OpenStreetMap &copy; CARTO' },
+        },
+    };
+    const dashboardLayerStyles = {
+        'administrasi-area': {
+            style: { color: '#075985', fillColor: '#38bdf8', fillOpacity: 0.48, opacity: 0.95, weight: 1.4 },
+            hover: { fillOpacity: 0.68, weight: 2.8 },
+        },
+        'administrasi-garis': {
+            style: { color: '#0e7490', fillOpacity: 0, opacity: 0.95, weight: 1.6, dashArray: '4 3' },
+            hover: { opacity: 1, weight: 2.6 },
+        },
+    };
+
     initDashboardMap();
+    setupDashboardMapStyleMenu();
 
     function initDashboardMap() {
         const el = document.getElementById('dashboard-map');
         if (!el) return;
-        const map = L.map(el).setView([-7.965, 110.603], 11);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+        const map = L.map(el).setView([-7.965, 110.603], 10);
+        dashboardMaps[el.id] = map;
+        map._pjuBaseStyle = 'satellite';
+        map._pjuBaseLayer = createDashboardBaseLayer('satellite').addTo(map);
         loadDashboardMarkers(map);
+        loadDashboardAdministrativeLayers(map);
+    }
+
+    function createDashboardBaseLayer(style) {
+        const config = dashboardMapBaseLayers[style] || dashboardMapBaseLayers.standard;
+
+        return L.tileLayer(config.url, config.options);
+    }
+
+    function setupDashboardMapStyleMenu() {
+        const toggle = document.getElementById('dashboard-map-style-toggle');
+        const menu = document.getElementById('dashboard-map-style-menu');
+        const label = document.getElementById('dashboard-map-style-label');
+
+        if (!toggle || !menu || !label) return;
+
+        toggle.addEventListener('click', () => {
+            const isOpen = !menu.classList.contains('hidden');
+            menu.classList.toggle('hidden', isOpen);
+            toggle.setAttribute('aria-expanded', String(!isOpen));
+        });
+
+        menu.querySelectorAll('[data-dashboard-map-style]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const style = button.dataset.dashboardMapStyle || 'standard';
+                setDashboardMapStyle(style);
+                label.textContent = dashboardMapBaseLayers[style]?.label || dashboardMapBaseLayers.standard.label;
+                menu.classList.add('hidden');
+                toggle.setAttribute('aria-expanded', 'false');
+            });
+        });
+
+        document.addEventListener('click', (event) => {
+            if (toggle.contains(event.target) || menu.contains(event.target)) return;
+            menu.classList.add('hidden');
+            toggle.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    function setDashboardMapStyle(style) {
+        Object.values(dashboardMaps).forEach((map) => {
+            if (map._pjuBaseStyle === style) return;
+            if (map._pjuBaseLayer) map.removeLayer(map._pjuBaseLayer);
+            map._pjuBaseLayer = createDashboardBaseLayer(style).addTo(map);
+            map._pjuBaseStyle = style;
+        });
     }
 
     async function loadDashboardMarkers(map) {
@@ -199,7 +297,7 @@
                 icon: L.divIcon({ className: '', html: `<span style="display:block;width:18px;height:18px;border-radius:999px;background:${markerColors[pole.condition] || '#2563eb'};border:3px solid white;box-shadow:0 8px 20px rgba(15,23,42,.22)"></span>`, iconSize: [18, 18], iconAnchor: [9, 9] })
             }).addTo(map).bindPopup(createDashboardMarkerPopup(pole), { maxWidth: 300, className: 'pju-marker-popup' });
         });
-        if (bounds.length) map.fitBounds(bounds, { padding: [36, 36], maxZoom: 13 });
+        if (bounds.length) map.fitBounds(bounds, { padding: [56, 56], maxZoom: 11 });
     }
 
     function createDashboardMarkerPopup(pole) {
@@ -220,5 +318,84 @@
                 </dl>
             </div>
         `;
+    }
+
+    async function loadDashboardAdministrativeLayers(map) {
+        try {
+            const layers = await (window.pjuLoadAdministrativeLayers?.() || Promise.resolve([]));
+            addDashboardLayersToMap(map, layers);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    function addDashboardLayersToMap(map, layers) {
+        if (!layers.length) return;
+        if (map._pjuDashboardLayerGroup) {
+            map.addLayer(map._pjuDashboardLayerGroup);
+            return;
+        }
+
+        const group = L.layerGroup();
+        layers.forEach((layer) => {
+            const layerStyle = dashboardLayerStyles[layer.id] || { style: layer.style, hover: layer.hover };
+            const layerConfig = { ...layer, ...layerStyle };
+            const geoLayer = L.geoJSON(layerConfig.data, {
+                style: (feature) => layerConfig.id === 'administrasi-area'
+                    ? { ...layerConfig.style, fillColor: adminColor(feature) }
+                    : layerConfig.style,
+                onEachFeature: (feature, featureLayer) => bindDashboardFeature(layerConfig, feature, featureLayer),
+            });
+            group.addLayer(geoLayer);
+        });
+        group.addTo(map);
+        map._pjuDashboardLayerGroup = group;
+    }
+
+    function bindDashboardFeature(layerConfig, feature, layer) {
+        if (layer.setStyle) {
+            const base = layerConfig.id === 'administrasi-area'
+                ? { ...layerConfig.style, fillColor: adminColor(feature) }
+                : layerConfig.style;
+            layer.on({
+                mouseover: () => layer.setStyle({ ...base, ...layerConfig.hover }),
+                mouseout: () => layer.setStyle(base),
+            });
+        }
+
+        const properties = feature.properties || {};
+        const name = dashboardProp(properties, 'namobj') || dashboardProp(properties, 'desa') || dashboardProp(properties, 'wadmkd') || layerConfig.label;
+        const village = dashboardProp(properties, 'desa') || dashboardProp(properties, 'wadmkd') || dashboardProp(properties, 'namobj') || '-';
+        const district = dashboardProp(properties, 'wadmkc') || dashboardProp(properties, 'kecamata_1') || '-';
+        const regency = dashboardProp(properties, 'wadmkk') || dashboardProp(properties, 'kabupaten') || '-';
+
+        layer.bindPopup(`
+            <div class="p-3" style="width:min(320px, calc(100vw - 64px));">
+                <div class="border-b border-white/10 pb-3">
+                    <p class="text-xs font-black uppercase tracking-widest text-cyan-400">${escapeHtml(layerConfig.label)}</p>
+                    <p class="mt-1 text-lg font-black leading-tight text-slate-100">${escapeHtml(name)}</p>
+                </div>
+                <dl class="mt-3 grid gap-2 text-sm">
+                    ${dashboardFeatureInfoRow('Desa', village)}
+                    ${dashboardFeatureInfoRow('Kecamatan', district)}
+                    ${dashboardFeatureInfoRow('Kabupaten', regency)}
+                </dl>
+            </div>
+        `, { maxWidth: 380, className: 'pju-marker-popup' });
+    }
+
+    function dashboardFeatureInfoRow(label, value) {
+        return `
+            <div class="rounded-lg border border-white/10 bg-white/5 p-3">
+                <dt class="text-xs font-black uppercase tracking-widest text-slate-400">${escapeHtml(label)}</dt>
+                <dd class="mt-1 break-words font-extrabold text-slate-100">${escapeHtml(value)}</dd>
+            </div>
+        `;
+    }
+
+    function dashboardProp(properties, key) {
+        const match = Object.keys(properties).find((item) => item.toLowerCase() === key.toLowerCase());
+
+        return match && properties[match] != null ? String(properties[match]).trim() : '';
     }
 @endsection
