@@ -28,7 +28,23 @@
 </div>
 <div id="{{ $prefix }}-source-select-wrap" data-route-source-select-wrap>
     <label class="label">Nomor Tiang Sumber</label>
-    <select class="field" name="customer_id" required disabled data-route-source-select>
+    <div class="relative" data-route-source-combobox>
+        <button type="button" class="field flex h-11 items-center justify-between gap-3 text-left" data-route-source-toggle aria-expanded="false">
+            <span class="min-w-0 truncate" data-route-source-label>Pilih sumber</span>
+            <i data-lucide="chevron-down" class="size-4 shrink-0 text-cyan-300"></i>
+        </button>
+        <div class="absolute left-0 right-0 z-[1200] mt-1 hidden overflow-hidden rounded-lg border border-white/10 bg-slate-950 shadow-2xl" data-route-source-menu>
+            <div class="border-b border-white/10 p-2">
+                <div class="relative">
+                    <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500"></i>
+                    <input class="field h-10 py-2 pl-10" type="search" autocomplete="off" placeholder="Search..." data-route-source-search>
+                </div>
+            </div>
+            <div class="max-h-56 overflow-y-auto py-1" data-route-source-options></div>
+            <p class="hidden px-3 py-3 text-sm font-semibold text-amber-300" data-route-source-empty>Tidak ada nomor tiang yang cocok.</p>
+        </div>
+    </div>
+    <select class="sr-only" name="customer_id" required disabled data-route-source-select>
         <option value="">Pilih sumber</option>
         @if ($selectedCustomerId && ! $hasSelectedSourceOption)
             <option value="{{ $selectedCustomerId }}" data-next-sub="{{ $selectedSubName ?: \App\Models\Pole::nextSubNameForCustomer($selectedCustomerId) }}" selected>

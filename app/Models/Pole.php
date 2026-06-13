@@ -211,10 +211,11 @@ class Pole extends Model
     public function scopeSourceOptions(Builder $query): Builder
     {
         return $query
-            ->selectRaw('MIN(id) as id, customer_id')
+            ->selectRaw('MAX(id) as id, customer_id')
             ->whereNotNull('customer_id')
             ->where('customer_id', '<>', '')
             ->groupBy('customer_id')
+            ->orderByDesc('id')
             ->orderBy('customer_id');
     }
 

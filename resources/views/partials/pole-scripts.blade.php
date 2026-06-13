@@ -19,7 +19,82 @@
             const subWrap = form.querySelector('[data-route-sub-wrap]');
             const sourceInput = form.querySelector('[data-route-source-input]');
             const sourceSelect = form.querySelector('[data-route-source-select]');
+            const sourceCombo = form.querySelector('[data-route-source-combobox]');
+            const sourceToggle = form.querySelector('[data-route-source-toggle]');
+            const sourceLabel = form.querySelector('[data-route-source-label]');
+            const sourceMenu = form.querySelector('[data-route-source-menu]');
+            const sourceSearch = form.querySelector('[data-route-source-search]');
+            const sourceOptionList = form.querySelector('[data-route-source-options]');
+            const sourceEmpty = form.querySelector('[data-route-source-empty]');
             const subPreview = form.querySelector('[data-route-sub-preview]');
+            const normalizeSearch = (value) => (value || '').toString().trim().toLowerCase();
+            const closeSourceMenu = () => {
+                sourceMenu?.classList.add('hidden');
+                sourceToggle?.setAttribute('aria-expanded', 'false');
+            };
+            const updateSourceLabel = () => {
+                if (!sourceSelect || !sourceLabel) return;
+
+                const selectedOption = sourceSelect.selectedOptions?.[0];
+                sourceLabel.textContent = selectedOption?.value ? selectedOption.textContent.trim() : 'Pilih sumber';
+
+                sourceOptionList?.querySelectorAll('[data-route-source-option]').forEach((button) => {
+                    const isSelected = button.dataset.value === sourceSelect.value;
+                    button.classList.toggle('bg-cyan-500/15', isSelected);
+                    button.classList.toggle('text-cyan-100', isSelected);
+                    button.classList.toggle('text-slate-200', !isSelected);
+                });
+            };
+            const createSourceOptions = () => {
+                if (!sourceSelect || !sourceOptionList || sourceOptionList.dataset.rendered === '1') return;
+
+                [...sourceSelect.options].forEach((option) => {
+                    if (!option.value) return;
+
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'flex w-full items-center px-3 py-2 text-left text-sm font-semibold text-slate-200 transition hover:bg-white/10';
+                    button.dataset.routeSourceOption = '1';
+                    button.dataset.value = option.value;
+                    button.textContent = option.textContent.trim();
+                    button.addEventListener('click', () => {
+                        sourceSelect.value = option.value;
+                        sourceSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                        closeSourceMenu();
+                    });
+                    sourceOptionList.appendChild(button);
+                });
+
+                sourceOptionList.dataset.rendered = '1';
+                updateSourceLabel();
+            };
+            const filterSourceOptions = () => {
+                createSourceOptions();
+                if (!sourceOptionList) return;
+
+                const keyword = normalizeSearch(sourceSearch?.value);
+                let visibleOptions = 0;
+
+                sourceOptionList.querySelectorAll('[data-route-source-option]').forEach((button) => {
+                    const text = normalizeSearch(`${button.textContent} ${button.dataset.value}`);
+                    const isVisible = !keyword || text.includes(keyword);
+                    button.classList.toggle('hidden', !isVisible);
+                    if (isVisible) visibleOptions += 1;
+                });
+
+                sourceEmpty?.classList.toggle('hidden', !keyword || visibleOptions > 0);
+            };
+            const openSourceMenu = () => {
+                if (!sourceMenu || sourceSelect?.disabled) return;
+
+                sourceMenu.classList.remove('hidden');
+                sourceToggle?.setAttribute('aria-expanded', 'true');
+                if (sourceSearch) {
+                    sourceSearch.value = '';
+                    filterSourceOptions();
+                    setTimeout(() => sourceSearch.focus(), 0);
+                }
+            };
             const syncSubPreview = () => {
                 if (!sourceSelect || !subPreview) return;
 
@@ -52,15 +127,47 @@
                     sourceSelect.disabled = !isSub;
                 }
 
+                if (sourceToggle) {
+                    sourceToggle.disabled = !isSub;
+                    sourceToggle.classList.toggle('opacity-70', !isSub);
+                }
+
+                if (sourceSearch) {
+                    sourceSearch.disabled = !isSub;
+                }
+
                 if (isSub) {
+                    createSourceOptions();
+                    filterSourceOptions();
+                    updateSourceLabel();
                     syncSubPreview();
-                } else if (subPreview) {
-                    subPreview.value = '';
+                } else {
+                    closeSourceMenu();
+                    if (subPreview) {
+                        subPreview.value = '';
+                    }
                 }
             };
 
             options.forEach((option) => option.addEventListener('change', sync));
-            sourceSelect?.addEventListener('change', syncSubPreview);
+            sourceToggle?.addEventListener('click', () => {
+                if (sourceMenu?.classList.contains('hidden')) {
+                    openSourceMenu();
+                } else {
+                    closeSourceMenu();
+                }
+            });
+            sourceSearch?.addEventListener('input', filterSourceOptions);
+            sourceSearch?.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') closeSourceMenu();
+            });
+            document.addEventListener('click', (event) => {
+                if (sourceCombo && !sourceCombo.contains(event.target)) closeSourceMenu();
+            });
+            sourceSelect?.addEventListener('change', () => {
+                updateSourceLabel();
+                syncSubPreview();
+            });
             sync();
         });
     };
