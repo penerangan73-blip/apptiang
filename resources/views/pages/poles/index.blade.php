@@ -734,7 +734,7 @@
 
             try {
                 const response = await fetch(checkbox.dataset.poleVerificationUrl, {
-                    method: 'PATCH',
+                    method: 'POST',
                     headers: {
                         Accept: 'application/json',
                         'Content-Type': 'application/json',

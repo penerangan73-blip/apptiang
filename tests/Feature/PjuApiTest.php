@@ -299,10 +299,16 @@ class PjuApiTest extends TestCase
             ->assertJsonPath('data.is_verified', true)
             ->assertJsonPath('data.verified_by.email', 'verifikator@pju.local');
 
+        $this->withToken($token)
+            ->postJson('/api/poles/'.$pole->id.'/verification', ['is_verified' => false])
+            ->assertOk()
+            ->assertJsonPath('data.is_verified', false)
+            ->assertJsonPath('data.verified_by', null);
+
         $this->assertDatabaseHas('poles', [
             'id' => $pole->id,
-            'is_verified' => true,
-            'verified_by_id' => $verifikator->id,
+            'is_verified' => false,
+            'verified_by_id' => null,
         ]);
 
         $this->withToken($token)->getJson('/api/users')->assertForbidden();
