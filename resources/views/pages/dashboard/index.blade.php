@@ -308,7 +308,7 @@
             bounds.push([lat, lng]);
             L.circleMarker([lat, lng], {
                 renderer: map._pjuMarkerRenderer,
-                radius: 5,
+                radius: 6,
                 stroke: true,
                 color: '#ffffff',
                 weight: 2,
