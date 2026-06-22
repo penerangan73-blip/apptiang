@@ -215,6 +215,8 @@
             hover: { opacity: 1, weight: 2.6 },
         },
     };
+    const dashboardMarkerUrl = @json(route('map.markers', ['summary' => 1]));
+    const dashboardMarkerLimit = 8000;
 
     initDashboardMap();
     setupDashboardMapStyleMenu();
@@ -228,6 +230,8 @@
         map._pjuBaseStyle = 'satellite';
         map._pjuBaseLayer = createDashboardBaseLayer('satellite').addTo(map);
         map._pjuMarkerRenderer = L.canvas({ padding: 0.5, pane: 'pju-marker-pane' });
+        map._pjuMarkerLayer = L.layerGroup().addTo(map);
+        map.on('moveend zoomend', debounceDashboardMap(() => loadDashboardMarkers(map), 300));
         loadDashboardMarkers(map);
         loadDashboardAdministrativeLayers(map);
     }
@@ -289,23 +293,44 @@
     }
 
     async function loadDashboardMarkers(map) {
+        map._pjuMarkerRequest?.abort();
+        map._pjuMarkerRequest = new AbortController();
+
         try {
-            const response = await fetch(@json(route('map.markers', ['summary' => 1, 'limit' => 3000])), { headers: { Accept: 'application/json' } });
+            const response = await fetch(dashboardMarkerUrlForMap(map), {
+                headers: { Accept: 'application/json' },
+                signal: map._pjuMarkerRequest.signal,
+            });
             if (!response.ok) throw new Error('Marker tidak bisa dimuat.');
             const payload = await response.json();
             addDashboardMarkers(map, payload.data || []);
         } catch (error) {
+            if (error.name === 'AbortError') return;
             console.error(error);
         }
     }
 
+    function dashboardMarkerUrlForMap(map) {
+        const url = new URL(dashboardMarkerUrl, window.location.origin);
+        const bounds = map.getBounds();
+
+        url.searchParams.set('north', bounds.getNorth().toFixed(7));
+        url.searchParams.set('south', bounds.getSouth().toFixed(7));
+        url.searchParams.set('east', bounds.getEast().toFixed(7));
+        url.searchParams.set('west', bounds.getWest().toFixed(7));
+        url.searchParams.set('limit', String(dashboardMarkerLimit));
+
+        return url.toString();
+    }
+
     function addDashboardMarkers(map, poles) {
-        const bounds = [];
+        const layer = map._pjuMarkerLayer || L.layerGroup().addTo(map);
+        layer.clearLayers();
+
         const markerColors = { kokoh: '#059669', keropos: '#e11d48', miring: '#d97706', berkarat: '#b45309', lainnya: '#64748b' };
         poles.forEach((pole) => {
             const lat = Number(pole.latitude), lng = Number(pole.longitude);
             if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-            bounds.push([lat, lng]);
             L.circleMarker([lat, lng], {
                 renderer: map._pjuMarkerRenderer,
                 radius: 6,
@@ -315,9 +340,17 @@
                 fill: true,
                 fillColor: markerColors[pole.condition] || '#2563eb',
                 fillOpacity: 0.9,
-            }).addTo(map).bindPopup(createDashboardMarkerPopup(pole), { maxWidth: 300, className: 'pju-marker-popup' });
+            }).addTo(layer).bindPopup(createDashboardMarkerPopup(pole), { maxWidth: 300, className: 'pju-marker-popup' });
         });
-        if (bounds.length) map.fitBounds(bounds, { padding: [56, 56], maxZoom: 11 });
+    }
+
+    function debounceDashboardMap(callback, delay) {
+        let timeout;
+
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => callback(...args), delay);
+        };
     }
 
     function createDashboardMarkerPopup(pole) {
