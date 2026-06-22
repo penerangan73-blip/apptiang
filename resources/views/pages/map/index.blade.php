@@ -236,6 +236,7 @@
             const payload = await response.json();
             addPoleMarkers(map, payload.data || [], interactive);
             updateMarkerStatus(payload.meta || {});
+            syncAdministrativeSummaryVisibility(map);
         } catch (error) {
             if (error.name === 'AbortError') return;
             console.error(error);
@@ -281,13 +282,14 @@
 
             addPoleClusterMarker(map, layer, group);
         });
+        syncAdministrativeSummaryVisibility(map);
     }
 
     function groupPolesForMap(map, poles) {
         const zoom = map.getZoom();
         if (zoom >= 16) return poles.map((pole) => ({ poles: [pole] }));
 
-        const gridSize = zoom >= 14 ? 34 : 46;
+        const gridSize = zoom >= 15 ? 34 : (zoom >= 13 ? 52 : 70);
         const groups = new Map();
 
         poles.forEach((pole) => {
@@ -552,6 +554,9 @@
             if (map._pjuAdminSummaryLayer && map.hasLayer(map._pjuAdminSummaryLayer)) {
                 map.removeLayer(map._pjuAdminSummaryLayer);
             }
+            if (map._pjuMarkerLayer && !map.hasLayer(map._pjuMarkerLayer)) {
+                map.addLayer(map._pjuMarkerLayer);
+            }
         });
         const btn = document.getElementById('toggle-map-layers');
         if (btn) {
@@ -604,15 +609,20 @@
     }
 
     function syncAdministrativeSummaryVisibility(map) {
-        if (!map._pjuAdminSummaryLayer) return;
+        const shouldShow = map.getZoom() <= 10 && map._pjuLayerGroup && map.hasLayer(map._pjuLayerGroup) && map._pjuAdminSummaryLayer;
+        const summaryShown = map._pjuAdminSummaryLayer && map.hasLayer(map._pjuAdminSummaryLayer);
+        const markerShown = map._pjuMarkerLayer && map.hasLayer(map._pjuMarkerLayer);
 
-        const shouldShow = map.getZoom() <= 13 && map._pjuLayerGroup && map.hasLayer(map._pjuLayerGroup);
-        const isShown = map.hasLayer(map._pjuAdminSummaryLayer);
-
-        if (shouldShow && !isShown) {
+        if (shouldShow && !summaryShown) {
             map.addLayer(map._pjuAdminSummaryLayer);
-        } else if (!shouldShow && isShown) {
+        } else if (!shouldShow && summaryShown) {
             map.removeLayer(map._pjuAdminSummaryLayer);
+        }
+
+        if (shouldShow && markerShown) {
+            map.removeLayer(map._pjuMarkerLayer);
+        } else if (!shouldShow && map._pjuMarkerLayer && !markerShown) {
+            map.addLayer(map._pjuMarkerLayer);
         }
     }
 

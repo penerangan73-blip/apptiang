@@ -226,7 +226,7 @@
     function initDashboardMap() {
         const el = document.getElementById('dashboard-map');
         if (!el) return;
-        const map = L.map(el, { preferCanvas: true }).setView([-7.965, 110.603], 10);
+        const map = L.map(el, { preferCanvas: true }).setView([-7.965, 110.603], 11);
         dashboardMaps[el.id] = map;
         setupDashboardMapPanes(map);
         map._pjuBaseStyle = 'satellite';
@@ -307,6 +307,7 @@
             if (!response.ok) throw new Error('Marker tidak bisa dimuat.');
             const payload = await response.json();
             addDashboardMarkers(map, payload.data || []);
+            syncDashboardAdministrativeSummaryVisibility(map);
         } catch (error) {
             if (error.name === 'AbortError') return;
             console.error(error);
@@ -339,13 +340,14 @@
 
             addDashboardClusterMarker(map, layer, group);
         });
+        syncDashboardAdministrativeSummaryVisibility(map);
     }
 
     function groupDashboardPolesForMap(map, poles) {
         const zoom = map.getZoom();
         if (zoom >= 16) return poles.map((pole) => ({ poles: [pole] }));
 
-        const gridSize = zoom >= 14 ? 34 : 46;
+        const gridSize = zoom >= 15 ? 34 : (zoom >= 13 ? 52 : 70);
         const groups = new Map();
 
         poles.forEach((pole) => {
@@ -528,15 +530,20 @@
     }
 
     function syncDashboardAdministrativeSummaryVisibility(map) {
-        if (!map._pjuDashboardAdminSummaryLayer) return;
+        const shouldShow = map.getZoom() <= 10 && map._pjuDashboardLayerGroup && map.hasLayer(map._pjuDashboardLayerGroup) && map._pjuDashboardAdminSummaryLayer;
+        const summaryShown = map._pjuDashboardAdminSummaryLayer && map.hasLayer(map._pjuDashboardAdminSummaryLayer);
+        const markerShown = map._pjuMarkerLayer && map.hasLayer(map._pjuMarkerLayer);
 
-        const shouldShow = map.getZoom() <= 13 && map._pjuDashboardLayerGroup && map.hasLayer(map._pjuDashboardLayerGroup);
-        const isShown = map.hasLayer(map._pjuDashboardAdminSummaryLayer);
-
-        if (shouldShow && !isShown) {
+        if (shouldShow && !summaryShown) {
             map.addLayer(map._pjuDashboardAdminSummaryLayer);
-        } else if (!shouldShow && isShown) {
+        } else if (!shouldShow && summaryShown) {
             map.removeLayer(map._pjuDashboardAdminSummaryLayer);
+        }
+
+        if (shouldShow && markerShown) {
+            map.removeLayer(map._pjuMarkerLayer);
+        } else if (!shouldShow && map._pjuMarkerLayer && !markerShown) {
+            map.addLayer(map._pjuMarkerLayer);
         }
     }
 
