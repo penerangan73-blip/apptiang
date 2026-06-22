@@ -328,19 +328,74 @@
         layer.clearLayers();
 
         const markerColors = { kokoh: '#059669', keropos: '#e11d48', miring: '#d97706', berkarat: '#b45309', lainnya: '#64748b' };
+        groupDashboardPolesForMap(map, poles).forEach((group) => {
+            if (group.poles.length === 1) {
+                addSingleDashboardMarker(map, layer, group.poles[0], markerColors);
+                return;
+            }
+
+            addDashboardClusterMarker(map, layer, group);
+        });
+    }
+
+    function groupDashboardPolesForMap(map, poles) {
+        const zoom = map.getZoom();
+        if (zoom >= 16) return poles.map((pole) => ({ poles: [pole] }));
+
+        const gridSize = zoom >= 14 ? 34 : 46;
+        const groups = new Map();
+
         poles.forEach((pole) => {
             const lat = Number(pole.latitude), lng = Number(pole.longitude);
             if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-            L.circleMarker([lat, lng], {
-                renderer: map._pjuMarkerRenderer,
-                radius: 6,
-                stroke: true,
-                color: '#ffffff',
-                weight: 2,
-                fill: true,
-                fillColor: markerColors[pole.condition] || '#2563eb',
-                fillOpacity: 0.9,
-            }).addTo(layer).bindPopup(createDashboardMarkerPopup(pole), { maxWidth: 300, className: 'pju-marker-popup' });
+
+            const point = map.latLngToLayerPoint([lat, lng]);
+            const key = `${Math.floor(point.x / gridSize)}:${Math.floor(point.y / gridSize)}`;
+            const group = groups.get(key) || { poles: [], latTotal: 0, lngTotal: 0, bounds: [] };
+            group.poles.push(pole);
+            group.latTotal += lat;
+            group.lngTotal += lng;
+            group.bounds.push([lat, lng]);
+            groups.set(key, group);
+        });
+
+        return [...groups.values()].map((group) => ({
+            ...group,
+            center: [group.latTotal / group.poles.length, group.lngTotal / group.poles.length],
+        }));
+    }
+
+    function addSingleDashboardMarker(map, layer, pole, markerColors) {
+        const lat = Number(pole.latitude), lng = Number(pole.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+        L.circleMarker([lat, lng], {
+            renderer: map._pjuMarkerRenderer,
+            radius: 6,
+            stroke: true,
+            color: '#ffffff',
+            weight: 2,
+            fill: true,
+            fillColor: markerColors[pole.condition] || '#2563eb',
+            fillOpacity: 0.9,
+        }).addTo(layer).bindPopup(createDashboardMarkerPopup(pole), { maxWidth: 300, className: 'pju-marker-popup' });
+    }
+
+    function addDashboardClusterMarker(map, layer, group) {
+        const count = group.poles.length;
+        const size = Math.min(48, 28 + Math.log10(count) * 12);
+        const marker = L.marker(group.center, {
+            pane: 'pju-marker-pane',
+            icon: L.divIcon({
+                className: '',
+                html: `<span style="display:flex;width:${size}px;height:${size}px;align-items:center;justify-content:center;border-radius:999px;background:#0891b2;border:3px solid white;box-shadow:0 10px 26px rgba(15,23,42,.3);color:white;font-size:12px;font-weight:900;">${count.toLocaleString('id-ID')}</span>`,
+                iconSize: [size, size],
+                iconAnchor: [size / 2, size / 2],
+            }),
+        }).addTo(layer);
+
+        marker.on('click', () => {
+            map.fitBounds(group.bounds, { padding: [44, 44], maxZoom: Math.max(map.getZoom() + 2, 15) });
         });
     }
 
