@@ -479,7 +479,7 @@
             .then((payload) => {
                 const byKey = new Map();
                 (payload.data || []).forEach((item) => {
-                    byKey.set(dashboardAdminSummaryKey(item.village, item.district), item);
+                    byKey.set(dashboardAdminSummaryKey(item.district), item);
                 });
 
                 return byKey;
@@ -495,30 +495,39 @@
         try {
             const summaries = await loadDashboardAdministrativeSummary();
             const group = L.layerGroup();
+            const districtGroups = new Map();
 
             areaLayer.data.features.forEach((feature) => {
                 const properties = feature.properties || {};
-                const village = dashboardProp(properties, 'desa') || dashboardProp(properties, 'wadmkd') || dashboardProp(properties, 'namobj');
                 const district = dashboardProp(properties, 'wadmkc') || dashboardProp(properties, 'kecamatan') || dashboardProp(properties, 'kapanewon') || dashboardProp(properties, 'kecamata_1');
-                const summary = summaries.get(dashboardAdminSummaryKey(village, district)) || summaries.get(dashboardAdminSummaryKey(village, ''));
+                const summary = summaries.get(dashboardAdminSummaryKey(district));
 
                 if (!summary?.total) return;
 
                 const bounds = L.geoJSON(feature).getBounds();
                 if (!bounds.isValid()) return;
 
-                L.marker(bounds.getCenter(), {
+                const key = dashboardAdminSummaryKey(district);
+                const districtGroup = districtGroups.get(key) || { summary, bounds: null };
+                districtGroup.bounds = districtGroup.bounds ? districtGroup.bounds.extend(bounds) : bounds;
+                districtGroups.set(key, districtGroup);
+            });
+
+            districtGroups.forEach((item) => {
+                if (!item.bounds?.isValid()) return;
+
+                L.marker(item.bounds.getCenter(), {
                     pane: 'pju-marker-pane',
                     interactive: true,
                     icon: L.divIcon({
                         className: '',
-                        html: dashboardAdminSummaryBadgeHtml(summary),
+                        html: dashboardAdminSummaryBadgeHtml(item.summary),
                         iconSize: [54, 38],
                         iconAnchor: [27, 19],
                     }),
                 })
                     .addTo(group)
-                    .bindPopup(dashboardAdminSummaryPopupHtml(summary), { maxWidth: 280, className: 'pju-marker-popup' });
+                    .bindPopup(dashboardAdminSummaryPopupHtml(item.summary), { maxWidth: 280, className: 'pju-marker-popup' });
             });
 
             if (map._pjuDashboardAdminSummaryLayer) map.removeLayer(map._pjuDashboardAdminSummaryLayer);
@@ -557,8 +566,8 @@
         return `
             <div class="p-3">
                 <p class="text-xs font-black uppercase tracking-widest text-cyan-400">Ringkasan Wilayah</p>
-                <p class="mt-1 text-lg font-black text-slate-100">${escapeHtml(summary.village || '-')}</p>
-                <p class="text-sm font-semibold text-slate-400">${escapeHtml(summary.district || '-')}</p>
+                <p class="mt-1 text-lg font-black text-slate-100">${escapeHtml(summary.district || '-')}</p>
+                <p class="text-sm font-semibold text-slate-400">Kecamatan / Kapanewon</p>
                 <dl class="mt-3 grid grid-cols-[84px_1fr] gap-x-3 gap-y-1.5 text-sm">
                     <dt class="font-bold text-slate-500">Total</dt>
                     <dd class="font-semibold text-slate-100">${Number(summary.total || 0).toLocaleString('id-ID')} titik</dd>
@@ -575,8 +584,8 @@
         `;
     }
 
-    function dashboardAdminSummaryKey(village, district) {
-        return [dashboardNormalizeAdminName(village), dashboardNormalizeAdminName(district)].join('|');
+    function dashboardAdminSummaryKey(district) {
+        return dashboardNormalizeAdminName(district);
     }
 
     function dashboardNormalizeAdminName(value) {

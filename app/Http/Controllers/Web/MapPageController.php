@@ -149,22 +149,21 @@ class MapPageController extends Controller
             trim((string) ($validated['query'] ?? '')),
             $validated['condition'] ?? null
         )
-            ->whereNotNull('village')
-            ->where('village', '<>', '')
-            ->select($this->poleColumns(['village', 'district']))
+            ->whereNotNull('district')
+            ->where('district', '<>', '')
+            ->select($this->poleColumns(['district']))
             ->selectRaw('COUNT(*) as total')
             ->selectRaw("SUM(CASE WHEN `condition` = 'kokoh' THEN 1 ELSE 0 END) as kokoh")
             ->selectRaw("SUM(CASE WHEN `condition` = 'keropos' THEN 1 ELSE 0 END) as keropos")
             ->selectRaw("SUM(CASE WHEN `condition` = 'miring' THEN 1 ELSE 0 END) as miring")
             ->selectRaw("SUM(CASE WHEN `condition` = 'berkarat' THEN 1 ELSE 0 END) as berkarat")
             ->selectRaw("SUM(CASE WHEN `condition` = 'lainnya' THEN 1 ELSE 0 END) as lainnya")
-            ->groupBy($this->poleColumns(['village', 'district']))
+            ->groupBy($this->poleColumns(['district']))
             ->orderByDesc('total')
             ->get();
 
         return response()->json([
             'data' => $summary->map(fn (Pole $pole) => [
-                'village' => $pole->village,
                 'district' => $pole->district,
                 'total' => (int) $pole->total,
                 'conditions' => [
