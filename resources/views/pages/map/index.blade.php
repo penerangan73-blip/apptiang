@@ -95,6 +95,7 @@
     const markerColors = { kokoh: '#059669', keropos: '#e11d48', miring: '#d97706', berkarat: '#b45309', lainnya: '#64748b' };
     const mainMaps = {};
     const mapMarkerUrl = @json(route('map.markers', request()->only(['query', 'condition'])));
+    const administrativeSummaryUrl = @json(route('map.administrative-summary', request()->only(['query', 'condition'])));
     const mapMarkerLimit = 8000;
     const mapBaseLayers = {
         standard: {
@@ -136,6 +137,7 @@
         map._pjuMarkerRenderer = L.canvas({ padding: 0.5, pane: 'pju-marker-pane' });
         map._pjuMarkerLayer = L.layerGroup().addTo(map);
         map.on('moveend zoomend', debounce(() => loadPoleMarkers(map, interactive), 300));
+        map.on('zoomend', () => syncAdministrativeSummaryVisibility(map));
         loadPoleMarkers(map, interactive);
     }
 
@@ -446,7 +448,7 @@
         { id: 'administrasi-garis', label: 'Batas Administrasi', url: '/data/peta/administrasi_ln_340320240806233638.zip', style: { color: '#0e7490', fillOpacity: 0, opacity: 0.95, weight: 1.6, dashArray: '4 3' }, hover: { opacity: 1, weight: 2.6 } },
     ];
     const loadedLayers = [];
-    let layerPromise = null, shpScriptPromise = null;
+    let layerPromise = null, shpScriptPromise = null, administrativeSummaryPromise = null;
 
     async function ensureShpJs() {
         if (window.shp) return window.shp;
@@ -473,6 +475,26 @@
             return loadedLayers;
         })();
         return layerPromise;
+    }
+
+    async function loadAdministrativeSummary() {
+        if (administrativeSummaryPromise) return administrativeSummaryPromise;
+
+        administrativeSummaryPromise = fetch(administrativeSummaryUrl, { headers: { Accept: 'application/json' } })
+            .then((response) => {
+                if (!response.ok) throw new Error('Ringkasan wilayah tidak bisa dimuat.');
+                return response.json();
+            })
+            .then((payload) => {
+                const byKey = new Map();
+                (payload.data || []).forEach((item) => {
+                    byKey.set(adminSummaryKey(item.village, item.district), item);
+                });
+
+                return byKey;
+            });
+
+        return administrativeSummaryPromise;
     }
 
     async function toggleMapLayers() {
@@ -505,6 +527,7 @@
     function addLayersToMap(map, layers) {
         if (map._pjuLayerGroup) {
             map.addLayer(map._pjuLayerGroup);
+            syncAdministrativeSummaryVisibility(map);
             return;
         }
         const group = L.layerGroup();
@@ -518,12 +541,16 @@
         });
         group.addTo(map);
         map._pjuLayerGroup = group;
+        addAdministrativeSummaryToMap(map, layers);
     }
 
     function closeLayersFromMaps() {
         Object.values(mainMaps).forEach((map) => {
             if (map._pjuLayerGroup && map.hasLayer(map._pjuLayerGroup)) {
                 map.removeLayer(map._pjuLayerGroup);
+            }
+            if (map._pjuAdminSummaryLayer && map.hasLayer(map._pjuAdminSummaryLayer)) {
+                map.removeLayer(map._pjuAdminSummaryLayer);
             }
         });
         const btn = document.getElementById('toggle-map-layers');
@@ -533,6 +560,100 @@
             btn.classList.add('btn-muted');
         }
         if (window.lucide) lucide.createIcons();
+    }
+
+    async function addAdministrativeSummaryToMap(map, layers) {
+        const areaLayer = layers.find((layer) => layer.id === 'administrasi-area');
+        if (!areaLayer?.data?.features?.length) return;
+
+        try {
+            const summaries = await loadAdministrativeSummary();
+            const group = L.layerGroup();
+
+            areaLayer.data.features.forEach((feature) => {
+                const properties = feature.properties || {};
+                const village = prop(properties, 'desa') || prop(properties, 'wadmkd') || prop(properties, 'namobj');
+                const district = prop(properties, 'wadmkc') || prop(properties, 'kecamatan') || prop(properties, 'kapanewon') || prop(properties, 'kecamata_1');
+                const summary = summaries.get(adminSummaryKey(village, district)) || summaries.get(adminSummaryKey(village, ''));
+
+                if (!summary?.total) return;
+
+                const bounds = L.geoJSON(feature).getBounds();
+                if (!bounds.isValid()) return;
+
+                L.marker(bounds.getCenter(), {
+                    pane: 'pju-marker-pane',
+                    interactive: true,
+                    icon: L.divIcon({
+                        className: '',
+                        html: adminSummaryBadgeHtml(summary),
+                        iconSize: [54, 38],
+                        iconAnchor: [27, 19],
+                    }),
+                })
+                    .addTo(group)
+                    .bindPopup(adminSummaryPopupHtml(summary), { maxWidth: 280, className: 'pju-marker-popup' });
+            });
+
+            if (map._pjuAdminSummaryLayer) map.removeLayer(map._pjuAdminSummaryLayer);
+            map._pjuAdminSummaryLayer = group;
+            syncAdministrativeSummaryVisibility(map);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    function syncAdministrativeSummaryVisibility(map) {
+        if (!map._pjuAdminSummaryLayer) return;
+
+        const shouldShow = map.getZoom() <= 13 && map._pjuLayerGroup && map.hasLayer(map._pjuLayerGroup);
+        const isShown = map.hasLayer(map._pjuAdminSummaryLayer);
+
+        if (shouldShow && !isShown) {
+            map.addLayer(map._pjuAdminSummaryLayer);
+        } else if (!shouldShow && isShown) {
+            map.removeLayer(map._pjuAdminSummaryLayer);
+        }
+    }
+
+    function adminSummaryBadgeHtml(summary) {
+        const total = Number(summary.total || 0).toLocaleString('id-ID');
+
+        return `<span style="display:inline-flex;min-width:46px;height:30px;align-items:center;justify-content:center;border-radius:999px;background:#0f172a;border:2px solid white;box-shadow:0 10px 26px rgba(15,23,42,.35);color:white;font-size:12px;font-weight:900;padding:0 8px;">${total}</span>`;
+    }
+
+    function adminSummaryPopupHtml(summary) {
+        return `
+            <div class="p-3">
+                <p class="text-xs font-black uppercase tracking-widest text-cyan-400">Ringkasan Wilayah</p>
+                <p class="mt-1 text-lg font-black text-slate-100">${escapeHtml(summary.village || '-')}</p>
+                <p class="text-sm font-semibold text-slate-400">${escapeHtml(summary.district || '-')}</p>
+                <dl class="mt-3 grid grid-cols-[84px_1fr] gap-x-3 gap-y-1.5 text-sm">
+                    <dt class="font-bold text-slate-500">Total</dt>
+                    <dd class="font-semibold text-slate-100">${Number(summary.total || 0).toLocaleString('id-ID')} titik</dd>
+                    <dt class="font-bold text-slate-500">Kokoh</dt>
+                    <dd class="font-semibold text-slate-100">${Number(summary.conditions?.kokoh || 0).toLocaleString('id-ID')}</dd>
+                    <dt class="font-bold text-slate-500">Keropos</dt>
+                    <dd class="font-semibold text-slate-100">${Number(summary.conditions?.keropos || 0).toLocaleString('id-ID')}</dd>
+                    <dt class="font-bold text-slate-500">Miring</dt>
+                    <dd class="font-semibold text-slate-100">${Number(summary.conditions?.miring || 0).toLocaleString('id-ID')}</dd>
+                    <dt class="font-bold text-slate-500">Berkarat</dt>
+                    <dd class="font-semibold text-slate-100">${Number(summary.conditions?.berkarat || 0).toLocaleString('id-ID')}</dd>
+                </dl>
+            </div>
+        `;
+    }
+
+    function adminSummaryKey(village, district) {
+        return [normalizeAdminName(village), normalizeAdminName(district)].join('|');
+    }
+
+    function normalizeAdminName(value) {
+        return String(value || '')
+            .toLowerCase()
+            .replace(/\b(desa|kelurahan|kalurahan|kapanewon|kecamatan)\b/g, '')
+            .replace(/[^a-z0-9]+/g, '')
+            .trim();
     }
 
     function bindFeature(ml, feature, layer) {

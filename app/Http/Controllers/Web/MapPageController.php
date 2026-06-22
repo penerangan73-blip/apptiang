@@ -138,6 +138,46 @@ class MapPageController extends Controller
         ]);
     }
 
+    public function administrativeSummary(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'query' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
+        ]);
+
+        $summary = $this->filteredPoleQuery(
+            trim((string) ($validated['query'] ?? '')),
+            $validated['condition'] ?? null
+        )
+            ->whereNotNull('village')
+            ->where('village', '<>', '')
+            ->select($this->poleColumns(['village', 'district']))
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw("SUM(CASE WHEN `condition` = 'kokoh' THEN 1 ELSE 0 END) as kokoh")
+            ->selectRaw("SUM(CASE WHEN `condition` = 'keropos' THEN 1 ELSE 0 END) as keropos")
+            ->selectRaw("SUM(CASE WHEN `condition` = 'miring' THEN 1 ELSE 0 END) as miring")
+            ->selectRaw("SUM(CASE WHEN `condition` = 'berkarat' THEN 1 ELSE 0 END) as berkarat")
+            ->selectRaw("SUM(CASE WHEN `condition` = 'lainnya' THEN 1 ELSE 0 END) as lainnya")
+            ->groupBy($this->poleColumns(['village', 'district']))
+            ->orderByDesc('total')
+            ->get();
+
+        return response()->json([
+            'data' => $summary->map(fn (Pole $pole) => [
+                'village' => $pole->village,
+                'district' => $pole->district,
+                'total' => (int) $pole->total,
+                'conditions' => [
+                    'kokoh' => (int) $pole->kokoh,
+                    'keropos' => (int) $pole->keropos,
+                    'miring' => (int) $pole->miring,
+                    'berkarat' => (int) $pole->berkarat,
+                    'lainnya' => (int) $pole->lainnya,
+                ],
+            ])->values(),
+        ]);
+    }
+
     public function export(Request $request, string $format): Response
     {
         $validated = $request->validate([

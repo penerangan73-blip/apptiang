@@ -26,6 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/data-tiang/{pole}', PoleDetailPageController::class)->name('poles.show');
     Route::get('/peta', MapPageController::class)->name('map.index');
     Route::get('/peta/markers', [MapPageController::class, 'markers'])->name('map.markers');
+    Route::get('/peta/administrative-summary', [MapPageController::class, 'administrativeSummary'])->name('map.administrative-summary');
     Route::get('/peta/export/{format}', [MapPageController::class, 'export'])->whereIn('format', ['geojson', 'kml', 'shp'])->name('map.export');
     Route::redirect('/aktifitas', '/aktivitas');
     Route::get('/aktivitas', ReportPageController::class)->name('reports.index');

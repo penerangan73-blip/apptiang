@@ -216,7 +216,9 @@
         },
     };
     const dashboardMarkerUrl = @json(route('map.markers', ['summary' => 1]));
+    const dashboardAdministrativeSummaryUrl = @json(route('map.administrative-summary'));
     const dashboardMarkerLimit = 8000;
+    let dashboardAdministrativeSummaryPromise = null;
 
     initDashboardMap();
     setupDashboardMapStyleMenu();
@@ -232,6 +234,7 @@
         map._pjuMarkerRenderer = L.canvas({ padding: 0.5, pane: 'pju-marker-pane' });
         map._pjuMarkerLayer = L.layerGroup().addTo(map);
         map.on('moveend zoomend', debounceDashboardMap(() => loadDashboardMarkers(map), 300));
+        map.on('zoomend', () => syncDashboardAdministrativeSummaryVisibility(map));
         loadDashboardMarkers(map);
         loadDashboardAdministrativeLayers(map);
     }
@@ -441,6 +444,7 @@
         if (!layers.length) return;
         if (map._pjuDashboardLayerGroup) {
             map.addLayer(map._pjuDashboardLayerGroup);
+            syncDashboardAdministrativeSummaryVisibility(map);
             return;
         }
 
@@ -459,6 +463,121 @@
         });
         group.addTo(map);
         map._pjuDashboardLayerGroup = group;
+        addDashboardAdministrativeSummaryToMap(map, layers);
+    }
+
+    async function loadDashboardAdministrativeSummary() {
+        if (dashboardAdministrativeSummaryPromise) return dashboardAdministrativeSummaryPromise;
+
+        dashboardAdministrativeSummaryPromise = fetch(dashboardAdministrativeSummaryUrl, { headers: { Accept: 'application/json' } })
+            .then((response) => {
+                if (!response.ok) throw new Error('Ringkasan wilayah tidak bisa dimuat.');
+                return response.json();
+            })
+            .then((payload) => {
+                const byKey = new Map();
+                (payload.data || []).forEach((item) => {
+                    byKey.set(dashboardAdminSummaryKey(item.village, item.district), item);
+                });
+
+                return byKey;
+            });
+
+        return dashboardAdministrativeSummaryPromise;
+    }
+
+    async function addDashboardAdministrativeSummaryToMap(map, layers) {
+        const areaLayer = layers.find((layer) => layer.id === 'administrasi-area');
+        if (!areaLayer?.data?.features?.length) return;
+
+        try {
+            const summaries = await loadDashboardAdministrativeSummary();
+            const group = L.layerGroup();
+
+            areaLayer.data.features.forEach((feature) => {
+                const properties = feature.properties || {};
+                const village = dashboardProp(properties, 'desa') || dashboardProp(properties, 'wadmkd') || dashboardProp(properties, 'namobj');
+                const district = dashboardProp(properties, 'wadmkc') || dashboardProp(properties, 'kecamatan') || dashboardProp(properties, 'kapanewon') || dashboardProp(properties, 'kecamata_1');
+                const summary = summaries.get(dashboardAdminSummaryKey(village, district)) || summaries.get(dashboardAdminSummaryKey(village, ''));
+
+                if (!summary?.total) return;
+
+                const bounds = L.geoJSON(feature).getBounds();
+                if (!bounds.isValid()) return;
+
+                L.marker(bounds.getCenter(), {
+                    pane: 'pju-marker-pane',
+                    interactive: true,
+                    icon: L.divIcon({
+                        className: '',
+                        html: dashboardAdminSummaryBadgeHtml(summary),
+                        iconSize: [54, 38],
+                        iconAnchor: [27, 19],
+                    }),
+                })
+                    .addTo(group)
+                    .bindPopup(dashboardAdminSummaryPopupHtml(summary), { maxWidth: 280, className: 'pju-marker-popup' });
+            });
+
+            if (map._pjuDashboardAdminSummaryLayer) map.removeLayer(map._pjuDashboardAdminSummaryLayer);
+            map._pjuDashboardAdminSummaryLayer = group;
+            syncDashboardAdministrativeSummaryVisibility(map);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    function syncDashboardAdministrativeSummaryVisibility(map) {
+        if (!map._pjuDashboardAdminSummaryLayer) return;
+
+        const shouldShow = map.getZoom() <= 13 && map._pjuDashboardLayerGroup && map.hasLayer(map._pjuDashboardLayerGroup);
+        const isShown = map.hasLayer(map._pjuDashboardAdminSummaryLayer);
+
+        if (shouldShow && !isShown) {
+            map.addLayer(map._pjuDashboardAdminSummaryLayer);
+        } else if (!shouldShow && isShown) {
+            map.removeLayer(map._pjuDashboardAdminSummaryLayer);
+        }
+    }
+
+    function dashboardAdminSummaryBadgeHtml(summary) {
+        const total = Number(summary.total || 0).toLocaleString('id-ID');
+
+        return `<span style="display:inline-flex;min-width:46px;height:30px;align-items:center;justify-content:center;border-radius:999px;background:#0f172a;border:2px solid white;box-shadow:0 10px 26px rgba(15,23,42,.35);color:white;font-size:12px;font-weight:900;padding:0 8px;">${total}</span>`;
+    }
+
+    function dashboardAdminSummaryPopupHtml(summary) {
+        return `
+            <div class="p-3">
+                <p class="text-xs font-black uppercase tracking-widest text-cyan-400">Ringkasan Wilayah</p>
+                <p class="mt-1 text-lg font-black text-slate-100">${escapeHtml(summary.village || '-')}</p>
+                <p class="text-sm font-semibold text-slate-400">${escapeHtml(summary.district || '-')}</p>
+                <dl class="mt-3 grid grid-cols-[84px_1fr] gap-x-3 gap-y-1.5 text-sm">
+                    <dt class="font-bold text-slate-500">Total</dt>
+                    <dd class="font-semibold text-slate-100">${Number(summary.total || 0).toLocaleString('id-ID')} titik</dd>
+                    <dt class="font-bold text-slate-500">Kokoh</dt>
+                    <dd class="font-semibold text-slate-100">${Number(summary.conditions?.kokoh || 0).toLocaleString('id-ID')}</dd>
+                    <dt class="font-bold text-slate-500">Keropos</dt>
+                    <dd class="font-semibold text-slate-100">${Number(summary.conditions?.keropos || 0).toLocaleString('id-ID')}</dd>
+                    <dt class="font-bold text-slate-500">Miring</dt>
+                    <dd class="font-semibold text-slate-100">${Number(summary.conditions?.miring || 0).toLocaleString('id-ID')}</dd>
+                    <dt class="font-bold text-slate-500">Berkarat</dt>
+                    <dd class="font-semibold text-slate-100">${Number(summary.conditions?.berkarat || 0).toLocaleString('id-ID')}</dd>
+                </dl>
+            </div>
+        `;
+    }
+
+    function dashboardAdminSummaryKey(village, district) {
+        return [dashboardNormalizeAdminName(village), dashboardNormalizeAdminName(district)].join('|');
+    }
+
+    function dashboardNormalizeAdminName(value) {
+        return String(value || '')
+            .toLowerCase()
+            .replace(/\b(desa|kelurahan|kalurahan|kapanewon|kecamatan)\b/g, '')
+            .replace(/[^a-z0-9]+/g, '')
+            .trim();
     }
 
     function bindDashboardFeature(layerConfig, feature, layer) {
