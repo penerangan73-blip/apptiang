@@ -51,6 +51,7 @@
         <div class="p-0 sm:p-5">
             <div class="relative">
                 <div id="main-map" class="glass-panel h-[65vh] min-h-[400px] sm:h-[560px] overflow-hidden rounded-none sm:rounded-lg border-x-0 sm:border-x"></div>
+                <div id="map-marker-status" class="pointer-events-none absolute left-3 top-3 z-[500] rounded-md border border-white/10 bg-slate-950/85 px-3 py-2 text-xs font-bold text-slate-200 shadow-lg backdrop-blur">Memuat titik...</div>
                 @include('partials.marker-status-legend')
             </div>
         </div>
@@ -94,6 +95,7 @@
     const markerColors = { kokoh: '#059669', keropos: '#e11d48', miring: '#d97706', berkarat: '#b45309', lainnya: '#64748b' };
     const mainMaps = {};
     const mapMarkerUrl = @json(route('map.markers', request()->only(['query', 'condition'])));
+    const mapMarkerLimit = 8000;
     const mapBaseLayers = {
         standard: {
             label: 'Standar',
@@ -126,11 +128,26 @@
     function initPoleMap(id, interactive) {
         const el = document.getElementById(id);
         if (!el || mainMaps[id]) return;
-        const map = L.map(el).setView([-7.965, 110.603], 11);
+        const map = L.map(el, { preferCanvas: true }).setView([-7.965, 110.603], 11);
         mainMaps[id] = map;
+        setupMapPanes(map);
         map._pjuBaseStyle = 'satellite';
         map._pjuBaseLayer = createBaseLayer('satellite').addTo(map);
+        map._pjuMarkerRenderer = L.canvas({ padding: 0.5, pane: 'pju-marker-pane' });
+        map._pjuMarkerLayer = L.layerGroup().addTo(map);
+        map.on('moveend zoomend', debounce(() => loadPoleMarkers(map, interactive), 300));
         loadPoleMarkers(map, interactive);
+    }
+
+    function setupMapPanes(map) {
+        if (!map.getPane('pju-admin-pane')) {
+            map.createPane('pju-admin-pane');
+            map.getPane('pju-admin-pane').style.zIndex = 410;
+        }
+        if (!map.getPane('pju-marker-pane')) {
+            map.createPane('pju-marker-pane');
+            map.getPane('pju-marker-pane').style.zIndex = 650;
+        }
     }
 
     function createBaseLayer(style) {
@@ -204,32 +221,85 @@
     }
 
     async function loadPoleMarkers(map, interactive) {
+        map._pjuMarkerRequest?.abort();
+        map._pjuMarkerRequest = new AbortController();
+        setMarkerStatus('Memuat titik di area ini...');
+
         try {
-            const response = await fetch(mapMarkerUrl, { headers: { Accept: 'application/json' } });
+            const response = await fetch(markerUrlForMap(map), {
+                headers: { Accept: 'application/json' },
+                signal: map._pjuMarkerRequest.signal,
+            });
             if (!response.ok) throw new Error('Marker tidak bisa dimuat.');
             const payload = await response.json();
             addPoleMarkers(map, payload.data || [], interactive);
+            updateMarkerStatus(payload.meta || {});
         } catch (error) {
+            if (error.name === 'AbortError') return;
             console.error(error);
+            setMarkerStatus('Titik belum bisa dimuat.');
         }
     }
 
+    function markerUrlForMap(map) {
+        const url = new URL(mapMarkerUrl, window.location.origin);
+        const bounds = map.getBounds();
+
+        url.searchParams.set('north', bounds.getNorth().toFixed(7));
+        url.searchParams.set('south', bounds.getSouth().toFixed(7));
+        url.searchParams.set('east', bounds.getEast().toFixed(7));
+        url.searchParams.set('west', bounds.getWest().toFixed(7));
+        url.searchParams.set('limit', String(mapMarkerLimit));
+
+        return url.toString();
+    }
+
+    function updateMarkerStatus(meta) {
+        const shown = Number(meta.count || 0).toLocaleString('id-ID');
+        const limit = Number(meta.limit || mapMarkerLimit).toLocaleString('id-ID');
+        const suffix = meta.limited ? ` dari maks. ${limit}. Perbesar area untuk melihat lebih detail.` : '';
+
+        setMarkerStatus(`${shown} titik tampil${suffix}`);
+    }
+
+    function setMarkerStatus(message) {
+        const status = document.getElementById('map-marker-status');
+        if (status) status.textContent = message;
+    }
+
     function addPoleMarkers(map, poles, interactive) {
-        const bounds = [];
+        const layer = map._pjuMarkerLayer || L.layerGroup().addTo(map);
+        layer.clearLayers();
+
         poles.forEach((pole) => {
             const lat = Number(pole.latitude), lng = Number(pole.longitude);
             if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-            bounds.push([lat, lng]);
-            const marker = L.marker([lat, lng], {
-                icon: L.divIcon({ className: '', html: `<span style="display:block;width:18px;height:18px;border-radius:999px;background:${markerColors[pole.condition] || '#2563eb'};border:3px solid white;box-shadow:0 8px 20px rgba(15,23,42,.22)"></span>`, iconSize: [18, 18], iconAnchor: [9, 9] })
-            }).addTo(map);
-            marker.bindPopup(createMarkerPopup(pole), { maxWidth: 300, className: 'pju-marker-popup' });
+            const color = markerColors[pole.condition] || '#2563eb';
+            const marker = L.circleMarker([lat, lng], {
+                renderer: map._pjuMarkerRenderer,
+                radius: 6,
+                stroke: true,
+                color: '#ffffff',
+                weight: 2,
+                fill: true,
+                fillColor: color,
+                fillOpacity: 0.9,
+            }).addTo(layer);
             marker.on('click', () => {
                 renderSelectedPole(pole);
+                marker.bindPopup(createMarkerPopup(pole), { maxWidth: 300, className: 'pju-marker-popup' }).openPopup();
                 setTimeout(() => window.lucide?.createIcons(), 0);
             });
         });
-        if (bounds.length) map.fitBounds(bounds, { padding: [36, 36], maxZoom: interactive ? 12 : 13 });
+    }
+
+    function debounce(callback, delay) {
+        let timeout;
+
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => callback(...args), delay);
+        };
     }
 
     function renderSelectedPole(pole) {
@@ -385,6 +455,7 @@
         const group = L.layerGroup();
         layers.forEach(layer => {
             const geoLayer = L.geoJSON(layer.data, {
+                pane: 'pju-admin-pane',
                 style: f => layer.id === 'administrasi-area' ? { ...layer.style, fillColor: adminColor(f) } : layer.style,
                 onEachFeature: (f, fl) => bindFeature(layer, f, fl),
             });

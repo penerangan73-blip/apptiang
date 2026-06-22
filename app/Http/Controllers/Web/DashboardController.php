@@ -63,9 +63,7 @@ class DashboardController extends Controller
             'daya' => (int) $poleStats->daya,
         ];
 
-        $sourcePoles = Pole::query()
-            ->sourceOptions()
-            ->get();
+        $sourcePoles = collect();
 
         return view('pages.dashboard.index', [
             'recentPoles' => $recentPoles,

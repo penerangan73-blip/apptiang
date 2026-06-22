@@ -44,7 +44,7 @@
             <p class="hidden px-3 py-3 text-sm font-semibold text-amber-300" data-route-source-empty>Tidak ada nomor tiang yang cocok.</p>
         </div>
     </div>
-    <select class="sr-only" name="customer_id" required disabled data-route-source-select>
+    <select class="sr-only" name="customer_id" required disabled data-route-source-select data-source-options-url="{{ route('poles.source-options') }}">
         <option value="">Pilih sumber</option>
         @if ($selectedCustomerId && ! $hasSelectedSourceOption)
             <option value="{{ $selectedCustomerId }}" data-next-sub="{{ $selectedSubName ?: \App\Models\Pole::nextSubNameForCustomer($selectedCustomerId) }}" selected>

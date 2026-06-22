@@ -28,6 +28,10 @@
             const sourceEmpty = form.querySelector('[data-route-source-empty]');
             const subPreview = form.querySelector('[data-route-sub-preview]');
             const normalizeSearch = (value) => (value || '').toString().trim().toLowerCase();
+            const sourceOptionsUrl = sourceSelect?.dataset.sourceOptionsUrl || '';
+            const sourceUsesRemoteOptions = Boolean(sourceOptionsUrl);
+            let sourceRequest = null;
+            let sourceFetchTimer = null;
             const closeSourceMenu = () => {
                 sourceMenu?.classList.add('hidden');
                 sourceToggle?.setAttribute('aria-expanded', 'false');
@@ -45,30 +49,31 @@
                     button.classList.toggle('text-slate-200', !isSelected);
                 });
             };
-            const createSourceOptions = () => {
-                if (!sourceSelect || !sourceOptionList || sourceOptionList.dataset.rendered === '1') return;
+            const appendSourceButton = (option) => {
+                if (!sourceOptionList || !option.value) return;
 
-                [...sourceSelect.options].forEach((option) => {
-                    if (!option.value) return;
-
-                    const button = document.createElement('button');
-                    button.type = 'button';
-                    button.className = 'flex w-full items-center px-3 py-2 text-left text-sm font-semibold text-slate-200 transition hover:bg-white/10';
-                    button.dataset.routeSourceOption = '1';
-                    button.dataset.value = option.value;
-                    button.textContent = option.textContent.trim();
-                    button.addEventListener('click', () => {
-                        sourceSelect.value = option.value;
-                        sourceSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                        closeSourceMenu();
-                    });
-                    sourceOptionList.appendChild(button);
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'flex w-full items-center px-3 py-2 text-left text-sm font-semibold text-slate-200 transition hover:bg-white/10';
+                button.dataset.routeSourceOption = '1';
+                button.dataset.value = option.value;
+                button.textContent = option.textContent.trim();
+                button.addEventListener('click', () => {
+                    sourceSelect.value = option.value;
+                    sourceSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    closeSourceMenu();
                 });
+                sourceOptionList.appendChild(button);
+            };
+            const createSourceOptions = () => {
+                if (!sourceSelect || !sourceOptionList || sourceOptionList.dataset.rendered === '1' || sourceUsesRemoteOptions) return;
 
+                [...sourceSelect.options].forEach((option) => appendSourceButton(option));
                 sourceOptionList.dataset.rendered = '1';
                 updateSourceLabel();
             };
-            const filterSourceOptions = () => {
+            const filterLocalSourceOptions = () => {
+                if (sourceUsesRemoteOptions) return;
                 createSourceOptions();
                 if (!sourceOptionList) return;
 
@@ -84,6 +89,66 @@
 
                 sourceEmpty?.classList.toggle('hidden', !keyword || visibleOptions > 0);
             };
+            const upsertSourceSelectOption = (item) => {
+                if (!sourceSelect || !item.customer_id) return null;
+
+                const value = String(item.customer_id);
+                let option = [...sourceSelect.options].find((candidate) => candidate.value === value);
+
+                if (!option) {
+                    option = new Option(value, value);
+                    option.dataset.remoteOption = '1';
+                    sourceSelect.appendChild(option);
+                }
+
+                option.dataset.nextSub = item.next_sub_name || '';
+
+                return option;
+            };
+            const fetchRemoteSourceOptions = async (keyword = '') => {
+                if (!sourceUsesRemoteOptions || !sourceSelect || !sourceOptionList) return;
+
+                sourceRequest?.abort();
+                sourceRequest = new AbortController();
+                sourceOptionList.innerHTML = '<p class="px-3 py-3 text-sm font-semibold text-slate-400">Memuat sumber...</p>';
+                sourceEmpty?.classList.add('hidden');
+
+                try {
+                    const url = new URL(sourceOptionsUrl, window.location.origin);
+                    url.searchParams.set('query', keyword);
+                    url.searchParams.set('limit', '30');
+                    const response = await fetch(url.toString(), {
+                        headers: { Accept: 'application/json' },
+                        signal: sourceRequest.signal,
+                    });
+                    if (!response.ok) throw new Error('Sumber tidak bisa dimuat.');
+
+                    const payload = await response.json();
+                    const items = payload.data || [];
+                    const selectedValue = sourceSelect.value;
+
+                    [...sourceSelect.options].forEach((option) => {
+                        if (option.dataset.remoteOption === '1' && option.value !== selectedValue) option.remove();
+                    });
+                    sourceOptionList.innerHTML = '';
+                    items.forEach((item) => {
+                        const option = upsertSourceSelectOption(item);
+                        if (option) appendSourceButton(option);
+                    });
+
+                    sourceEmpty?.classList.toggle('hidden', items.length > 0);
+                    updateSourceLabel();
+                } catch (error) {
+                    if (error.name === 'AbortError') return;
+                    sourceOptionList.innerHTML = '<p class="px-3 py-3 text-sm font-semibold text-amber-300">Sumber belum bisa dimuat.</p>';
+                }
+            };
+            const queueRemoteSourceFetch = () => {
+                if (!sourceUsesRemoteOptions) return;
+
+                clearTimeout(sourceFetchTimer);
+                sourceFetchTimer = setTimeout(() => fetchRemoteSourceOptions(sourceSearch?.value || ''), 250);
+            };
             const openSourceMenu = () => {
                 if (!sourceMenu || sourceSelect?.disabled) return;
 
@@ -91,7 +156,11 @@
                 sourceToggle?.setAttribute('aria-expanded', 'true');
                 if (sourceSearch) {
                     sourceSearch.value = '';
-                    filterSourceOptions();
+                    if (sourceUsesRemoteOptions) {
+                        fetchRemoteSourceOptions();
+                    } else {
+                        filterLocalSourceOptions();
+                    }
                     setTimeout(() => sourceSearch.focus(), 0);
                 }
             };
@@ -138,7 +207,7 @@
 
                 if (isSub) {
                     createSourceOptions();
-                    filterSourceOptions();
+                    filterLocalSourceOptions();
                     updateSourceLabel();
                     syncSubPreview();
                 } else {
@@ -157,7 +226,13 @@
                     closeSourceMenu();
                 }
             });
-            sourceSearch?.addEventListener('input', filterSourceOptions);
+            sourceSearch?.addEventListener('input', () => {
+                if (sourceUsesRemoteOptions) {
+                    queueRemoteSourceFetch();
+                } else {
+                    filterLocalSourceOptions();
+                }
+            });
             sourceSearch?.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape') closeSourceMenu();
             });
@@ -249,10 +324,11 @@
             };
             const map = L.map(container).setView([initialCoordinates.latitude, initialCoordinates.longitude], 16);
             window.pjuMaps[container.id] = map;
+            setupCoordinateMapPanes(map);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
             window.pjuAddAdministrativeLayersToMap?.(map);
             const pinIcon = L.divIcon({ className: '', html: '<span style="display:flex;width:24px;height:24px;align-items:center;justify-content:center;border-radius:999px;background:#2563eb;border:3px solid white;box-shadow:0 10px 24px rgba(15,23,42,.35)"><span style="display:block;width:6px;height:6px;border-radius:999px;background:white"></span></span>', iconSize: [24, 24], iconAnchor: [12, 12] });
-            const marker = L.marker([initialCoordinates.latitude, initialCoordinates.longitude], { draggable: true, icon: pinIcon }).addTo(map);
+            const marker = L.marker([initialCoordinates.latitude, initialCoordinates.longitude], { draggable: true, icon: pinIcon, pane: 'pju-marker-pane' }).addTo(map);
             window.pjuCoordinatePickerState[container.id] = {
                 draft: initialCoordinates,
                 latInput,
@@ -282,6 +358,17 @@
             });
         });
     };
+
+    function setupCoordinateMapPanes(map) {
+        if (!map.getPane('pju-admin-pane')) {
+            map.createPane('pju-admin-pane');
+            map.getPane('pju-admin-pane').style.zIndex = 410;
+        }
+        if (!map.getPane('pju-marker-pane')) {
+            map.createPane('pju-marker-pane');
+            map.getPane('pju-marker-pane').style.zIndex = 650;
+        }
+    }
 
     document.addEventListener('click', (event) => {
         const locationButton = event.target.closest('[data-location-button]');
@@ -495,6 +582,7 @@
 
             layers.forEach((layerConfig) => {
                 group.addLayer(L.geoJSON(layerConfig.data, {
+                    pane: 'pju-admin-pane',
                     style: (feature) => layerConfig.id === 'administrasi-area'
                         ? { ...layerConfig.style, fillColor: adminColor(feature) }
                         : layerConfig.style,

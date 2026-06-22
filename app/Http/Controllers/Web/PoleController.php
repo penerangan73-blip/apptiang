@@ -18,6 +18,29 @@ use Illuminate\Validation\ValidationException;
 
 class PoleController extends Controller
 {
+    public function sourceOptions(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'query' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'limit' => ['sometimes', 'integer', 'min:1', 'max:50'],
+        ]);
+        $query = trim((string) ($validated['query'] ?? ''));
+        $limit = (int) ($validated['limit'] ?? 30);
+
+        $sources = Pole::query()
+            ->sourceOptions()
+            ->when($query !== '', fn ($builder) => $builder->where('customer_id', 'like', "%{$query}%"))
+            ->limit($limit)
+            ->get();
+
+        return response()->json([
+            'data' => $sources->map(fn (Pole $pole) => [
+                'customer_id' => $pole->customer_id,
+                'next_sub_name' => Pole::nextSubNameForCustomer($pole->customer_id),
+            ])->values(),
+        ]);
+    }
+
     public function export(Request $request): Response
     {
         $validated = $request->validate([

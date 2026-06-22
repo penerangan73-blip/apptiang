@@ -27,9 +27,7 @@ class PoleDetailPageController extends Controller
             ->withQueryString();
 
         $user = $request->user();
-        $sourcePoles = Pole::query()
-            ->sourceOptions()
-            ->get();
+        $sourcePoles = collect();
 
         return view('pages.poles.show', [
             'pole' => $pole,

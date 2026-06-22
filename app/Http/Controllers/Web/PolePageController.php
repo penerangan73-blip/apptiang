@@ -20,9 +20,7 @@ class PolePageController extends Controller
             ->latest()
             ->get();
 
-        $sourcePoles = Pole::query()
-            ->sourceOptions()
-            ->get();
+        $sourcePoles = collect();
 
         $years = Pole::query()
             ->whereNotNull('created_at')

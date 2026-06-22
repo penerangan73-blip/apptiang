@@ -49,6 +49,34 @@ class PjuApiTest extends TestCase
             ->assertJsonPath('data.0.kwh_meter', 'sudah_ada');
     }
 
+    public function test_map_markers_can_be_limited_to_visible_bounds(): void
+    {
+        $user = $this->seedUser('user');
+        Pole::query()->create([
+            ...$this->polePayload('PEL-TST-001'),
+            'latitude' => -7.965,
+            'longitude' => 110.603,
+        ]);
+        Pole::query()->create([
+            ...$this->polePayload('PEL-TST-002'),
+            'latitude' => -7.966,
+            'longitude' => 110.604,
+        ]);
+        Pole::query()->create([
+            ...$this->polePayload('PEL-TST-003'),
+            'latitude' => -6.21462,
+            'longitude' => 106.82137,
+        ]);
+
+        $this->actingAs($user)
+            ->getJson('/peta/markers?north=-7.960&south=-7.970&east=110.610&west=110.600&limit=1')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('meta.count', 1)
+            ->assertJsonPath('meta.limited', true)
+            ->assertJsonPath('meta.limit', 1);
+    }
+
     public function test_poles_can_be_created_and_updated(): void
     {
         Storage::fake('public');

@@ -222,12 +222,25 @@
     function initDashboardMap() {
         const el = document.getElementById('dashboard-map');
         if (!el) return;
-        const map = L.map(el).setView([-7.965, 110.603], 10);
+        const map = L.map(el, { preferCanvas: true }).setView([-7.965, 110.603], 10);
         dashboardMaps[el.id] = map;
+        setupDashboardMapPanes(map);
         map._pjuBaseStyle = 'satellite';
         map._pjuBaseLayer = createDashboardBaseLayer('satellite').addTo(map);
+        map._pjuMarkerRenderer = L.canvas({ padding: 0.5, pane: 'pju-marker-pane' });
         loadDashboardMarkers(map);
         loadDashboardAdministrativeLayers(map);
+    }
+
+    function setupDashboardMapPanes(map) {
+        if (!map.getPane('pju-admin-pane')) {
+            map.createPane('pju-admin-pane');
+            map.getPane('pju-admin-pane').style.zIndex = 410;
+        }
+        if (!map.getPane('pju-marker-pane')) {
+            map.createPane('pju-marker-pane');
+            map.getPane('pju-marker-pane').style.zIndex = 650;
+        }
     }
 
     function createDashboardBaseLayer(style) {
@@ -277,7 +290,7 @@
 
     async function loadDashboardMarkers(map) {
         try {
-            const response = await fetch(@json(route('map.markers', ['summary' => 1])), { headers: { Accept: 'application/json' } });
+            const response = await fetch(@json(route('map.markers', ['summary' => 1, 'limit' => 3000])), { headers: { Accept: 'application/json' } });
             if (!response.ok) throw new Error('Marker tidak bisa dimuat.');
             const payload = await response.json();
             addDashboardMarkers(map, payload.data || []);
@@ -293,8 +306,15 @@
             const lat = Number(pole.latitude), lng = Number(pole.longitude);
             if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
             bounds.push([lat, lng]);
-            L.marker([lat, lng], {
-                icon: L.divIcon({ className: '', html: `<span style="display:block;width:18px;height:18px;border-radius:999px;background:${markerColors[pole.condition] || '#2563eb'};border:3px solid white;box-shadow:0 8px 20px rgba(15,23,42,.22)"></span>`, iconSize: [18, 18], iconAnchor: [9, 9] })
+            L.circleMarker([lat, lng], {
+                renderer: map._pjuMarkerRenderer,
+                radius: 5,
+                stroke: true,
+                color: '#ffffff',
+                weight: 2,
+                fill: true,
+                fillColor: markerColors[pole.condition] || '#2563eb',
+                fillOpacity: 0.9,
             }).addTo(map).bindPopup(createDashboardMarkerPopup(pole), { maxWidth: 300, className: 'pju-marker-popup' });
         });
         if (bounds.length) map.fitBounds(bounds, { padding: [56, 56], maxZoom: 11 });
@@ -341,6 +361,7 @@
             const layerStyle = dashboardLayerStyles[layer.id] || { style: layer.style, hover: layer.hover };
             const layerConfig = { ...layer, ...layerStyle };
             const geoLayer = L.geoJSON(layerConfig.data, {
+                pane: 'pju-admin-pane',
                 style: (feature) => layerConfig.id === 'administrasi-area'
                     ? { ...layerConfig.style, fillColor: adminColor(feature) }
                     : layerConfig.style,

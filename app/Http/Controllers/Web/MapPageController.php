@@ -15,6 +15,10 @@ use ZipArchive;
 
 class MapPageController extends Controller
 {
+    private const DEFAULT_MARKER_LIMIT = 8000;
+    private const DEFAULT_SUMMARY_MARKER_LIMIT = 3000;
+    private const MAX_MARKER_LIMIT = 10000;
+
     public function __invoke(Request $request): View
     {
         $query = trim((string) $request->query('query', ''));
@@ -27,9 +31,7 @@ class MapPageController extends Controller
             ->withQueryString();
 
         $dialogPoles = $poles->getCollection()->unique('id')->values();
-        $sourcePoles = Pole::query()
-            ->sourceOptions()
-            ->get();
+        $sourcePoles = collect();
         $user = $request->user();
 
         return view('pages.map.index', [
@@ -50,13 +52,31 @@ class MapPageController extends Controller
             'query' => ['sometimes', 'nullable', 'string', 'max:120'],
             'condition' => ['sometimes', 'nullable', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
             'summary' => ['sometimes', 'boolean'],
+            'north' => ['sometimes', 'numeric', 'between:-90,90'],
+            'south' => ['sometimes', 'numeric', 'between:-90,90'],
+            'east' => ['sometimes', 'numeric', 'between:-180,180'],
+            'west' => ['sometimes', 'numeric', 'between:-180,180'],
+            'limit' => ['sometimes', 'integer', 'min:1', 'max:'.self::MAX_MARKER_LIMIT],
         ]);
         $summary = $request->boolean('summary');
+        $limit = (int) ($validated['limit'] ?? ($summary ? self::DEFAULT_SUMMARY_MARKER_LIMIT : self::DEFAULT_MARKER_LIMIT));
 
-        $markers = $this->filteredPoleQuery(
+        $query = $this->filteredPoleQuery(
             trim((string) ($validated['query'] ?? '')),
             $validated['condition'] ?? null
-        )
+        );
+
+        if ($this->hasBounds($validated)) {
+            $this->applyBounds(
+                $query,
+                (float) $validated['north'],
+                (float) $validated['south'],
+                (float) $validated['east'],
+                (float) $validated['west']
+            );
+        }
+
+        $markers = $query
             ->select($this->poleColumns($summary ? [
                 'id',
                 'sub_name',
@@ -95,11 +115,12 @@ class MapPageController extends Controller
                 'light_point_count',
                 'kwh_meter',
                 'ownership',
-                'photo_url',
-                'notes',
             ]))
             ->latest()
+            ->limit($limit + 1)
             ->get();
+        $isLimited = $markers->count() > $limit;
+        $markers = $markers->take($limit);
 
         return response()->json([
             'data' => $markers->map(fn (Pole $pole) => [
@@ -109,6 +130,11 @@ class MapPageController extends Controller
                 'administrative_address' => $pole->administrativeAddress(),
                 'location_label' => $pole->locationLabel(),
             ])->values(),
+            'meta' => [
+                'count' => $markers->count(),
+                'limited' => $isLimited,
+                'limit' => $limit,
+            ],
         ]);
     }
 
@@ -140,6 +166,32 @@ class MapPageController extends Controller
     private function filteredPoleQuery(string $query, ?string $condition)
     {
         return Pole::query()->search($query)->condition($condition);
+    }
+
+    private function hasBounds(array $validated): bool
+    {
+        return array_key_exists('north', $validated)
+            && array_key_exists('south', $validated)
+            && array_key_exists('east', $validated)
+            && array_key_exists('west', $validated);
+    }
+
+    private function applyBounds($query, float $north, float $south, float $east, float $west): void
+    {
+        $minLat = min($north, $south);
+        $maxLat = max($north, $south);
+
+        $query->whereBetween('latitude', [$minLat, $maxLat]);
+
+        if ($west <= $east) {
+            $query->whereBetween('longitude', [$west, $east]);
+            return;
+        }
+
+        $query->where(function ($query) use ($west, $east) {
+            $query->whereBetween('longitude', [$west, 180])
+                ->orWhereBetween('longitude', [-180, $east]);
+        });
     }
 
     private function exportPoleQuery(string $query, ?array $searchColumns, array $filters)
