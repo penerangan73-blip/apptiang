@@ -13,6 +13,8 @@
         'hilang' => 'Kusam',
         'tiang_baja_galvanis' => 'Tiang Baja (Galvanis)',
         'tiang_beton' => 'Tiang Beton',
+        'tiang_kayu' => 'Kayu',
+        'tiang_bambu' => 'Bambu',
         'menempel_tiang_pln' => 'Menempel Tiang PLN',
         'menempel_pohon' => 'Menempel Pohon',
         'tanpa_penyangga' => 'Tanpa Penyangga',

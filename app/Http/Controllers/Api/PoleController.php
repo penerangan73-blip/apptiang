@@ -141,7 +141,7 @@ class PoleController extends Controller
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'power_usage' => ['required', 'integer', 'min:0', 'max:100000'],
             'condition' => ['required', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
-            'pole_type' => ['required', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln', 'menempel_pohon', 'tanpa_penyangga'])],
+            'pole_type' => ['required', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'tiang_kayu', 'tiang_bambu', 'menempel_tiang_pln', 'menempel_pohon', 'tanpa_penyangga'])],
             'height' => ['nullable', 'numeric', 'min:0', 'max:1000'],
             'ornament_type' => ['required', Rule::in(['single_arm', 'double_arm', 'high_mast', 'lainnya'])],
             'lamp_type' => ['required', Rule::in(['led', 'cfl', 'hps', 'son_t', 'mercury', 'lainnya'])],

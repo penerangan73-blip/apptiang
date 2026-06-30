@@ -60,7 +60,7 @@ class DatabaseSeeder extends Seeder
             ['kapanewon' => 'Karangmojo', 'street' => 'Jalan Bejiharjo-Karangmojo', 'lat' => -7.9286, 'lon' => 110.6492],
         ];
         $conditions = ['kokoh', 'kokoh', 'kokoh', 'keropos', 'miring', 'berkarat', 'lainnya'];
-        $poleTypes = ['tiang_baja_galvanis', 'tiang_beton', 'menempel_tiang_pln', 'menempel_pohon', 'tanpa_penyangga'];
+        $poleTypes = ['tiang_baja_galvanis', 'tiang_beton', 'tiang_kayu', 'tiang_bambu', 'menempel_tiang_pln', 'menempel_pohon', 'tanpa_penyangga'];
         $ornamentTypes = ['single_arm', 'double_arm', 'high_mast', 'lainnya'];
         $lampTypes = ['led', 'cfl', 'hps', 'son_t', 'mercury', 'lainnya'];
         $lampStatuses = ['menyala', 'menyala', 'menyala', 'mati', 'redup', 'berkedip'];
