@@ -171,7 +171,7 @@
             <label class="label">Jenis Tiang</label>
             <select class="field" name="pole_type" required>
                 <option value="" @selected($poleValue('pole_type') === '')>Pilihan</option>
-                @foreach (['tiang_baja_galvanis' => 'Tiang Baja (Galvanis)', 'tiang_beton' => 'Tiang Beton', 'tiang_kayu' => 'Kayu', 'tiang_bambu' => 'Bambu', 'menempel_tiang_pln' => 'Menempel Tiang PLN', 'menempel_pohon' => 'Menempel Pohon', 'tanpa_penyangga' => 'Tanpa Penyangga'] as $value => $text)
+                @foreach (['tiang_baja_galvanis' => 'Tiang Baja (Galvanis)', 'tiang_beton' => 'Tiang Beton', 'tiang_cor' => 'Tiang Cor', 'tiang_kayu' => 'Kayu', 'tiang_bambu' => 'Bambu', 'menempel_tiang_pln' => 'Menempel Tiang PLN', 'menempel_tembok' => 'Menempel Tembok', 'menempel_pohon' => 'Menempel Pohon', 'tanpa_penyangga' => 'Tanpa Penyangga'] as $value => $text)
                     <option value="{{ $value }}" @selected($poleValue('pole_type') === $value)>{{ $text }}</option>
                 @endforeach
             </select>

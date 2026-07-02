@@ -92,7 +92,10 @@ class PoleController extends Controller
             'Keterangan',
         ];
 
-        $html = '<html><head><meta charset="UTF-8"></head><body><table border="1"><thead><tr>';
+        $dateColumnIndexes = [20, 22, 26];
+        $textCellStyle = "mso-number-format:'\\@';";
+
+        $html = '<html><head><meta charset="UTF-8"><style>.text-cell{mso-number-format:"\@";}</style></head><body><table border="1"><thead><tr>';
         foreach ($headers as $header) {
             $html .= '<th>'.e($header).'</th>';
         }
@@ -120,20 +123,21 @@ class PoleController extends Controller
                 $pole->light_point_count,
                 $this->formatOption($pole->kwh_meter),
                 $this->formatOwnership($pole->ownership),
-                optional($pole->created_at)->format('H:i d-m-Y'),
+                $this->formatExportDate($pole->created_at),
                 $pole->createdBy?->name,
-                optional($pole->updated_at)->format('H:i d-m-Y'),
+                $this->formatExportDate($pole->updated_at),
                 $pole->updatedBy?->name,
                 $pole->is_verified ? 'Terverifikasi' : 'Belum',
                 $pole->verifiedBy?->name,
-                optional($pole->verified_at)->format('H:i d-m-Y'),
+                $this->formatExportDate($pole->verified_at),
                 $pole->photos->pluck('photo_url')->implode(', ') ?: $pole->photo_url,
                 $pole->notes,
             ];
 
             $html .= '<tr>';
-            foreach ($row as $cell) {
-                $html .= '<td>'.e((string) $cell).'</td>';
+            foreach ($row as $index => $cell) {
+                $attributes = in_array($index, $dateColumnIndexes, true) ? ' class="text-cell" style="'.$textCellStyle.'"' : '';
+                $html .= '<td'.$attributes.'>'.e((string) $cell).'</td>';
             }
             $html .= '</tr>';
         }
@@ -398,7 +402,7 @@ class PoleController extends Controller
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'power_usage' => ['required', 'integer', 'min:0', 'max:100000'],
             'condition' => ['required', Rule::in(['keropos', 'miring', 'berkarat', 'kokoh', 'lainnya'])],
-            'pole_type' => ['required', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'tiang_kayu', 'tiang_bambu', 'menempel_tiang_pln', 'menempel_pohon', 'tanpa_penyangga'])],
+            'pole_type' => ['required', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'tiang_cor', 'tiang_kayu', 'tiang_bambu', 'menempel_tiang_pln', 'menempel_tembok', 'menempel_pohon', 'tanpa_penyangga'])],
             'height' => ['nullable', 'numeric', 'min:0', 'max:1000'],
             'ornament_type' => ['required', Rule::in(['single_arm', 'double_arm', 'high_mast', 'lainnya'])],
             'lamp_type' => ['required', Rule::in(['led', 'cfl', 'hps', 'son_t', 'mercury', 'lainnya'])],
@@ -580,7 +584,7 @@ class PoleController extends Controller
             'district' => ['sometimes', 'nullable', 'string', 'max:120'],
             'regency' => ['sometimes', 'nullable', 'string', 'max:120'],
             'province' => ['sometimes', 'nullable', 'string', 'max:120'],
-            'pole_type' => ['sometimes', 'nullable', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'tiang_kayu', 'tiang_bambu', 'menempel_tiang_pln', 'menempel_pohon', 'tanpa_penyangga'])],
+            'pole_type' => ['sometimes', 'nullable', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'tiang_cor', 'tiang_kayu', 'tiang_bambu', 'menempel_tiang_pln', 'menempel_tembok', 'menempel_pohon', 'tanpa_penyangga'])],
             'lamp_type' => ['sometimes', 'nullable', Rule::in(['led', 'cfl', 'hps', 'son_t', 'mercury', 'lainnya'])],
             'lamp_status' => ['sometimes', 'nullable', Rule::in(['menyala', 'redup', 'berkedip', 'mati', 'rusak_pecah', 'tidak_ada_lampu'])],
             'lamp_house_type' => ['sometimes', 'nullable', Rule::in(['caping', 'konvensional', 'tidak_ada'])],
@@ -665,9 +669,11 @@ class PoleController extends Controller
             'hilang' => 'Kusam',
             'tiang_baja_galvanis' => 'Tiang Baja (Galvanis)',
             'tiang_beton' => 'Tiang Beton',
+            'tiang_cor' => 'Tiang Cor',
             'tiang_kayu' => 'Kayu',
             'tiang_bambu' => 'Bambu',
             'menempel_tiang_pln' => 'Menempel Tiang PLN',
+            'menempel_tembok' => 'Menempel Tembok',
             'menempel_pohon' => 'Menempel Pohon',
             'tanpa_penyangga' => 'Tanpa Penyangga',
             'single_arm' => 'Single Arm',
@@ -713,6 +719,11 @@ class PoleController extends Controller
     private function formatLampType(?string $value): string
     {
         return $this->formatOption($value);
+    }
+
+    private function formatExportDate(?\DateTimeInterface $date): string
+    {
+        return $date?->format('H:i d-m-Y') ?? '';
     }
 
     private function deletePoleWithAssets(Pole $pole): void

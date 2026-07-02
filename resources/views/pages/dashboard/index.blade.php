@@ -73,35 +73,54 @@
 {{-- Ringkasan Di Atas Peta --}}
 <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
     <div class="space-y-5">
-        <div class="grid gap-4 sm:grid-cols-2">
-            @include('partials.stat-card', ['label' => 'Total Tiang', 'value' => number_format($stats['total']), 'description' => 'aset terdata', 'icon' => 'database'])
-            @include('partials.stat-card', ['label' => 'Total Daya Lampu', 'value' => number_format($stats['daya']), 'description' => 'watt terdata', 'icon' => 'zap'])
+        <div class="space-y-3">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-lg font-black">Ringkasan Aset</h3>
+                    <p class="text-sm text-slate-400">Jumlah tiang, sumber, sub, dan daya terdata.</p>
+                </div>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                @include('partials.stat-card', ['label' => 'Total Tiang', 'value' => number_format($stats['total']), 'description' => 'aset terdata', 'icon' => 'database'])
+                @include('partials.stat-card', ['label' => 'Tiang Sumber', 'value' => number_format($stats['sumber']), 'description' => 'nomor utama', 'icon' => 'git-commit-horizontal'])
+                @include('partials.stat-card', ['label' => 'Tiang Sub', 'value' => number_format($stats['sub']), 'description' => 'turunan sumber', 'icon' => 'git-branch'])
+                @include('partials.stat-card', ['label' => 'Total Daya Lampu', 'value' => number_format($stats['daya']), 'description' => 'watt terdata', 'icon' => 'zap'])
+            </div>
         </div>
 
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            @include('partials.stat-card', ['label' => 'Lampu Menyala', 'value' => number_format($stats['lamp_menyala']), 'description' => 'status normal', 'icon' => 'lightbulb'])
-            @include('partials.stat-card', ['label' => 'Lampu Redup', 'value' => number_format($stats['lamp_redup']), 'description' => 'perlu cek daya', 'icon' => 'sun-dim'])
-            @include('partials.stat-card', ['label' => 'Lampu Berkedip', 'value' => number_format($stats['lamp_berkedip']), 'description' => 'perlu pemeriksaan', 'icon' => 'activity'])
-            @include('partials.stat-card', ['label' => 'Lampu Mati', 'value' => number_format($stats['lamp_mati']), 'description' => 'prioritas tindak lanjut', 'icon' => 'power-off'])
+        <div class="space-y-3">
+            <div>
+                <h3 class="text-lg font-black">Status Lampu</h3>
+                <p class="text-sm text-slate-400">Distribusi kondisi lampu sesuai pilihan input.</p>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                @include('partials.stat-card', ['label' => 'Lampu Menyala', 'value' => number_format($stats['lamp_menyala']), 'description' => 'status normal', 'icon' => 'lightbulb'])
+                @include('partials.stat-card', ['label' => 'Lampu Redup', 'value' => number_format($stats['lamp_redup']), 'description' => 'perlu cek daya', 'icon' => 'sun-dim'])
+                @include('partials.stat-card', ['label' => 'Lampu Berkedip', 'value' => number_format($stats['lamp_berkedip']), 'description' => 'perlu pemeriksaan', 'icon' => 'activity'])
+                @include('partials.stat-card', ['label' => 'Lampu Mati', 'value' => number_format($stats['lamp_mati']), 'description' => 'prioritas tindak lanjut', 'icon' => 'power-off'])
+                @include('partials.stat-card', ['label' => 'Lampu Rusak Pecah', 'value' => number_format($stats['lamp_rusak_pecah']), 'description' => 'perlu penggantian', 'icon' => 'triangle-alert'])
+                @include('partials.stat-card', ['label' => 'Tidak Ada Lampu', 'value' => number_format($stats['lamp_tidak_ada_lampu']), 'description' => 'tanpa unit lampu', 'icon' => 'circle-off'])
+            </div>
         </div>
 
         <div class="card p-5">
             <h3 class="text-lg font-black">Kondisi Tiang</h3>
             <p class="text-sm text-slate-400">Distribusi kondisi aset PJU.</p>
-            <div class="mt-4 space-y-4">
+            <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 @foreach (['kokoh', 'keropos', 'miring', 'berkarat', 'lainnya'] as $conditionName)
                     @php
                         $count = $stats[$conditionName];
                         $percent = (int) round(($count / max($stats['total'], 1)) * 100);
                     @endphp
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between gap-3">
-                            <span class="badge badge-{{ $conditionName }}">{{ $label($conditionName) }}</span>
-                            <p class="text-sm font-bold text-slate-400">{{ number_format($count) }} data - {{ $percent }}%</p>
+                    <div class="rounded-lg border border-white/10 bg-slate-950/30 p-3">
+                        <div class="flex items-start justify-between gap-3">
+                            <span class="badge badge-{{ $conditionName }} shrink-0">{{ $label($conditionName) }}</span>
+                            <p class="text-right text-lg font-black text-slate-100">{{ number_format($count) }}</p>
                         </div>
-                        <div class="h-2 overflow-hidden rounded-full bg-slate-800">
+                        <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-800">
                             <div class="h-full rounded-full bg-cyan-600" style="width: {{ $percent }}%"></div>
                         </div>
+                        <p class="mt-2 text-xs font-bold text-slate-500">{{ $percent }}% dari total</p>
                     </div>
                 @endforeach
             </div>
@@ -119,16 +138,42 @@
                 <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400">Aktivitas</p>
             </div>
         </div>
-        <div class="mt-4 max-h-[340px] space-y-3 overflow-y-auto pr-2 xl:max-h-[520px]">
-            @forelse ($todayReports as $report)
-                <div class="rounded-lg border bg-slate-900/5 p-3">
-                    <p class="font-bold text-slate-100">{{ $report->pole?->displayName() ?? 'Tiang tidak ditemukan' }}</p>
-                    <p class="text-sm text-slate-400">{{ $report->pole?->locationLabel() }}</p>
-                    <p class="mt-2 text-sm leading-6 text-slate-300">{{ $report->notes }}</p>
+        <div class="mt-5 space-y-4">
+            @forelse ($todayReports->take(5) as $report)
+                <div class="relative grid grid-cols-[32px_minmax(0,1fr)] gap-3">
+                    <div class="flex flex-col items-center">
+                        <span class="flex size-8 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.14)]">
+                            <i data-lucide="activity" class="size-4"></i>
+                        </span>
+                        @if (! $loop->last)
+                            <span class="mt-2 h-full min-h-8 w-px bg-white/10"></span>
+                        @endif
+                    </div>
+                    <div class="min-w-0 rounded-lg border border-white/10 bg-slate-950/30 p-3">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="truncate font-bold text-slate-100">{{ $report->pole?->displayName() ?? 'Tiang tidak ditemukan' }}</p>
+                                <p class="mt-1 truncate text-xs font-semibold text-slate-500">{{ $report->pole?->locationLabel() ?: '-' }}</p>
+                            </div>
+                            <span class="shrink-0 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-black text-cyan-300">{{ $report->created_at?->format('H:i') }} WIB</span>
+                        </div>
+                        <p class="mt-2 line-clamp-2 text-sm leading-6 text-slate-300">{{ $report->notes }}</p>
+                    </div>
                 </div>
             @empty
-                <p class="text-sm text-slate-400">Belum ada aktivitas hari ini.</p>
+                <div class="flex min-h-52 flex-col items-center justify-center rounded-lg border border-dashed border-white/15 text-center text-slate-500">
+                    <i data-lucide="calendar-clock" class="mb-3 size-9 opacity-70"></i>
+                    <p class="text-sm font-bold text-slate-300">Belum ada aktivitas hari ini</p>
+                    <p class="mt-1 max-w-56 text-xs leading-5 text-slate-500">Aktivitas lapangan akan muncul di sini setelah laporan dibuat.</p>
+                </div>
             @endforelse
+            @if ($todayReports->count() > 5)
+                <p class="text-xs font-bold text-slate-500">+{{ $todayReports->count() - 5 }} aktivitas lainnya hari ini</p>
+            @endif
+            <a href="{{ route('reports.index') }}" class="btn btn-muted w-full">
+                <i data-lucide="list-todo" class="icon"></i>
+                Lihat Semua Aktivitas
+            </a>
         </div>
     </div>
 </div>

@@ -344,6 +344,42 @@ class PjuApiTest extends TestCase
         $this->assertDatabaseMissing('poles', ['id' => $pole->id]);
     }
 
+    public function test_verifikator_can_comment_on_pole_detail(): void
+    {
+        $surveyor = $this->seedUser('surveyor');
+        $verifikator = $this->seedUser('verifikator');
+        $viewer = $this->seedUser('user');
+        $pole = Pole::query()->create([
+            ...$this->polePayload(),
+            'created_by_id' => $surveyor->id,
+            'updated_by_id' => $surveyor->id,
+        ]);
+
+        $this->actingAs($verifikator)
+            ->post('/poles/'.$pole->id.'/comments', [
+                'comment' => 'Koordinat sudah sesuai, foto perlu diperbarui.',
+            ])
+            ->assertRedirect(route('poles.show', $pole).'#komentar-verifikator');
+
+        $this->assertDatabaseHas('pole_comments', [
+            'pole_id' => $pole->id,
+            'user_id' => $verifikator->id,
+            'comment' => 'Koordinat sudah sesuai, foto perlu diperbarui.',
+        ]);
+
+        $this->actingAs($verifikator)
+            ->get('/data-tiang/'.$pole->id)
+            ->assertOk()
+            ->assertSee('Komentar Verifikator')
+            ->assertSee('Koordinat sudah sesuai, foto perlu diperbarui.');
+
+        $this->actingAs($viewer)
+            ->post('/poles/'.$pole->id.'/comments', [
+                'comment' => 'Komentar dari viewer.',
+            ])
+            ->assertForbidden();
+    }
+
     public function test_superadmin_can_manage_users(): void
     {
         $superadmin = $this->seedUser('superadmin');

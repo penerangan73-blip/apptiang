@@ -60,7 +60,7 @@ class DatabaseSeeder extends Seeder
             ['kapanewon' => 'Karangmojo', 'street' => 'Jalan Bejiharjo-Karangmojo', 'lat' => -7.9286, 'lon' => 110.6492],
         ];
         $conditions = ['kokoh', 'kokoh', 'kokoh', 'keropos', 'miring', 'berkarat', 'lainnya'];
-        $poleTypes = ['tiang_baja_galvanis', 'tiang_beton', 'tiang_kayu', 'tiang_bambu', 'menempel_tiang_pln', 'menempel_pohon', 'tanpa_penyangga'];
+        $poleTypes = ['tiang_baja_galvanis', 'tiang_beton', 'tiang_cor', 'tiang_kayu', 'tiang_bambu', 'menempel_tiang_pln', 'menempel_tembok', 'menempel_pohon', 'tanpa_penyangga'];
         $ornamentTypes = ['single_arm', 'double_arm', 'high_mast', 'lainnya'];
         $lampTypes = ['led', 'cfl', 'hps', 'son_t', 'mercury', 'lainnya'];
         $lampStatuses = ['menyala', 'menyala', 'menyala', 'mati', 'redup', 'berkedip'];
@@ -99,7 +99,7 @@ class DatabaseSeeder extends Seeder
                 'power_usage' => $this->pick($powerUsages),
                 'condition' => $this->pick($conditions),
                 'pole_type' => $poleType,
-                'height' => in_array($poleType, ['menempel_tiang_pln', 'menempel_pohon', 'tanpa_penyangga'], true) ? null : $this->randomFloat(5.5, 10.5, 1),
+                'height' => in_array($poleType, ['menempel_tiang_pln', 'menempel_tembok', 'menempel_pohon', 'tanpa_penyangga'], true) ? null : $this->randomFloat(5.5, 10.5, 1),
                 'ornament_type' => $this->pick($ornamentTypes),
                 'lamp_type' => $this->pick($lampTypes),
                 'lamp_status' => $this->pick($lampStatuses),

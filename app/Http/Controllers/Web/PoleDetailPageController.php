@@ -23,7 +23,12 @@ class PoleDetailPageController extends Controller
             ->with(['user:id,name,role', 'photos'])
             ->latest('report_date')
             ->latest()
-            ->paginate(8)
+            ->paginate(8, ['*'], 'reports_page')
+            ->withQueryString();
+
+        $comments = $pole->comments()
+            ->with('user:id,name,role')
+            ->paginate(6, ['*'], 'comments_page')
             ->withQueryString();
 
         $user = $request->user();
@@ -32,10 +37,12 @@ class PoleDetailPageController extends Controller
         return view('pages.poles.show', [
             'pole' => $pole,
             'reports' => $reports,
+            'comments' => $comments,
             'sourcePoles' => $sourcePoles,
             'user' => $user,
             'canCreatePoles' => in_array($user->role, ['superadmin', 'surveyor'], true),
             'canManagePoles' => in_array($user->role, ['superadmin', 'surveyor', 'verifikator'], true),
+            'canCommentPoles' => $user->role === 'verifikator',
         ]);
     }
 

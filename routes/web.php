@@ -4,6 +4,7 @@ use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\DailyReportController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\MapPageController;
+use App\Http\Controllers\Web\PoleCommentController;
 use App\Http\Controllers\Web\PoleController;
 use App\Http\Controllers\Web\PoleDetailPageController;
 use App\Http\Controllers\Web\PolePageController;
@@ -39,6 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/poles/source-options', [PoleController::class, 'sourceOptions'])->name('poles.source-options');
     Route::put('/poles/{pole}', [PoleController::class, 'update'])->middleware('role:superadmin,surveyor,verifikator')->name('poles.update');
     Route::match(['post', 'patch'], '/poles/{pole}/verification', [PoleController::class, 'verify'])->middleware('role:verifikator')->name('poles.verify');
+    Route::post('/poles/{pole}/comments', [PoleCommentController::class, 'store'])->middleware('role:verifikator')->name('poles.comments.store');
     Route::delete('/poles/bulk-delete', [PoleController::class, 'bulkDestroy'])->middleware('role:superadmin,surveyor,verifikator')->name('poles.bulk-destroy');
     Route::delete('/poles/{pole}', [PoleController::class, 'destroy'])->middleware('role:superadmin,surveyor,verifikator')->name('poles.destroy');
     Route::delete('/pole-photos/{photo}', [PoleController::class, 'destroyPhoto'])->middleware('role:superadmin,surveyor,verifikator')->name('pole-photos.destroy');

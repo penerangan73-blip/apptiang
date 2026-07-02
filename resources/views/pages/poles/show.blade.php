@@ -16,9 +16,11 @@
         'hilang' => 'Kusam',
         'tiang_baja_galvanis' => 'Tiang Baja (Galvanis)',
         'tiang_beton' => 'Tiang Beton',
+        'tiang_cor' => 'Tiang Cor',
         'tiang_kayu' => 'Kayu',
         'tiang_bambu' => 'Bambu',
         'menempel_tiang_pln' => 'Menempel Tiang PLN',
+        'menempel_tembok' => 'Menempel Tembok',
         'menempel_pohon' => 'Menempel Pohon',
         'tanpa_penyangga' => 'Tanpa Penyangga',
         'single_arm' => 'Single Arm',
@@ -51,6 +53,11 @@
     ][$value] ?? ucfirst(str_replace('_', ' ', (string) $value));
     $ownership = fn ($value) => ['dpu_kp' => 'DPU KP', 'dishub' => 'DISHUB', 'pln' => 'PLN', 'lainnya' => 'Lainnya'][$value] ?? $label($value);
     $poleTitle = $pole->displayName();
+    $verificationLabel = $pole->is_verified ? 'Terverifikasi' : 'Belum diverifikasi';
+    $verificationMeta = $pole->is_verified
+        ? (($pole->verifiedBy?->name ?? '-').' / '.(optional($pole->verified_at)->format('H:i d-m-Y') ?: '-'))
+        : '-';
+    $latestReport = $reports->getCollection()->first();
     $poleMapData = [
         ...$pole->only(['customer_id', 'street_name', 'address', 'village', 'district', 'regency', 'province', 'latitude', 'longitude', 'power_usage', 'condition']),
         'display_name' => $poleTitle,
@@ -60,141 +67,168 @@
     ];
 @endphp
 
-<div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-    <div class="min-w-0">
-        <a href="{{ route('poles.index') }}" class="inline-flex items-center gap-2 text-sm font-bold text-cyan-400 hover:text-cyan-300">
-            <i data-lucide="arrow-left" class="icon"></i>
-            Kembali ke Data Tiang
-        </a>
-        <div class="mt-3 flex flex-wrap items-center gap-3">
-            <h2 class="break-words text-2xl font-black text-slate-100 sm:text-3xl">{{ $poleTitle }}</h2>
-            <span class="badge badge-{{ $pole->condition }}">{{ $label($pole->condition) }}</span>
+<div class="space-y-4">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0">
+            <a href="{{ route('poles.index') }}" class="inline-flex items-center gap-2 text-sm font-bold text-cyan-400 hover:text-cyan-300">
+                <i data-lucide="arrow-left" class="icon"></i>
+                Kembali ke Data Tiang
+            </a>
+            <div class="mt-3 flex flex-wrap items-center gap-3">
+                <h2 class="break-words text-2xl font-black leading-tight text-slate-100 sm:text-3xl">{{ $poleTitle }}</h2>
+                <span class="badge badge-{{ $pole->condition }}">{{ $label($pole->condition) }}</span>
+                <span class="rounded-full border {{ $pole->is_verified ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300' : 'border-amber-400/30 bg-amber-400/10 text-amber-200' }} px-3 py-1 text-xs font-black uppercase tracking-widest">{{ $verificationLabel }}</span>
+            </div>
+            <p class="mt-2 max-w-4xl text-sm leading-6 text-slate-400">{{ $pole->locationLabel() ?: 'Lokasi belum dilengkapi.' }}</p>
         </div>
-        <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-400">{{ $pole->locationLabel() }}</p>
+        <div class="flex flex-wrap gap-2 lg:justify-end">
+            @if ($canCreatePoles ?? false)
+                <button type="button" class="btn btn-muted" data-open-dialog="report-dialog" data-report-pole="{{ $pole->id }}">
+                    <i data-lucide="file-plus-2" class="icon text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.55)]"></i>
+                    Laporan Kerusakan
+                </button>
+            @endif
+            @if ($canManagePoles)
+                <button type="button" class="btn btn-primary" data-open-dialog="pole-edit-{{ $pole->id }}">
+                    <i data-lucide="edit-3" class="icon drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]"></i>
+                    Edit Tiang
+                </button>
+            @endif
+        </div>
     </div>
-    <div class="flex flex-wrap gap-2">
-        @if ($canCreatePoles ?? false)
-            <button type="button" class="btn btn-muted" data-open-dialog="report-dialog" data-report-pole="{{ $pole->id }}">
-                <i data-lucide="file-plus-2" class="icon"></i>
-                Laporan Kerusakan
-            </button>
-        @endif
-        @if ($canManagePoles)
-            <button type="button" class="btn btn-primary" data-open-dialog="pole-edit-{{ $pole->id }}">
-                <i data-lucide="edit-3" class="icon"></i>
-                Edit Tiang
-            </button>
-        @endif
+
+    <div class="card p-4 sm:p-5">
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="flex min-h-24 items-center gap-3 rounded-lg border border-white/10 bg-slate-950/30 p-4">
+                <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
+                    <i data-lucide="zap" class="icon"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Daya Lampu</p>
+                    <p class="mt-1 truncate text-lg font-black text-slate-100">{{ number_format($pole->power_usage) }} Watt</p>
+                </div>
+            </div>
+            <div class="flex min-h-24 items-center gap-3 rounded-lg border border-white/10 bg-slate-950/30 p-4">
+                <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
+                    <i data-lucide="utility-pole" class="icon"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Jenis Tiang</p>
+                    <p class="mt-1 truncate text-lg font-black text-slate-100">{{ $label($pole->pole_type) }}</p>
+                </div>
+            </div>
+            <div class="flex min-h-24 items-center gap-3 rounded-lg border border-white/10 bg-slate-950/30 p-4">
+                <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
+                    <i data-lucide="ruler" class="icon"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Tinggi Tiang</p>
+                    <p class="mt-1 truncate text-lg font-black text-slate-100">{{ $pole->height ? $pole->height.' m' : '-' }}</p>
+                </div>
+            </div>
+            <div class="flex min-h-24 items-center gap-3 rounded-lg border border-white/10 bg-slate-950/30 p-4">
+                <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
+                    <i data-lucide="lightbulb" class="icon"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Kondisi Lampu</p>
+                    <p class="mt-1 truncate text-lg font-black text-slate-100">{{ $label($pole->lamp_status) }}</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+<div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_390px]">
     <div class="space-y-5">
-        <div class="card p-5">
-            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                @include('partials.detail-item', ['label' => 'Daya Lampu', 'value' => number_format($pole->power_usage).' Watt'])
-                @include('partials.detail-item', ['label' => 'Jenis Tiang', 'value' => $label($pole->pole_type)])
-                @include('partials.detail-item', ['label' => 'Tinggi Tiang', 'value' => $pole->height ? $pole->height.' m' : '-'])
-                @include('partials.detail-item', ['label' => 'Kondisi Lampu', 'value' => $label($pole->lamp_status)])
-            </div>
-        </div>
-
         <div class="card overflow-hidden">
             <div class="border-b border-white/10 p-5">
                 <h3 class="text-lg font-black">Data Lengkap</h3>
-                <p class="text-sm text-slate-400">Informasi aset, koordinat, dan riwayat input.</p>
+                <p class="text-sm text-slate-400">Informasi aset, lokasi, spesifikasi, dan riwayat input.</p>
             </div>
-            <div class="grid gap-5 p-5 md:grid-cols-2">
-                @include('partials.detail-item', ['label' => 'Alamat', 'value' => $pole->addressLine(), 'class' => 'md:col-span-2'])
-                @include('partials.detail-item', ['label' => 'Kelurahan', 'value' => $pole->village ?: '-'])
-                @include('partials.detail-item', ['label' => 'Kecamatan', 'value' => $pole->district ?: '-'])
-                @include('partials.detail-item', ['label' => 'Kabupaten', 'value' => $pole->regency ?: '-'])
-                @include('partials.detail-item', ['label' => 'Provinsi', 'value' => $pole->province ?: '-'])
-                @include('partials.detail-item', ['label' => 'Latitude', 'value' => number_format((float) $pole->latitude, 7)])
-                @include('partials.detail-item', ['label' => 'Longitude', 'value' => number_format((float) $pole->longitude, 7)])
-                @include('partials.detail-item', ['label' => 'Tipe Ornamen', 'value' => $label($pole->ornament_type)])
-                @include('partials.detail-item', ['label' => 'Jenis Lampu', 'value' => $label($pole->lamp_type)])
-                @include('partials.detail-item', ['label' => 'Jenis Rumah Lampu', 'value' => $label($pole->lamp_house_type)])
-                @include('partials.detail-item', ['label' => 'Kondisi Rumah Lampu', 'value' => $label($pole->lamp_house_condition)])
-                @include('partials.detail-item', ['label' => 'Jumlah Titik Lampu', 'value' => number_format((int) $pole->light_point_count)])
-                @include('partials.detail-item', ['label' => 'KWH Meter', 'value' => $label($pole->kwh_meter) ?: '-'])
-                @include('partials.detail-item', ['label' => 'Kepemilikan', 'value' => $ownership($pole->ownership)])
-                @include('partials.detail-item', ['label' => 'Pertama Diinput', 'value' => optional($pole->created_at)->format('H:i d-m-Y') ?: '-'])
-                @include('partials.detail-item', ['label' => 'Diinput Oleh', 'value' => $pole->createdBy?->name ?? '-'])
-                @include('partials.detail-item', ['label' => 'Update Terakhir', 'value' => optional($pole->updated_at)->format('H:i d-m-Y') ?: '-'])
-                @include('partials.detail-item', ['label' => 'Update Oleh', 'value' => $pole->updatedBy?->name ?? '-'])
-                @include('partials.detail-item', ['label' => 'Verifikasi', 'value' => $pole->is_verified ? 'Terverifikasi' : 'Belum diverifikasi'])
-                @include('partials.detail-item', ['label' => 'Diverifikasi Oleh', 'value' => $pole->is_verified ? (($pole->verifiedBy?->name ?? '-').' / '.(optional($pole->verified_at)->format('H:i d-m-Y') ?: '-')) : '-'])
-                @include('partials.detail-item', ['label' => 'Keterangan', 'value' => $pole->notes ?: '-', 'class' => 'md:col-span-2'])
+            <div class="divide-y divide-white/5">
+                <section class="p-5">
+                    <h4 class="mb-4 text-sm font-black uppercase tracking-widest text-cyan-300">Lokasi</h4>
+                    <div class="grid gap-5 md:grid-cols-2">
+                        @include('partials.detail-item', ['label' => 'Alamat', 'value' => $pole->addressLine() ?: '-', 'class' => 'md:col-span-2'])
+                        @include('partials.detail-item', ['label' => 'Kelurahan', 'value' => $pole->village ?: '-'])
+                        @include('partials.detail-item', ['label' => 'Kecamatan', 'value' => $pole->district ?: '-'])
+                        @include('partials.detail-item', ['label' => 'Kabupaten', 'value' => $pole->regency ?: '-'])
+                        @include('partials.detail-item', ['label' => 'Provinsi', 'value' => $pole->province ?: '-'])
+                        @include('partials.detail-item', ['label' => 'Latitude', 'value' => number_format((float) $pole->latitude, 7)])
+                        @include('partials.detail-item', ['label' => 'Longitude', 'value' => number_format((float) $pole->longitude, 7)])
+                    </div>
+                </section>
+                <section class="p-5">
+                    <h4 class="mb-4 text-sm font-black uppercase tracking-widest text-cyan-300">Spesifikasi Aset</h4>
+                    <div class="grid gap-5 md:grid-cols-2">
+                        @include('partials.detail-item', ['label' => 'Kondisi Tiang', 'value' => $label($pole->condition)])
+                        @include('partials.detail-item', ['label' => 'Jenis Tiang', 'value' => $label($pole->pole_type)])
+                        @include('partials.detail-item', ['label' => 'Tinggi Tiang', 'value' => $pole->height ? $pole->height.' m' : '-'])
+                        @include('partials.detail-item', ['label' => 'Tipe Ornamen', 'value' => $label($pole->ornament_type)])
+                        @include('partials.detail-item', ['label' => 'KWH Meter', 'value' => $label($pole->kwh_meter) ?: '-'])
+                        @include('partials.detail-item', ['label' => 'Kepemilikan', 'value' => $ownership($pole->ownership)])
+                    </div>
+                </section>
+                <section class="p-5">
+                    <h4 class="mb-4 text-sm font-black uppercase tracking-widest text-cyan-300">Lampu</h4>
+                    <div class="grid gap-5 md:grid-cols-2">
+                        @include('partials.detail-item', ['label' => 'Daya Lampu', 'value' => number_format($pole->power_usage).' Watt'])
+                        @include('partials.detail-item', ['label' => 'Jenis Lampu', 'value' => $label($pole->lamp_type)])
+                        @include('partials.detail-item', ['label' => 'Kondisi Lampu', 'value' => $label($pole->lamp_status)])
+                        @include('partials.detail-item', ['label' => 'Jenis Rumah Lampu', 'value' => $label($pole->lamp_house_type)])
+                        @include('partials.detail-item', ['label' => 'Kondisi Rumah Lampu', 'value' => $label($pole->lamp_house_condition)])
+                        @include('partials.detail-item', ['label' => 'Jumlah Titik Lampu', 'value' => number_format((int) $pole->light_point_count)])
+                    </div>
+                </section>
+                <section class="p-5">
+                    <h4 class="mb-4 text-sm font-black uppercase tracking-widest text-cyan-300">Audit & Catatan</h4>
+                    <div class="grid gap-5 md:grid-cols-2">
+                        @include('partials.detail-item', ['label' => 'Pertama Diinput', 'value' => optional($pole->created_at)->format('H:i d-m-Y') ?: '-'])
+                        @include('partials.detail-item', ['label' => 'Diinput Oleh', 'value' => $pole->createdBy?->name ?? '-'])
+                        @include('partials.detail-item', ['label' => 'Update Terakhir', 'value' => optional($pole->updated_at)->format('H:i d-m-Y') ?: '-'])
+                        @include('partials.detail-item', ['label' => 'Update Oleh', 'value' => $pole->updatedBy?->name ?? '-'])
+                        @include('partials.detail-item', ['label' => 'Verifikasi', 'value' => $verificationLabel])
+                        @include('partials.detail-item', ['label' => 'Diverifikasi Oleh', 'value' => $verificationMeta])
+                        @include('partials.detail-item', ['label' => 'Keterangan', 'value' => $pole->notes ?: '-', 'class' => 'md:col-span-2'])
+                    </div>
+                </section>
             </div>
         </div>
 
-        <div class="card overflow-hidden">
-            <div class="flex flex-col gap-3 border-b border-white/10 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h3 class="text-lg font-black">Histori Aktivitas</h3>
-                    <p class="text-sm text-slate-400">{{ $reports->total() }} aktivitas tercatat untuk tiang ini.</p>
-                </div>
-                @if ($canCreatePoles ?? false)
-                    <button type="button" class="btn btn-muted" data-open-dialog="report-dialog" data-report-pole="{{ $pole->id }}">
-                        <i data-lucide="plus-circle" class="icon"></i>
-                        Tambah Laporan
-                    </button>
-                @endif
-            </div>
-            <div class="divide-y divide-white/5">
-                @forelse ($reports as $report)
-                    <div class="grid gap-4 p-5 md:grid-cols-[minmax(0,1fr)_180px]">
-                        <div class="min-w-0">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <p class="font-black text-slate-100">{{ optional($report->report_date)->format('d-m-Y') }}</p>
-                                <span class="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400">{{ $report->user?->name ?? 'User tidak ditemukan' }}</span>
-                            </div>
-                            <p class="mt-2 text-sm leading-6 text-slate-300">{{ $report->notes }}</p>
+        <div class="card p-5">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="min-w-0">
+                    <div class="flex items-center gap-3">
+                        <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
+                            <i data-lucide="history" class="icon"></i>
                         </div>
-                        <div>
-                            @php
-                                $reportPhotos = match (true) {
-                                    $report->photos->isNotEmpty() => $report->photos,
-                                    (bool) $report->photo_url => collect([(object) ['photo_url' => $report->photo_url]]),
-                                    $pole->photos->isNotEmpty() => $pole->photos,
-                                    (bool) $pole->photo_url => collect([(object) ['photo_url' => $pole->photo_url]]),
-                                    default => collect(),
-                                };
-                            @endphp
-                            @if ($reportPhotos->isNotEmpty())
-                                <div class="grid grid-cols-2 gap-2">
-                                    @foreach ($reportPhotos->take(4) as $photo)
-                                        <div class="group relative overflow-hidden rounded-lg border border-white/10 bg-white/5">
-                                            <a href="{{ $photo->photo_url }}" target="_blank" class="block">
-                                                <img src="{{ $photo->photo_url }}" alt="Foto laporan {{ $poleTitle }}" class="h-20 w-full object-cover">
-                                            </a>
-                                            @if ($canManagePoles && isset($photo->id))
-                                                <form method="POST" action="{{ route('daily-report-photos.destroy', $photo) }}" class="absolute right-1.5 top-1.5">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="flex size-7 items-center justify-center rounded-md bg-red-600/90 text-white shadow-lg transition hover:bg-red-500" onclick="return confirm('Hapus foto laporan ini?')" aria-label="Hapus foto laporan">
-                                                        <i data-lucide="trash-2" class="size-4"></i>
-                                                    </button>
-                                                </form>
-                                            @endif
-                                        </div>
-                                    @endforeach
-                                </div>
-                                @if ($reportPhotos->count() > 4)
-                                    <p class="mt-2 text-xs font-bold text-slate-400">+{{ $reportPhotos->count() - 4 }} foto lainnya</p>
-                                @endif
-                            @else
-                                <div class="flex h-28 items-center justify-center rounded-lg border border-dashed border-white/15 text-sm font-semibold text-slate-500">Tanpa foto</div>
-                            @endif
+                        <div class="min-w-0">
+                            <h3 class="text-lg font-black">Histori Aktivitas</h3>
+                            <p class="text-sm text-slate-400">{{ $reports->total() }} aktivitas tercatat untuk tiang ini.</p>
                         </div>
                     </div>
-                @empty
-                    <div class="p-8 text-center text-sm font-semibold text-slate-400">Belum ada histori aktivitas untuk tiang ini.</div>
-                @endforelse
-            </div>
-            <div class="border-t border-white/10 px-5 py-4">
-                {{ $reports->links() }}
+                    @if ($latestReport)
+                        <p class="mt-4 text-sm leading-6 text-slate-300">
+                            Terakhir: <span class="font-bold text-slate-100">{{ optional($latestReport->report_date)->format('d-m-Y') }}</span>
+                            oleh <span class="font-bold text-slate-100">{{ $latestReport->user?->name ?? 'User tidak ditemukan' }}</span>
+                        </p>
+                    @else
+                        <p class="mt-4 text-sm leading-6 text-slate-400">Belum ada aktivitas tercatat.</p>
+                    @endif
+                </div>
+                <div class="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+                    <button type="button" class="btn btn-primary" data-open-dialog="pole-history-dialog">
+                        <i data-lucide="history" class="icon"></i>
+                        Lihat Histori
+                    </button>
+                    @if ($canCreatePoles ?? false)
+                        <button type="button" class="btn btn-muted" data-open-dialog="report-dialog" data-report-pole="{{ $pole->id }}">
+                            <i data-lucide="plus-circle" class="icon"></i>
+                            Tambah Laporan
+                        </button>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
@@ -216,7 +250,7 @@
                         @foreach ($polePhotos as $photo)
                             <div class="group relative overflow-hidden rounded-lg border border-white/10 bg-white/5">
                                 <a href="{{ $photo->photo_url }}" target="_blank" class="block">
-                                    <img src="{{ $photo->photo_url }}" alt="Foto {{ $poleTitle }}" class="max-h-[320px] w-full object-cover">
+                                    <img src="{{ $photo->photo_url }}" alt="Foto {{ $poleTitle }}" class="aspect-[4/3] w-full object-cover">
                                 </a>
                                 @if ($canManagePoles && isset($photo->id))
                                     <form method="POST" action="{{ route('pole-photos.destroy', $photo) }}" class="absolute right-3 top-3">
@@ -240,13 +274,62 @@
             </div>
         </div>
 
+        <div id="komentar-verifikator" class="card overflow-hidden">
+            <div class="flex items-start justify-between gap-3 border-b border-white/10 p-5">
+                <div class="min-w-0">
+                    <h3 class="text-lg font-black">Komentar Verifikator</h3>
+                    <p class="text-sm text-slate-400">{{ $comments->total() }} komentar tercatat.</p>
+                </div>
+                <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
+                    <i data-lucide="message-square-text" class="icon"></i>
+                </div>
+            </div>
+            @if ($canCommentPoles ?? false)
+                <form method="POST" action="{{ route('poles.comments.store', $pole) }}" class="border-b border-white/10 p-5">
+                    @csrf
+                    <label class="label" for="verifier-comment">Komentar</label>
+                    <textarea id="verifier-comment" name="comment" rows="3" class="field" maxlength="2000" required placeholder="Tulis komentar verifikasi...">{{ old('comment') }}</textarea>
+                    @error('comment')
+                        <p class="mt-2 text-sm font-semibold text-red-300">{{ $message }}</p>
+                    @enderror
+                    <button type="submit" class="btn btn-primary mt-3 w-full">
+                        <i data-lucide="send" class="icon drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]"></i>
+                        Simpan Komentar
+                    </button>
+                </form>
+            @endif
+            <div class="divide-y divide-white/5">
+                @forelse ($comments as $comment)
+                    <div class="p-5">
+                        <div class="flex items-start gap-3">
+                            <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/5 text-sm font-black text-cyan-200">
+                                {{ strtoupper(substr($comment->user?->name ?? 'V', 0, 1)) }}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="truncate font-black text-slate-100">{{ $comment->user?->name ?? 'User tidak ditemukan' }}</p>
+                                <p class="mt-0.5 text-xs font-semibold text-slate-500">{{ optional($comment->created_at)->format('H:i d-m-Y') }}</p>
+                                <p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-300">{{ $comment->comment }}</p>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="p-8 text-center text-sm font-semibold text-slate-400">Belum ada komentar verifikator.</div>
+                @endforelse
+            </div>
+            @if ($comments->hasPages())
+                <div class="border-t border-white/10 px-5 py-4">
+                    {{ $comments->links() }}
+                </div>
+            @endif
+        </div>
+
         <div class="card overflow-hidden">
             <div class="border-b border-white/10 p-5">
                 <h3 class="text-lg font-black">Lokasi</h3>
                 <p class="text-sm text-slate-400">{{ number_format((float) $pole->latitude, 5) }}, {{ number_format((float) $pole->longitude, 5) }}</p>
             </div>
             <div class="p-5">
-                <div id="pole-detail-map" class="glass-panel h-80 overflow-hidden rounded-lg"></div>
+                <div id="pole-detail-map" class="glass-panel h-72 overflow-hidden rounded-lg"></div>
             </div>
         </div>
     </aside>
@@ -255,6 +338,77 @@
 
 @section('dialogs')
     @include('partials.pole-dialogs', ['dialogPoles' => collect([$pole]), 'reportPoles' => collect([$pole]), 'sourcePoles' => $sourcePoles])
+    <dialog id="pole-history-dialog">
+        <div class="modal-card">
+            <div class="flex items-start justify-between gap-4 border-b border-white/10 p-5">
+                <div>
+                    <h2 class="text-xl font-black">Histori Aktivitas</h2>
+                    <p class="text-sm text-slate-400">{{ $reports->total() }} aktivitas tercatat untuk {{ $poleTitle }}.</p>
+                </div>
+                <button type="button" class="btn btn-muted px-3 py-2" data-close-dialog>
+                    <i data-lucide="x" class="icon"></i>
+                </button>
+            </div>
+            <div class="max-h-[70vh] overflow-y-auto">
+                <div class="divide-y divide-white/5">
+                    @forelse ($reports as $report)
+                        <div class="grid gap-4 p-5 md:grid-cols-[minmax(0,1fr)_220px]">
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <p class="font-black text-slate-100">{{ optional($report->report_date)->format('d-m-Y') }}</p>
+                                    <span class="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400">{{ $report->user?->name ?? 'User tidak ditemukan' }}</span>
+                                </div>
+                                <p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-300">{{ $report->notes }}</p>
+                            </div>
+                            <div>
+                                @php
+                                    $reportPhotos = match (true) {
+                                        $report->photos->isNotEmpty() => $report->photos,
+                                        (bool) $report->photo_url => collect([(object) ['photo_url' => $report->photo_url]]),
+                                        $pole->photos->isNotEmpty() => $pole->photos,
+                                        (bool) $pole->photo_url => collect([(object) ['photo_url' => $pole->photo_url]]),
+                                        default => collect(),
+                                    };
+                                @endphp
+                                @if ($reportPhotos->isNotEmpty())
+                                    <div class="grid grid-cols-2 gap-2">
+                                        @foreach ($reportPhotos->take(4) as $photo)
+                                            <div class="group relative overflow-hidden rounded-lg border border-white/10 bg-white/5">
+                                                <a href="{{ $photo->photo_url }}" target="_blank" class="block">
+                                                    <img src="{{ $photo->photo_url }}" alt="Foto laporan {{ $poleTitle }}" class="h-24 w-full object-cover">
+                                                </a>
+                                                @if ($canManagePoles && isset($photo->id))
+                                                    <form method="POST" action="{{ route('daily-report-photos.destroy', $photo) }}" class="absolute right-1.5 top-1.5">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="flex size-7 items-center justify-center rounded-md bg-red-600/90 text-white shadow-lg transition hover:bg-red-500" onclick="return confirm('Hapus foto laporan ini?')" aria-label="Hapus foto laporan">
+                                                            <i data-lucide="trash-2" class="size-4"></i>
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    @if ($reportPhotos->count() > 4)
+                                        <p class="mt-2 text-xs font-bold text-slate-400">+{{ $reportPhotos->count() - 4 }} foto lainnya</p>
+                                    @endif
+                                @else
+                                    <div class="flex h-28 items-center justify-center rounded-lg border border-dashed border-white/15 text-sm font-semibold text-slate-500">Tanpa foto</div>
+                                @endif
+                            </div>
+                        </div>
+                    @empty
+                        <div class="p-8 text-center text-sm font-semibold text-slate-400">Belum ada histori aktivitas untuk tiang ini.</div>
+                    @endforelse
+                </div>
+            </div>
+            @if ($reports->hasPages())
+                <div class="border-t border-white/10 px-5 py-4">
+                    {{ $reports->links() }}
+                </div>
+            @endif
+        </div>
+    </dialog>
 @endsection
 
 @section('page-scripts')
@@ -262,6 +416,20 @@
     @include('partials.pole-scripts')
 
     initPoleDetailMap();
+    openHistoryDialogFromPagination();
+
+    function openHistoryDialogFromPagination() {
+        if (!new URLSearchParams(window.location.search).has('reports_page')) return;
+
+        const dialog = document.getElementById('pole-history-dialog');
+        if (!dialog) return;
+
+        if (dialog.showModal) {
+            dialog.showModal();
+        } else {
+            dialog.setAttribute('open', 'open');
+        }
+    }
 
     function initPoleDetailMap() {
         const el = document.getElementById('pole-detail-map');

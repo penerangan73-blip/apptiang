@@ -73,6 +73,11 @@ class Pole extends Model
         return $this->hasMany(PolePhoto::class)->orderBy('sort_order')->orderBy('id');
     }
 
+    public function comments(): HasMany
+    {
+        return $this->hasMany(PoleComment::class)->latest();
+    }
+
     public function displayName(): string
     {
         return collect([$this->customer_id, $this->sub_name])
