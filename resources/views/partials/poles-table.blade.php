@@ -32,6 +32,8 @@
         'hps' => 'HPS (Sodium Tekanan Tinggi)',
         'son_t' => 'SON-T',
         'mercury' => 'Mercury',
+        'hpit' => 'HPIT',
+        'tl_neon' => 'TL/Neon',
         'lainnya' => 'Lainnya',
         'menyala' => 'Menyala',
         'redup' => 'Redup',

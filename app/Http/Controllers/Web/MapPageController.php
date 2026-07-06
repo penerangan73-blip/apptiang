@@ -283,7 +283,7 @@ class MapPageController extends Controller
             'regency' => ['sometimes', 'nullable', 'string', 'max:120'],
             'province' => ['sometimes', 'nullable', 'string', 'max:120'],
             'pole_type' => ['sometimes', 'nullable', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'tiang_cor', 'tiang_kayu', 'tiang_bambu', 'menempel_tiang_pln', 'menempel_tembok', 'menempel_pohon', 'tanpa_penyangga'])],
-            'lamp_type' => ['sometimes', 'nullable', Rule::in(['led', 'cfl', 'hps', 'son_t', 'mercury', 'lainnya'])],
+            'lamp_type' => ['sometimes', 'nullable', Rule::in(['led', 'cfl', 'hps', 'son_t', 'mercury', 'hpit', 'tl_neon', 'lainnya'])],
             'lamp_status' => ['sometimes', 'nullable', Rule::in(['menyala', 'redup', 'berkedip', 'mati', 'rusak_pecah', 'tidak_ada_lampu'])],
             'lamp_house_type' => ['sometimes', 'nullable', Rule::in(['caping', 'konvensional', 'tidak_ada'])],
             'lamp_house_condition' => ['sometimes', 'nullable', Rule::in(['baik', 'rusak'])],

@@ -133,7 +133,7 @@
             <label class="label">Jenis Lampu</label>
             <select class="field" name="lamp_type" required>
                 <option value="" @selected($poleValue('lamp_type') === '')>Pilihan</option>
-                @foreach (['led' => 'LED', 'cfl' => 'CFL', 'hps' => 'HPS (Sodium Tekanan Tinggi)', 'son_t' => 'SON-T', 'mercury' => 'Mercury', 'lainnya' => 'Lainnya'] as $value => $text)
+                @foreach (['led' => 'LED', 'cfl' => 'CFL', 'hps' => 'HPS (Sodium Tekanan Tinggi)', 'son_t' => 'SON-T', 'mercury' => 'Mercury', 'hpit' => 'HPIT', 'tl_neon' => 'TL/Neon', 'lainnya' => 'Lainnya'] as $value => $text)
                     <option value="{{ $value }}" @selected($poleValue('lamp_type') === $value)>{{ $text }}</option>
                 @endforeach
             </select>

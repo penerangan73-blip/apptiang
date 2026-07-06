@@ -62,7 +62,7 @@ class DatabaseSeeder extends Seeder
         $conditions = ['kokoh', 'kokoh', 'kokoh', 'keropos', 'miring', 'berkarat', 'lainnya'];
         $poleTypes = ['tiang_baja_galvanis', 'tiang_beton', 'tiang_cor', 'tiang_kayu', 'tiang_bambu', 'menempel_tiang_pln', 'menempel_tembok', 'menempel_pohon', 'tanpa_penyangga'];
         $ornamentTypes = ['single_arm', 'double_arm', 'high_mast', 'lainnya'];
-        $lampTypes = ['led', 'cfl', 'hps', 'son_t', 'mercury', 'lainnya'];
+        $lampTypes = ['led', 'cfl', 'hps', 'son_t', 'mercury', 'hpit', 'tl_neon', 'lainnya'];
         $lampStatuses = ['menyala', 'menyala', 'menyala', 'mati', 'redup', 'berkedip'];
         $lampHouseTypes = ['caping', 'konvensional', 'tidak_ada'];
         $lampHouseConditions = ['baik', 'baik', 'rusak'];

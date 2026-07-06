@@ -144,7 +144,7 @@ class PoleController extends Controller
             'pole_type' => ['required', Rule::in(['tiang_baja_galvanis', 'tiang_beton', 'tiang_cor', 'tiang_kayu', 'tiang_bambu', 'menempel_tiang_pln', 'menempel_tembok', 'menempel_pohon', 'tanpa_penyangga'])],
             'height' => ['nullable', 'numeric', 'min:0', 'max:1000'],
             'ornament_type' => ['required', Rule::in(['single_arm', 'double_arm', 'high_mast', 'lainnya'])],
-            'lamp_type' => ['required', Rule::in(['led', 'cfl', 'hps', 'son_t', 'mercury', 'lainnya'])],
+            'lamp_type' => ['required', Rule::in(['led', 'cfl', 'hps', 'son_t', 'mercury', 'hpit', 'tl_neon', 'lainnya'])],
             'lamp_status' => ['required', Rule::in(['menyala', 'redup', 'berkedip', 'mati', 'rusak_pecah', 'tidak_ada_lampu'])],
             'lamp_house_type' => ['required', Rule::in(['caping', 'konvensional', 'tidak_ada'])],
             'lamp_house_condition' => ['required', Rule::in(['baik', 'rusak'])],
