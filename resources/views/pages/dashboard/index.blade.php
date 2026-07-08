@@ -32,6 +32,15 @@
         animation: dashboardLogoGlow 2.8s ease-in-out infinite;
     }
 
+    .condition-stat-grid {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+    }
+
+    .condition-stat-value {
+        font-size: clamp(1.125rem, 2vw, 1.5rem);
+        overflow-wrap: anywhere;
+    }
+
     @media (prefers-reduced-motion: reduce) {
         .dashboard-logo-mark,
         .dashboard-logo-glow {
@@ -106,16 +115,16 @@
         <div class="card p-5">
             <h3 class="text-lg font-black">Kondisi Tiang</h3>
             <p class="text-sm text-slate-400">Distribusi kondisi aset PJU.</p>
-            <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div class="condition-stat-grid mt-4 grid gap-3">
                 @foreach (['kokoh', 'keropos', 'miring', 'berkarat', 'lainnya'] as $conditionName)
                     @php
                         $count = $stats[$conditionName];
                         $percent = (int) round(($count / max($stats['total'], 1)) * 100);
                     @endphp
-                    <div class="rounded-lg border border-white/10 bg-slate-950/30 p-3">
-                        <div class="flex items-start justify-between gap-3">
-                            <span class="badge badge-{{ $conditionName }} shrink-0">{{ $label($conditionName) }}</span>
-                            <p class="text-right text-lg font-black text-slate-100">{{ number_format($count) }}</p>
+                    <div class="min-w-0 rounded-lg border border-white/10 bg-slate-950/30 p-3">
+                        <div class="grid min-w-0 gap-2">
+                            <span class="badge badge-{{ $conditionName }} w-fit max-w-full truncate">{{ $label($conditionName) }}</span>
+                            <p class="condition-stat-value min-w-0 font-black leading-tight text-slate-100 tabular-nums">{{ number_format($count) }}</p>
                         </div>
                         <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-800">
                             <div class="h-full rounded-full bg-cyan-600" style="width: {{ $percent }}%"></div>
