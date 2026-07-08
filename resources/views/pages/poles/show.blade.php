@@ -60,6 +60,10 @@
         ? (($pole->verifiedBy?->name ?? '-').' / '.(optional($pole->verified_at)->format('H:i d-m-Y') ?: '-'))
         : '-';
     $latestReport = $reports->getCollection()->first();
+    $hasPoleCoordinates = is_numeric($pole->latitude) && is_numeric($pole->longitude);
+    $directionsUrl = $hasPoleCoordinates
+        ? 'https://www.google.com/maps/dir/?api=1&destination='.rawurlencode($pole->latitude.','.$pole->longitude)
+        : null;
     $poleMapData = [
         ...$pole->only(['customer_id', 'street_name', 'address', 'village', 'district', 'regency', 'province', 'latitude', 'longitude', 'power_usage', 'condition']),
         'display_name' => $poleTitle,
@@ -332,6 +336,12 @@
             </div>
             <div class="p-5">
                 <div id="pole-detail-map" class="glass-panel h-72 overflow-hidden rounded-lg"></div>
+                @if ($directionsUrl)
+                    <a href="{{ $directionsUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary mt-3 w-full px-4 py-3 text-sm">
+                        <i data-lucide="navigation" class="icon drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]"></i>
+                        Menuju Lokasi Tiang
+                    </a>
+                @endif
             </div>
         </div>
     </aside>
