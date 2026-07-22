@@ -66,7 +66,6 @@
                     <th class="px-5 py-3">Desa</th>
                     <th class="px-5 py-3">Kecamatan</th>
                     <th class="px-5 py-3">Kabupaten</th>
-                    <th class="px-5 py-3">Daya Lampu</th>
                     <th class="px-5 py-3">Kondisi Tiang</th>
                     <th class="px-5 py-3">Jenis Tiang</th>
                     <th class="px-5 py-3">Tinggi Tiang</th>
@@ -76,6 +75,8 @@
                     <th class="px-5 py-3">Jenis Rumah Lampu</th>
                     <th class="px-5 py-3">Kondisi Rumah Lampu</th>
                     <th class="px-5 py-3">Jumlah Titik Lampu</th>
+                    <th class="px-5 py-3">Daya Lampu per Titik</th>
+                    <th class="px-5 py-3">Total Daya</th>
                     <th class="px-5 py-3">KWH Meter</th>
                     @if ($showTimestamps)
                         <th class="px-5 py-3">Diinput</th>
@@ -95,7 +96,6 @@
                         <td class="px-5 py-4 text-slate-300">{{ $pole->village ?: '-' }}</td>
                         <td class="px-5 py-4 text-slate-300">{{ $pole->district ?: '-' }}</td>
                         <td class="px-5 py-4 text-slate-300">{{ $pole->regency ?: '-' }}</td>
-                        <td class="px-5 py-4">{{ number_format($pole->power_usage) }} Watt</td>
                         <td class="px-5 py-4"><span class="badge badge-{{ $pole->condition }}">{{ $label($pole->condition) }}</span></td>
                         <td class="px-5 py-4 text-slate-300">{{ $label($pole->pole_type) }}</td>
                         <td class="px-5 py-4 text-slate-300">{{ $pole->height ? $pole->height.' m' : '-' }}</td>
@@ -105,6 +105,8 @@
                         <td class="px-5 py-4 text-slate-300">{{ $label($pole->lamp_house_type) }}</td>
                         <td class="px-5 py-4 text-slate-300">{{ $label($pole->lamp_house_condition) }}</td>
                         <td class="px-5 py-4 text-slate-300">{{ number_format((int) $pole->light_point_count) }}</td>
+                        <td class="px-5 py-4 text-slate-300">{{ number_format((int) $pole->power_usage) }} Watt</td>
+                        <td class="px-5 py-4 font-black text-cyan-300">{{ number_format((int) $pole->power_usage * (int) $pole->light_point_count) }} Watt</td>
                         <td class="px-5 py-4 text-slate-300">{{ $label($pole->kwh_meter) ?: '-' }}</td>
                         @if ($showTimestamps)
                             <td class="px-5 py-4 text-slate-300">{{ optional($pole->created_at)->format('H:i d-m-Y') }}</td>
