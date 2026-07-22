@@ -69,7 +69,6 @@ class PoleController extends Controller
             'Provinsi',
             'Latitude',
             'Longitude',
-            'Daya Lampu',
             'Kondisi Tiang',
             'Jenis Tiang',
             'Tinggi Tiang',
@@ -79,6 +78,8 @@ class PoleController extends Controller
             'Jenis Rumah Lampu',
             'Kondisi Rumah Lampu',
             'Jumlah Titik Lampu',
+            'Daya Lampu per Titik',
+            'Total Daya',
             'KWH Meter',
             'Kepemilikan',
             'Pertama Diinput',
@@ -92,7 +93,7 @@ class PoleController extends Controller
             'Keterangan',
         ];
 
-        $dateColumnIndexes = [20, 22, 26];
+        $dateColumnIndexes = [21, 23, 27];
         $textCellStyle = "mso-number-format:'\\@';";
 
         $html = '<html><head><meta charset="UTF-8"><style>.text-cell{mso-number-format:"\@";}</style></head><body><table border="1"><thead><tr>';
@@ -111,7 +112,6 @@ class PoleController extends Controller
                 $pole->province,
                 $pole->latitude,
                 $pole->longitude,
-                $pole->power_usage,
                 $this->formatOption($pole->condition),
                 $this->formatOption($pole->pole_type),
                 $pole->height,
@@ -121,6 +121,8 @@ class PoleController extends Controller
                 $this->formatOption($pole->lamp_house_type),
                 $this->formatOption($pole->lamp_house_condition),
                 $pole->light_point_count,
+                $pole->power_usage,
+                (int) $pole->power_usage * (int) $pole->light_point_count,
                 $this->formatOption($pole->kwh_meter),
                 $this->formatOwnership($pole->ownership),
                 $this->formatExportDate($pole->created_at),
@@ -172,7 +174,7 @@ class PoleController extends Controller
         $year = $validated['year'] ?? null;
         $condition = $validated['condition'] ?? null;
         $canDeletePoles = $this->canDeletePoles($request);
-        $orderColumn = (int) data_get($validated, 'order.0.column', $canDeletePoles ? 18 : 17);
+        $orderColumn = (int) data_get($validated, 'order.0.column', $canDeletePoles ? 19 : 18);
         $orderDirection = data_get($validated, 'order.0.dir', 'desc') === 'asc' ? 'asc' : 'desc';
         $orderMap = $canDeletePoles
             ? [
@@ -181,27 +183,6 @@ class PoleController extends Controller
                 3 => 'village',
                 4 => 'district',
                 5 => 'regency',
-                6 => 'power_usage',
-                7 => 'condition',
-                8 => 'pole_type',
-                9 => 'height',
-                10 => 'ornament_type',
-                11 => 'lamp_type',
-                12 => 'lamp_status',
-                13 => 'lamp_house_type',
-                14 => 'lamp_house_condition',
-                15 => 'light_point_count',
-                16 => 'kwh_meter',
-                17 => 'is_verified',
-                18 => 'created_at',
-            ]
-            : [
-                0 => 'customer_id',
-                1 => 'address',
-                2 => 'village',
-                3 => 'district',
-                4 => 'regency',
-                5 => 'power_usage',
                 6 => 'condition',
                 7 => 'pole_type',
                 8 => 'height',
@@ -211,9 +192,32 @@ class PoleController extends Controller
                 12 => 'lamp_house_type',
                 13 => 'lamp_house_condition',
                 14 => 'light_point_count',
-                15 => 'kwh_meter',
-                16 => 'is_verified',
-                17 => 'created_at',
+                15 => 'power_usage',
+                16 => 'total_power',
+                17 => 'kwh_meter',
+                18 => 'is_verified',
+                19 => 'created_at',
+            ]
+            : [
+                0 => 'customer_id',
+                1 => 'address',
+                2 => 'village',
+                3 => 'district',
+                4 => 'regency',
+                5 => 'condition',
+                6 => 'pole_type',
+                7 => 'height',
+                8 => 'ornament_type',
+                9 => 'lamp_type',
+                10 => 'lamp_status',
+                11 => 'lamp_house_type',
+                12 => 'lamp_house_condition',
+                13 => 'light_point_count',
+                14 => 'power_usage',
+                15 => 'total_power',
+                16 => 'kwh_meter',
+                17 => 'is_verified',
+                18 => 'created_at',
             ];
 
         $baseQuery = Pole::query();
@@ -230,12 +234,17 @@ class PoleController extends Controller
             $sortColumn = 'street_name';
         }
 
-        if (! Schema::hasColumn('poles', $sortColumn)) {
+        if ($sortColumn !== 'total_power' && ! Schema::hasColumn('poles', $sortColumn)) {
             $sortColumn = 'created_at';
         }
 
+        if ($sortColumn === 'total_power') {
+            $filteredQuery->orderByRaw('COALESCE(power_usage, 0) * COALESCE(light_point_count, 1) '.$orderDirection);
+        } else {
+            $filteredQuery->orderBy($sortColumn, $orderDirection);
+        }
+
         $poles = $filteredQuery
-            ->orderBy($sortColumn, $orderDirection)
             ->when($sortColumn !== 'id', fn ($query) => $query->orderByDesc('id'))
             ->when($length !== -1, fn ($query) => $query->skip($start)->take($length))
             ->get();
@@ -528,6 +537,7 @@ class PoleController extends Controller
             'district' => e($pole->district ?: '-'),
             'regency' => e($pole->regency ?: '-'),
             'power_usage' => e(number_format((int) $pole->power_usage)).' Watt',
+            'total_power' => e(number_format((int) $pole->power_usage * (int) $pole->light_point_count)).' Watt',
             'condition' => '<span class="badge badge-'.e((string) $pole->condition).'">'.e($this->formatOption($pole->condition)).'</span>',
             'pole_type' => e($this->formatOption($pole->pole_type)),
             'height' => e($pole->height ? $pole->height.' m' : '-'),

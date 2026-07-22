@@ -90,6 +90,7 @@ class MapPageController extends Controller
                 'latitude',
                 'longitude',
                 'power_usage',
+                'light_point_count',
                 'condition',
             ] : [
                 'id',

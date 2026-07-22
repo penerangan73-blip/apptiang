@@ -38,7 +38,7 @@
         table.dataTable tbody tr { background: transparent; }
         #poles-datatable,
         .dataTables_scrollHeadInner,
-        .dataTables_scrollHeadInner table { min-width: 2180px; }
+        .dataTables_scrollHeadInner table { min-width: 2310px; }
         #poles-datatable { width: 100% !important; }
         #poles-datatable th,
         #poles-datatable td { white-space: nowrap; }
@@ -122,7 +122,6 @@
         'province' => 'Provinsi',
         'latitude' => 'Latitude',
         'longitude' => 'Longitude',
-        'power_usage' => 'Daya Lampu',
         'condition' => 'Kondisi Tiang',
         'pole_type' => 'Jenis Tiang',
         'height' => 'Tinggi Tiang',
@@ -132,6 +131,7 @@
         'lamp_house_type' => 'Jenis Rumah Lampu',
         'lamp_house_condition' => 'Kondisi Rumah Lampu',
         'light_point_count' => 'Jumlah Titik Lampu',
+        'power_usage' => 'Daya Lampu per Titik',
         'kwh_meter' => 'KWH Meter',
         'ownership' => 'Kepemilikan',
         'created_at' => 'Tanggal Input',
@@ -257,7 +257,7 @@
 
 <div class="card overflow-hidden">
     <div class="overflow-x-auto p-0">
-        <table id="poles-datatable" class="min-w-[2180px] divide-y divide-white/10 text-sm">
+        <table id="poles-datatable" class="min-w-[2310px] divide-y divide-white/10 text-sm">
             <thead class="bg-white/5 text-left text-xs font-black uppercase tracking-wide text-slate-400">
                 <tr>
                     @if ($canDeletePoles)
@@ -270,7 +270,6 @@
                     <th class="px-5 py-3">Desa</th>
                     <th class="px-5 py-3">Kecamatan</th>
                     <th class="px-5 py-3">Kabupaten</th>
-                    <th class="px-5 py-3">Daya Lampu</th>
                     <th class="px-5 py-3">Kondisi Tiang</th>
                     <th class="px-5 py-3">Jenis Tiang</th>
                     <th class="px-5 py-3">Tinggi Tiang</th>
@@ -280,6 +279,8 @@
                     <th class="px-5 py-3">Jenis Rumah Lampu</th>
                     <th class="px-5 py-3">Kondisi Rumah Lampu</th>
                     <th class="px-5 py-3">Jumlah Titik Lampu</th>
+                    <th class="px-5 py-3">Daya Lampu per Titik</th>
+                    <th class="px-5 py-3">Total Daya</th>
                     <th class="px-5 py-3">KWH Meter</th>
                     <th class="px-5 py-3">Verifikasi</th>
                     <th class="px-5 py-3">Diinput</th>
@@ -426,7 +427,7 @@
                     Object.assign(data, getAttributeFilters());
                 },
             },
-            order: [[canDeletePoles ? 18 : 17, 'desc']],
+            order: [[canDeletePoles ? 19 : 18, 'desc']],
             pageLength: 15,
             lengthMenu: [[10, 15, 25, 50, 100], [10, 15, 25, 50, 100]],
             columns: [
@@ -436,7 +437,6 @@
                 { data: 'village', name: 'village', width: '130px' },
                 { data: 'district', name: 'district', width: '140px' },
                 { data: 'regency', name: 'regency', width: '140px' },
-                { data: 'power_usage', name: 'power_usage', width: '120px' },
                 { data: 'condition', name: 'condition', width: '130px' },
                 { data: 'pole_type', name: 'pole_type', width: '160px' },
                 { data: 'height', name: 'height', width: '110px' },
@@ -446,6 +446,8 @@
                 { data: 'lamp_house_type', name: 'lamp_house_type', width: '160px' },
                 { data: 'lamp_house_condition', name: 'lamp_house_condition', width: '170px' },
                 { data: 'light_point_count', name: 'light_point_count', width: '150px' },
+                { data: 'power_usage', name: 'power_usage', width: '120px' },
+                { data: 'total_power', name: 'total_power', width: '130px' },
                 { data: 'kwh_meter', name: 'kwh_meter', width: '120px' },
                 { data: 'verification', name: 'is_verified', width: '150px' },
                 { data: 'created_at', name: 'created_at', width: '140px' },
@@ -453,7 +455,7 @@
             ],
             columnDefs: [
                 { targets: '_all', className: 'px-5 py-4 align-top text-slate-300' },
-                { targets: [canDeletePoles ? 19 : 18], className: 'px-5 py-4 align-top text-right' },
+                { targets: [canDeletePoles ? 20 : 19], className: 'px-5 py-4 align-top text-right' },
             ],
             language: {
                 emptyTable: 'Tidak ada tiang untuk filter ini.',

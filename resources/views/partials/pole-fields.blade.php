@@ -126,10 +126,6 @@
             </select>
         </div>
         <div>
-            <label class="label">Daya Lampu</label>
-            <input class="field" name="power_usage" type="number" min="0" value="{{ $poleValue('power_usage', 40) }}" required data-power-usage-input data-default-power="{{ $poleValue('power_usage', 40) ?: 40 }}">
-        </div>
-        <div>
             <label class="label">Jenis Lampu</label>
             <select class="field" name="lamp_type" required>
                 <option value="" @selected($poleValue('lamp_type') === '')>Pilihan</option>
@@ -156,9 +152,19 @@
                 @endforeach
             </select>
         </div>
-        <div>
-            <label class="label">Jumlah Titik Lampu</label>
-            <input class="field" name="light_point_count" type="number" min="1" value="{{ $poleValue('light_point_count', 1) }}" required>
+        <div class="grid gap-4 md:col-span-2 md:grid-cols-3">
+            <div>
+                <label class="label">Jumlah Titik Lampu</label>
+                <input class="field" name="light_point_count" type="number" min="1" value="{{ $poleValue('light_point_count', 1) }}" required data-light-point-count-input>
+            </div>
+            <div>
+                <label class="label">Daya Lampu per Titik</label>
+                <input class="field" name="power_usage" type="number" min="0" value="{{ $poleValue('power_usage', 40) }}" required data-power-usage-input data-default-power="{{ $poleValue('power_usage', 40) ?: 40 }}">
+            </div>
+            <div>
+                <label class="label">Total Daya</label>
+                <input class="field cursor-not-allowed opacity-70" type="number" value="{{ (int) $poleValue('light_point_count', 1) * (int) $poleValue('power_usage', 40) }}" readonly tabindex="-1" data-total-power-input>
+            </div>
         </div>
     </div>
 </div>

@@ -256,10 +256,17 @@
             group.dataset.lampTechnicalInitialized = '1';
 
             const statusSelect = group.querySelector('[data-lamp-status-select]');
+            const lightPointCountInput = group.querySelector('[data-light-point-count-input]');
             const powerInput = group.querySelector('[data-power-usage-input]');
-            if (!statusSelect || !powerInput) return;
+            const totalPowerInput = group.querySelector('[data-total-power-input]');
+            if (!statusSelect || !lightPointCountInput || !powerInput || !totalPowerInput) return;
 
             const defaultPower = Number(powerInput.dataset.defaultPower || 40) || 40;
+            const syncTotalPower = () => {
+                const lightPointCount = Number(lightPointCountInput.value || 0);
+                const powerPerPoint = Number(powerInput.value || 0);
+                totalPowerInput.value = Math.max(0, lightPointCount) * Math.max(0, powerPerPoint);
+            };
             const sync = () => {
                 const hasNoLamp = statusSelect.value === 'tidak_ada_lampu';
                 if (hasNoLamp) {
@@ -267,6 +274,7 @@
                     powerInput.min = 0;
                     powerInput.readOnly = true;
                     powerInput.classList.add('opacity-70');
+                    syncTotalPower();
                     return;
                 }
 
@@ -276,9 +284,12 @@
                 if (Number(powerInput.value || 0) <= 0) {
                     powerInput.value = defaultPower;
                 }
+                syncTotalPower();
             };
 
             statusSelect.addEventListener('change', sync);
+            lightPointCountInput.addEventListener('input', syncTotalPower);
+            powerInput.addEventListener('input', syncTotalPower);
             sync();
         });
     };

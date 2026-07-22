@@ -50,7 +50,7 @@ class DashboardController extends Controller
             ->selectRaw("SUM(CASE WHEN `lamp_status` = 'mati' THEN 1 ELSE 0 END) as lamp_mati")
             ->selectRaw("SUM(CASE WHEN `lamp_status` = 'rusak_pecah' THEN 1 ELSE 0 END) as lamp_rusak_pecah")
             ->selectRaw("SUM(CASE WHEN `lamp_status` = 'tidak_ada_lampu' THEN 1 ELSE 0 END) as lamp_tidak_ada_lampu")
-            ->selectRaw('COALESCE(SUM(power_usage), 0) as daya')
+            ->selectRaw('COALESCE(SUM(COALESCE(power_usage, 0) * COALESCE(light_point_count, 1)), 0) as daya')
             ->first();
 
         $stats = [

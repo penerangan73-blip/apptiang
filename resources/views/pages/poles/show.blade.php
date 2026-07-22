@@ -59,13 +59,14 @@
     $verificationMeta = $pole->is_verified
         ? (($pole->verifiedBy?->name ?? '-').' / '.(optional($pole->verified_at)->format('H:i d-m-Y') ?: '-'))
         : '-';
+    $totalPower = (int) $pole->light_point_count * (int) $pole->power_usage;
     $latestReport = $reports->getCollection()->first();
     $hasPoleCoordinates = is_numeric($pole->latitude) && is_numeric($pole->longitude);
     $directionsUrl = $hasPoleCoordinates
         ? 'https://www.google.com/maps/dir/?api=1&destination='.rawurlencode($pole->latitude.','.$pole->longitude)
         : null;
     $poleMapData = [
-        ...$pole->only(['customer_id', 'street_name', 'address', 'village', 'district', 'regency', 'province', 'latitude', 'longitude', 'power_usage', 'condition']),
+        ...$pole->only(['customer_id', 'street_name', 'address', 'village', 'district', 'regency', 'province', 'latitude', 'longitude', 'power_usage', 'light_point_count', 'condition']),
         'display_name' => $poleTitle,
         'address_line' => $pole->addressLine(),
         'administrative_address' => $pole->administrativeAddress(),
@@ -110,8 +111,8 @@
                     <i data-lucide="zap" class="icon"></i>
                 </div>
                 <div class="min-w-0">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Daya Lampu</p>
-                    <p class="mt-1 truncate text-lg font-black text-slate-100">{{ number_format($pole->power_usage) }} Watt</p>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Daya</p>
+                    <p class="mt-1 truncate text-lg font-black text-slate-100">{{ number_format($totalPower) }} Watt</p>
                 </div>
             </div>
             <div class="flex min-h-24 items-center gap-3 rounded-lg border border-white/10 bg-slate-950/30 p-4">
@@ -155,8 +156,8 @@
             <div class="divide-y divide-white/5">
                 <section class="p-5">
                     <h4 class="mb-4 text-sm font-black uppercase tracking-widest text-cyan-300">Lokasi</h4>
-                    <div class="grid gap-5 md:grid-cols-2">
-                        @include('partials.detail-item', ['label' => 'Alamat', 'value' => $pole->addressLine() ?: '-', 'class' => 'md:col-span-2'])
+                    <div class="grid gap-5 md:grid-cols-3">
+                        @include('partials.detail-item', ['label' => 'Alamat', 'value' => $pole->addressLine() ?: '-', 'class' => 'md:col-span-3'])
                         @include('partials.detail-item', ['label' => 'Kelurahan', 'value' => $pole->village ?: '-'])
                         @include('partials.detail-item', ['label' => 'Kecamatan', 'value' => $pole->district ?: '-'])
                         @include('partials.detail-item', ['label' => 'Kabupaten', 'value' => $pole->regency ?: '-'])
@@ -167,7 +168,7 @@
                 </section>
                 <section class="p-5">
                     <h4 class="mb-4 text-sm font-black uppercase tracking-widest text-cyan-300">Spesifikasi Aset</h4>
-                    <div class="grid gap-5 md:grid-cols-2">
+                    <div class="grid gap-5 md:grid-cols-3">
                         @include('partials.detail-item', ['label' => 'Kondisi Tiang', 'value' => $label($pole->condition)])
                         @include('partials.detail-item', ['label' => 'Jenis Tiang', 'value' => $label($pole->pole_type)])
                         @include('partials.detail-item', ['label' => 'Tinggi Tiang', 'value' => $pole->height ? $pole->height.' m' : '-'])
@@ -178,25 +179,26 @@
                 </section>
                 <section class="p-5">
                     <h4 class="mb-4 text-sm font-black uppercase tracking-widest text-cyan-300">Lampu</h4>
-                    <div class="grid gap-5 md:grid-cols-2">
-                        @include('partials.detail-item', ['label' => 'Daya Lampu', 'value' => number_format($pole->power_usage).' Watt'])
+                    <div class="grid gap-5 md:grid-cols-3">
                         @include('partials.detail-item', ['label' => 'Jenis Lampu', 'value' => $label($pole->lamp_type)])
                         @include('partials.detail-item', ['label' => 'Kondisi Lampu', 'value' => $label($pole->lamp_status)])
                         @include('partials.detail-item', ['label' => 'Jenis Rumah Lampu', 'value' => $label($pole->lamp_house_type)])
                         @include('partials.detail-item', ['label' => 'Kondisi Rumah Lampu', 'value' => $label($pole->lamp_house_condition)])
+                        @include('partials.detail-item', ['label' => 'Daya Lampu per Titik', 'value' => number_format($pole->power_usage).' Watt'])
                         @include('partials.detail-item', ['label' => 'Jumlah Titik Lampu', 'value' => number_format((int) $pole->light_point_count)])
+                        @include('partials.detail-item', ['label' => 'Total Daya', 'value' => number_format($totalPower).' Watt', 'class' => 'md:col-span-3', 'valueClass' => 'text-base font-black text-cyan-300'])
                     </div>
                 </section>
                 <section class="p-5">
                     <h4 class="mb-4 text-sm font-black uppercase tracking-widest text-cyan-300">Audit & Catatan</h4>
-                    <div class="grid gap-5 md:grid-cols-2">
+                    <div class="grid gap-5 md:grid-cols-3">
                         @include('partials.detail-item', ['label' => 'Pertama Diinput', 'value' => optional($pole->created_at)->format('H:i d-m-Y') ?: '-'])
                         @include('partials.detail-item', ['label' => 'Diinput Oleh', 'value' => $pole->createdBy?->name ?? '-'])
                         @include('partials.detail-item', ['label' => 'Update Terakhir', 'value' => optional($pole->updated_at)->format('H:i d-m-Y') ?: '-'])
                         @include('partials.detail-item', ['label' => 'Update Oleh', 'value' => $pole->updatedBy?->name ?? '-'])
                         @include('partials.detail-item', ['label' => 'Verifikasi', 'value' => $verificationLabel])
                         @include('partials.detail-item', ['label' => 'Diverifikasi Oleh', 'value' => $verificationMeta])
-                        @include('partials.detail-item', ['label' => 'Keterangan', 'value' => $pole->notes ?: '-', 'class' => 'md:col-span-2'])
+                        @include('partials.detail-item', ['label' => 'Keterangan', 'value' => $pole->notes ?: '-', 'class' => 'md:col-span-3'])
                     </div>
                 </section>
             </div>
@@ -470,7 +472,7 @@
                     <span class="badge badge-${pole.condition} mt-5 shrink-0">${escapeHtml(formatOption(pole.condition))}</span>
                 </div>
                 <p class="mt-1 text-sm leading-5 text-slate-300">${escapeHtml(pole.location_label || pole.address_line || pole.street_name)}</p>
-                <p class="mt-3 text-sm font-semibold text-slate-100">Daya lampu ${Number(pole.power_usage || 0).toLocaleString('id-ID')} W</p>
+                <p class="mt-3 text-sm font-semibold text-slate-100">Total daya ${(Number(pole.light_point_count || 0) * Number(pole.power_usage || 0)).toLocaleString('id-ID')} W</p>
             </div>
         `, { maxWidth: 300, className: 'pju-marker-popup' });
     }

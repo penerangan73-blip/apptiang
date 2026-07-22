@@ -93,7 +93,7 @@
                 @include('partials.stat-card', ['label' => 'Total Tiang', 'value' => number_format($stats['total']), 'description' => 'aset terdata', 'icon' => 'database'])
                 @include('partials.stat-card', ['label' => 'Tiang Sumber', 'value' => number_format($stats['sumber']), 'description' => 'nomor utama', 'icon' => 'git-commit-horizontal'])
                 @include('partials.stat-card', ['label' => 'Tiang Sub', 'value' => number_format($stats['sub']), 'description' => 'turunan sumber', 'icon' => 'git-branch'])
-                @include('partials.stat-card', ['label' => 'Total Daya Lampu', 'value' => number_format($stats['daya']), 'description' => 'watt terdata', 'icon' => 'zap'])
+                @include('partials.stat-card', ['label' => 'Total Daya Lampu', 'value' => number_format($stats['daya']), 'description' => 'watt terhitung', 'icon' => 'zap'])
             </div>
         </div>
 
@@ -478,8 +478,8 @@
                 </div>
                 <p class="mt-1 text-sm leading-5 text-slate-300">${escapeHtml(pole.location_label || pole.address_line || pole.street_name)}</p>
                 <dl class="mt-3 grid grid-cols-[74px_1fr] gap-x-3 gap-y-1.5 text-sm">
-                    <dt class="font-bold text-slate-500">Daya Lampu</dt>
-                    <dd class="font-semibold text-slate-100">${Number(pole.power_usage || 0).toLocaleString('id-ID')} W</dd>
+                    <dt class="font-bold text-slate-500">Total Daya</dt>
+                    <dd class="font-semibold text-slate-100">${(Number(pole.light_point_count || 0) * Number(pole.power_usage || 0)).toLocaleString('id-ID')} W</dd>
                     <dt class="font-bold text-slate-500">Koordinat</dt>
                     <dd class="font-semibold text-slate-100">${Number(pole.latitude).toFixed(5)}, ${Number(pole.longitude).toFixed(5)}</dd>
                 </dl>
