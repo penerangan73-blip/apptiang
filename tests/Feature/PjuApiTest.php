@@ -15,6 +15,61 @@ class PjuApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_pole_text_is_displayed_in_title_case_without_changing_the_pole_number(): void
+    {
+        $pole = Pole::query()->create([
+            ...$this->polePayload('pj-ABC-001'),
+            'sub_name' => 'sub-a01',
+            'address' => 'JALAN WONOSARI BARU',
+            'street_name' => 'JALAN WONOSARI BARU',
+            'village' => 'karang tengah',
+            'district' => 'WONOSARI',
+            'regency' => 'GUNUNGKIDUL',
+            'province' => 'DAERAH ISTIMEWA YOGYAKARTA',
+            'notes' => 'LAMPU PERLU DIPERIKSA',
+        ]);
+
+        $pole->refresh();
+
+        $this->assertSame('pj-ABC-001', $pole->customer_id);
+        $this->assertSame('sub-a01', $pole->sub_name);
+        $this->assertSame('Jalan Wonosari Baru', $pole->address);
+        $this->assertSame('Jalan Wonosari Baru', $pole->street_name);
+        $this->assertSame('Karang Tengah', $pole->village);
+        $this->assertSame('Wonosari', $pole->district);
+        $this->assertSame('Gunungkidul', $pole->regency);
+        $this->assertSame('Daerah Istimewa Yogyakarta', $pole->province);
+        $this->assertSame('Lampu Perlu Diperiksa', $pole->notes);
+    }
+
+    public function test_excel_export_uses_title_case_without_changing_the_pole_number(): void
+    {
+        $user = $this->seedUser('user');
+        Pole::query()->create([
+            ...$this->polePayload('pj-ABC-001'),
+            'address' => 'JALAN WONOSARI BARU',
+            'street_name' => 'JALAN WONOSARI BARU',
+            'village' => 'karang tengah',
+            'district' => 'WONOSARI',
+            'regency' => 'GUNUNGKIDUL',
+            'province' => 'DAERAH ISTIMEWA YOGYAKARTA',
+            'created_by_id' => $user->id,
+            'updated_by_id' => $user->id,
+        ]);
+
+        $this->actingAs($user)
+            ->get('/poles/export')
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
+            ->assertSee('pj-ABC-001', false)
+            ->assertSee('Jalan Wonosari Baru', false)
+            ->assertSee('Karang Tengah', false)
+            ->assertSee('Wonosari', false)
+            ->assertSee('Gunungkidul', false)
+            ->assertSee('Daerah Istimewa Yogyakarta', false)
+            ->assertDontSee('DAERAH ISTIMEWA YOGYAKARTA', false);
+    }
+
     public function test_user_can_login_and_read_snapshot_data(): void
     {
         $user = $this->seedUser('user');

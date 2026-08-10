@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class Pole extends Model
 {
@@ -84,6 +85,50 @@ class Pole extends Model
             ->map(fn ($value) => trim((string) $value))
             ->filter()
             ->implode('/');
+    }
+
+    protected function streetName(): Attribute
+    {
+        return Attribute::get(fn ($value) => static::titleCase($value));
+    }
+
+    protected function address(): Attribute
+    {
+        return Attribute::get(fn ($value) => static::titleCase($value));
+    }
+
+    protected function village(): Attribute
+    {
+        return Attribute::get(fn ($value) => static::titleCase($value));
+    }
+
+    protected function district(): Attribute
+    {
+        return Attribute::get(fn ($value) => static::titleCase($value));
+    }
+
+    protected function regency(): Attribute
+    {
+        return Attribute::get(fn ($value) => static::titleCase($value));
+    }
+
+    protected function province(): Attribute
+    {
+        return Attribute::get(fn ($value) => static::titleCase($value));
+    }
+
+    protected function notes(): Attribute
+    {
+        return Attribute::get(fn ($value) => static::titleCase($value));
+    }
+
+    public static function titleCase(mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        return Str::title(trim($value));
     }
 
     public static function nextSubNameForCustomer(string $customerId): string

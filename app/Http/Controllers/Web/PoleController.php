@@ -8,9 +8,9 @@ use App\Models\Pole;
 use App\Models\PolePhoto;
 use App\Support\ImageStorage;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -105,11 +105,11 @@ class PoleController extends Controller
         foreach ($poles as $pole) {
             $row = [
                 $pole->displayName(),
-                $pole->addressLine(),
-                $pole->village,
-                $pole->district,
-                $pole->regency,
-                $pole->province,
+                Pole::titleCase($pole->addressLine()),
+                Pole::titleCase($pole->village),
+                Pole::titleCase($pole->district),
+                Pole::titleCase($pole->regency),
+                Pole::titleCase($pole->province),
                 $pole->latitude,
                 $pole->longitude,
                 $this->formatOption($pole->condition),
@@ -126,14 +126,14 @@ class PoleController extends Controller
                 $this->formatOption($pole->kwh_meter),
                 $this->formatOwnership($pole->ownership),
                 $this->formatExportDate($pole->created_at),
-                $pole->createdBy?->name,
+                Pole::titleCase($pole->createdBy?->name),
                 $this->formatExportDate($pole->updated_at),
-                $pole->updatedBy?->name,
+                Pole::titleCase($pole->updatedBy?->name),
                 $pole->is_verified ? 'Terverifikasi' : 'Belum',
-                $pole->verifiedBy?->name,
+                Pole::titleCase($pole->verifiedBy?->name),
                 $this->formatExportDate($pole->verified_at),
                 $pole->photos->pluck('photo_url')->implode(', ') ?: $pole->photo_url,
-                $pole->notes,
+                Pole::titleCase($pole->notes),
             ];
 
             $html .= '<tr>';
