@@ -7,6 +7,7 @@ use App\Models\DailyReport;
 use App\Models\Pole;
 use App\Models\PolePhoto;
 use App\Support\ImageStorage;
+use App\Support\PoleRouteType;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -59,9 +60,12 @@ class PoleController extends Controller
             ->tap(fn ($query) => $this->applyAttributeFilters($query, $validated))
             ->latest()
             ->get();
+        $allPoleNumbers = $this->allPoleNumberSet();
 
         $headers = [
             'Nomor Tiang Listrik',
+            'Tipe Jalur',
+            'Sumber Jalur Tiang',
             'Alamat',
             'Kelurahan',
             'Kecamatan',
@@ -93,7 +97,7 @@ class PoleController extends Controller
             'Keterangan',
         ];
 
-        $dateColumnIndexes = [21, 23, 27];
+        $textCellColumnIndexes = [2, 23, 25, 29];
         $textCellStyle = "mso-number-format:'\\@';";
 
         $html = '<html><head><meta charset="UTF-8"><style>.text-cell{mso-number-format:"\@";}</style></head><body><table border="1"><thead><tr>';
@@ -103,8 +107,12 @@ class PoleController extends Controller
         $html .= '</tr></thead><tbody>';
 
         foreach ($poles as $pole) {
+            $poleNumber = trim($pole->displayName());
+            $routeType = PoleRouteType::determine($poleNumber, $allPoleNumbers);
             $row = [
-                $pole->displayName(),
+                $poleNumber,
+                $routeType['tipe'],
+                $routeType['sumber'],
                 Pole::titleCase($pole->addressLine()),
                 Pole::titleCase($pole->village),
                 Pole::titleCase($pole->district),
@@ -138,7 +146,7 @@ class PoleController extends Controller
 
             $html .= '<tr>';
             foreach ($row as $index => $cell) {
-                $attributes = in_array($index, $dateColumnIndexes, true) ? ' class="text-cell" style="'.$textCellStyle.'"' : '';
+                $attributes = in_array($index, $textCellColumnIndexes, true) ? ' class="text-cell" style="'.$textCellStyle.'"' : '';
                 $html .= '<td'.$attributes.'>'.e((string) $cell).'</td>';
             }
             $html .= '</tr>';
@@ -150,6 +158,21 @@ class PoleController extends Controller
             'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="data-tiang-pju-'.now()->toDateString().'.xls"',
         ]);
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    private function allPoleNumberSet(): array
+    {
+        return Pole::query()
+            ->select($this->poleColumns(['customer_id', 'sub_name']))
+            ->get()
+            ->map(fn (Pole $pole) => trim($pole->displayName()))
+            ->filter()
+            ->flip()
+            ->map(fn () => true)
+            ->all();
     }
 
     public function datatable(Request $request): JsonResponse
