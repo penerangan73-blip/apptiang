@@ -166,7 +166,7 @@ class PoleController extends Controller
     private function allPoleNumberSet(): array
     {
         return Pole::query()
-            ->select($this->poleColumns(['customer_id', 'sub_name']))
+            ->select(['customer_id', 'sub_name'])
             ->get()
             ->map(fn (Pole $pole) => trim($pole->displayName()))
             ->filter()
